@@ -116,7 +116,7 @@ class DownloadEngine extends EventEmitter {
                         Boolean(contentRangeHeader && status === 206);
 
       // Extract filename
-      let fileName = this.extractFileName(finalUrl, contentDisposition);
+      let fileName = this.extractFileName(finalUrl, contentDisposition, contentType);
 
       return {
         online: true,
@@ -136,33 +136,84 @@ class DownloadEngine extends EventEmitter {
     }
   }
 
-  extractFileName(urlStr, disposition) {
+  extractFileName(urlStr, disposition, contentType = '') {
     if (disposition) {
       // Check for filename*=UTF-8''...
       const utf8Match = disposition.match(/filename\*=UTF-8''([^;\r\n]+)/i);
       if (utf8Match && utf8Match[1]) {
         try {
-          return decodeURIComponent(utf8Match[1].trim());
+          const decoded = decodeURIComponent(utf8Match[1].trim()).replace(/[\\/:*?"<>|\r\n]/g, '_');
+          if (decoded) return decoded;
         } catch {}
       }
 
       // Check for regular filename="..."
-      const match = disposition.match(/filename=["']?([^"';\r\n]+)["']?/i);
+      const match = disposition.match(/filename\s*=\s*["']?([^"';\r\n]+)["']?/i);
       if (match && match[1]) {
-        return match[1].trim().replace(/[\\/:*?"<>|]/g, '_');
+        const cleaned = match[1].trim().replace(/[\\/:*?"<>|\r\n]/g, '_');
+        if (cleaned) return cleaned;
       }
     }
 
     try {
       const parsed = new URL(urlStr);
+
+      // Check query parameters commonly used for filenames (e.g., ?filename=xyz, ?name=xyz, ?file=xyz)
+      const queryParamNames = ['filename', 'file_name', 'name', 'file', 'title', 'fn', 'f'];
+      for (const param of queryParamNames) {
+        const val = parsed.searchParams.get(param);
+        if (val && typeof val === 'string') {
+          const cleanVal = decodeURIComponent(val.trim()).replace(/[\\/:*?"<>|\r\n]/g, '_');
+          if (cleanVal && cleanVal.includes('.')) {
+            return cleanVal;
+          }
+        }
+      }
+
       const pathname = parsed.pathname;
-      const basename = path.basename(pathname);
-      if (basename && basename.includes('.')) {
-        return decodeURIComponent(basename).replace(/[\\/:*?"<>|]/g, '_');
+      const rawBasename = path.basename(pathname);
+      if (rawBasename && rawBasename !== '/' && rawBasename !== '.' && rawBasename !== '..') {
+        const decoded = decodeURIComponent(rawBasename).replace(/[\\/:*?"<>|\r\n]/g, '_');
+        if (decoded && decoded.includes('.')) {
+          return decoded;
+        } else if (decoded && decoded.length > 1) {
+          // If basename has no extension, try to append from contentType if available
+          const ext = this.getExtensionFromMime(contentType);
+          return ext ? `${decoded}${ext}` : decoded;
+        }
       }
     } catch {}
 
-    return `download_${Date.now()}`;
+    const extFromMime = this.getExtensionFromMime(contentType);
+    return `download_${Date.now()}${extFromMime || ''}`;
+  }
+
+  getExtensionFromMime(mimeType) {
+    if (!mimeType) return '';
+    const clean = mimeType.toLowerCase().split(';')[0].trim();
+    const mimeMap = {
+      'application/zip': '.zip',
+      'application/x-zip-compressed': '.zip',
+      'application/x-rar-compressed': '.rar',
+      'application/x-7z-compressed': '.7z',
+      'application/x-tar': '.tar',
+      'application/gzip': '.tar.gz',
+      'application/pdf': '.pdf',
+      'video/mp4': '.mp4',
+      'video/x-matroska': '.mkv',
+      'video/webm': '.webm',
+      'audio/mpeg': '.mp3',
+      'audio/ogg': '.ogg',
+      'audio/wav': '.wav',
+      'image/jpeg': '.jpg',
+      'image/png': '.png',
+      'image/gif': '.gif',
+      'image/webp': '.webp',
+      'application/vnd.android.package-archive': '.apk',
+      'application/x-msdownload': '.exe',
+      'application/x-iso9660-image': '.iso'
+    };
+    return mimeMap[clean] || '';
   }
 
   formatBytes(bytes) {

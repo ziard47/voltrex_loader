@@ -27,6 +27,31 @@ import {
   Globe
 } from 'lucide-react';
 
+function inferFileNameFromUrl(urlStr) {
+  if (!urlStr || typeof urlStr !== 'string') return '';
+  try {
+    const parsed = new URL(urlStr.trim());
+    // Check common query parameters for filenames
+    for (const key of ['filename', 'file_name', 'name', 'file', 'title', 'fn', 'f']) {
+      const val = parsed.searchParams.get(key);
+      if (val) {
+        const decoded = decodeURIComponent(val.trim()).replace(/[\\/:*?"<>|\r\n]/g, '_');
+        if (decoded) return decoded;
+      }
+    }
+    const pathname = parsed.pathname;
+    const parts = pathname.split('/').filter(Boolean);
+    if (parts.length > 0) {
+      const last = parts[parts.length - 1];
+      const decoded = decodeURIComponent(last).replace(/[\\/:*?"<>|\r\n]/g, '_');
+      if (decoded && decoded !== '/' && decoded !== '.') {
+        return decoded;
+      }
+    }
+  } catch {}
+  return '';
+}
+
 export default function AddDownloadModal({
   open,
   onClose,
@@ -50,6 +75,8 @@ export default function AddDownloadModal({
     const pastedText = e.clipboardData?.getData('text')?.trim();
     if (pastedText && (pastedText.startsWith('http://') || pastedText.startsWith('https://'))) {
       setUrl(pastedText);
+      const inferred = inferFileNameFromUrl(pastedText);
+      if (inferred) setFileName(inferred);
       setProbeResult(null);
       setErrorMsg('');
       handleCheckUrl(pastedText);
@@ -65,6 +92,9 @@ export default function AddDownloadModal({
     // If a full URL is pasted via context menu or drag
     const trimmed = newUrl.trim();
     if ((!url || url.length < 5) && trimmed.length > 8 && (trimmed.startsWith('http://') || trimmed.startsWith('https://'))) {
+      const inferred = inferFileNameFromUrl(trimmed);
+      if (inferred) setFileName(inferred);
+
       if (pasteTimeoutRef.current) clearTimeout(pasteTimeoutRef.current);
       pasteTimeoutRef.current = setTimeout(() => {
         handleCheckUrl(trimmed);
@@ -75,7 +105,12 @@ export default function AddDownloadModal({
   useEffect(() => {
     if (open) {
       const incomingUrl = initialData?.url ? initialData.url.trim() : '';
-      const incomingName = initialData?.fileName ? initialData.fileName.trim() : '';
+      let incomingName = initialData?.fileName ? initialData.fileName.trim() : '';
+
+      // If incomingName is empty, immediately infer from URL so field is never empty
+      if (!incomingName && incomingUrl) {
+        incomingName = inferFileNameFromUrl(incomingUrl);
+      }
 
       setUrl(incomingUrl);
       setFileName(incomingName);
@@ -99,6 +134,9 @@ export default function AddDownloadModal({
     const targetUrl = (overrideUrl || url).trim();
     if (!targetUrl) return;
 
+    // Immediately populate inferred name if current state is blank
+    setFileName((prev) => (prev && prev.trim() ? prev : inferFileNameFromUrl(targetUrl)));
+
     setIsProbing(true);
     setErrorMsg('');
     try {
@@ -106,7 +144,8 @@ export default function AddDownloadModal({
         const result = await window.electronAPI.probeUrl(targetUrl);
         setProbeResult(result);
         if (result.online) {
-          if (result.fileName && !fileName) {
+          if (result.fileName) {
+            // Always adopt server's authoritative filename from probe
             setFileName(result.fileName);
           }
         } else {

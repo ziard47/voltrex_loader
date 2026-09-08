@@ -63,6 +63,12 @@ class BridgeServer {
               return;
             }
 
+            // Ensure filename is populated (fallback to URL extraction if browser omitted it)
+            let resolvedFileName = (data.fileName && typeof data.fileName === 'string' && data.fileName.trim()) || '';
+            if (!resolvedFileName && this.downloadEngine?.extractFileName) {
+              resolvedFileName = this.downloadEngine.extractFileName(downloadUrl);
+            }
+
             const settings = typeof this.getSettings === 'function' ? this.getSettings() : { autoCapturePrompt: true };
             const win = this.getMainWindow();
 
@@ -70,7 +76,7 @@ class BridgeServer {
               // Direct auto-start without modal prompt
               const task = await this.downloadEngine.addDownload({
                 url: downloadUrl,
-                fileName: data.fileName,
+                fileName: resolvedFileName,
                 referrer: data.referrer
               });
               res.writeHead(200, { 'Content-Type': 'application/json' });
@@ -83,12 +89,12 @@ class BridgeServer {
                 win.focus();
                 win.webContents.send('download:captured-prompt', {
                   url: downloadUrl,
-                  fileName: data.fileName,
+                  fileName: resolvedFileName,
                   referrer: data.referrer
                 });
               }
               res.writeHead(200, { 'Content-Type': 'application/json' });
-              res.end(JSON.stringify({ success: true, prompted: true, fileName: data.fileName }));
+              res.end(JSON.stringify({ success: true, prompted: true, fileName: resolvedFileName }));
             }
           } catch (err) {
             res.writeHead(500, { 'Content-Type': 'application/json' });

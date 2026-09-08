@@ -133,6 +133,7 @@ npm run package:linux
 ```
 
 - **Interactive Version Prompt**: The script prompts you to enter the version to build:
+
   ```
   Enter version to build (default: 1.0.0):
   ```
@@ -145,10 +146,36 @@ npm run package:linux
 Artifacts are automatically organized under `release/linux/<version>/`:
 
 - **`Voltrex Loader-<version>.AppImage`**: Standalone, portable executable ready to run immediately.
-- **`voltrex-loader-<version>-linux.tar.gz`**: Portable installer archive containing:
-  - `install.sh`: Automated user-space installer (sets up desktop shortcut, menu entry, and terminal command `voltrex-loader`).
+- **`voltrex-loader-<version>-linux.tar.gz`**: Installer archive containing:
+  - `voltrex-loader-unpacked/`: Complete unpacked Linux distribution (binaries, Electron libraries, locales, and assets).
+  - `install.sh`: Automated installer that copies the `linux-unpacked` files to `~/.local/share/voltrex-loader` (does **not** copy the AppImage), sets up terminal command symlink `~/.local/bin/voltrex-loader`, application menu launcher, and Desktop shortcut.
   - `uninstall.sh`: Automated uninstaller (supports `--purge` to clear config/cache).
-  - `Voltrex Loader-<version>.AppImage`
   - `voltrex-loader.desktop`
   - `voltrex-loader.png`
   - `README.txt`
+
+---
+
+## 🪟 Packaging for Windows
+
+You can build the Windows installer directly on Linux/SteamOS without switching operating systems:
+
+### 1. Build Windows Setup
+
+```bash
+npm run package:win
+```
+
+- **Interactive Version Prompt**: Same as Linux, prompts you to specify a version or press <kbd>Enter</kbd> to keep the current version.
+- **Automated Toolset**: Configured to package NSIS installer and portable executable on Linux without requiring Wine or Windows code-signing tools.
+
+### 2. Output Structure
+
+Artifacts are organized inside `release/windows/<version>/`:
+
+- **`voltrex-loader-win-setup.zip`**: Complete Windows installer distribution zip package containing:
+  - **`setup.exe`**: Modern UI setup wizard executable.
+  - **`app.bin`**: Compressed LZMA2 archive of the entire unpacked Windows application.
+  - _When `setup.exe` is run_: It displays the install wizard, prompts for install folder (defaults to `%LOCALAPPDATA%\Programs\Voltrex Loader`), extracts `app.bin`, creates Desktop & Start Menu shortcuts, registers in Windows Add/Remove Programs, and creates `Uninstall.exe`.
+- **`setup.exe`** & **`app.bin`**: Unzipped copies available directly for individual use.
+- **`win-unpacked/`**: Raw unpacked Windows application directory.

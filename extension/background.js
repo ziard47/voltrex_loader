@@ -78,7 +78,7 @@ chrome.contextMenus.onClicked.addListener(async (info) => {
     return;
   }
 
-  const result = await sendToVoltrex({ url: targetUrl });
+  const result = await sendToVoltrex({ url: targetUrl, fileName: extractUrlFileName(targetUrl) });
   if (result?.success) {
     chrome.notifications.create({
       type: 'basic',
@@ -143,10 +143,31 @@ chrome.downloads.onCreated.addListener(async (item) => {
     });
   } catch {}
 
-  // Forward to Voltrex Loader desktop app
+function extractUrlFileName(urlStr) {
+  try {
+    const parsed = new URL(urlStr);
+    for (const key of ['filename', 'file_name', 'name', 'file', 'title', 'fn', 'f']) {
+      const val = parsed.searchParams.get(key);
+      if (val) {
+        const decoded = decodeURIComponent(val.trim()).replace(/[\\/:*?"<>|\r\n]/g, '_');
+        if (decoded) return decoded;
+      }
+    }
+    const parts = parsed.pathname.split('/').filter(Boolean);
+    if (parts.length > 0) {
+      const last = parts[parts.length - 1];
+      const decoded = decodeURIComponent(last).replace(/[\\/:*?"<>|\r\n]/g, '_');
+      if (decoded && decoded !== '/' && decoded !== '.') return decoded;
+    }
+  } catch {}
+  return '';
+}
+
+// Forward to Voltrex Loader desktop app
+  const detectedFileName = (item.filename && item.filename.trim()) || extractUrlFileName(downloadUrl);
   const result = await sendToVoltrex({
     url: downloadUrl,
-    fileName: item.filename,
+    fileName: detectedFileName,
     referrer: item.referrer
   });
 
