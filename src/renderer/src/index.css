@@ -1,0 +1,54 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  body {
+    font-family: 'Outfit', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    background-color: #1D1616;
+    color: #EEEEEE;
+  }
+
+  button,
+  button:focus,
+  button:focus-visible {
+    outline: none !important;
+    box-shadow: none;
+  }
+}
+
+/* Custom scrollbar styling in dark/crimson palette */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: #181212;
+}
+
+::-webkit-scrollbar-thumb {
+  background: rgba(142, 22, 22, 0.45);
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(216, 64, 64, 0.65);
+}
+
+/* Glassmorphism helpers with crimson accents */
+.glass-panel {
+  background: rgba(29, 22, 22, 0.88);
+  backdrop-filter: blur(16px);
+  border: 1px solid rgba(142, 22, 22, 0.25);
+}
+
+.glass-card {
+  background: rgba(38, 28, 28, 0.7);
+  backdrop-filter: blur(12px);
+  border: 1px solid rgba(216, 64, 64, 0.2);
+}
+
+.font-mono-stat {
+  font-family: 'JetBrains Mono', monospace;
+}

@@ -1,0 +1,410 @@
+import React, { useState, useEffect, useRef } from 'react';
+import Dialog from '@mui/material/Dialog';
+import DialogTitle from '@mui/material/DialogTitle';
+import DialogContent from '@mui/material/DialogContent';
+import DialogActions from '@mui/material/DialogActions';
+import Button from '@mui/material/Button';
+import TextField from '@mui/material/TextField';
+import CircularProgress from '@mui/material/CircularProgress';
+import Select from '@mui/material/Select';
+import MenuItem from '@mui/material/MenuItem';
+import FormControl from '@mui/material/FormControl';
+import Chip from '@mui/material/Chip';
+import IconButton from '@mui/material/IconButton';
+import Tooltip from '@mui/material/Tooltip';
+import {
+  Download,
+  FolderOpen,
+  CheckCircle2,
+  XCircle,
+  HardDrive,
+  RefreshCw,
+  Clock,
+  ShieldCheck,
+  AlertTriangle,
+  X,
+  FileCode,
+  Globe
+} from 'lucide-react';
+
+export default function AddDownloadModal({
+  open,
+  onClose,
+  onAddDownload,
+  defaultSavePath,
+  initialData
+}) {
+  const [url, setUrl] = useState('');
+  const [fileName, setFileName] = useState('');
+  const [savePath, setSavePath] = useState(defaultSavePath || '');
+  const [priority, setPriority] = useState('NORMAL');
+
+  const [isProbing, setIsProbing] = useState(false);
+  const [probeResult, setProbeResult] = useState(null);
+  const [errorMsg, setErrorMsg] = useState('');
+
+  const urlInputRef = useRef(null);
+  const pasteTimeoutRef = useRef(null);
+
+  const handlePasteUrl = (e) => {
+    const pastedText = e.clipboardData?.getData('text')?.trim();
+    if (pastedText && (pastedText.startsWith('http://') || pastedText.startsWith('https://'))) {
+      setUrl(pastedText);
+      setProbeResult(null);
+      setErrorMsg('');
+      handleCheckUrl(pastedText);
+    }
+  };
+
+  const handleUrlChange = (e) => {
+    const newUrl = e.target.value;
+    setUrl(newUrl);
+    setProbeResult(null);
+    setErrorMsg('');
+
+    // If a full URL is pasted via context menu or drag
+    const trimmed = newUrl.trim();
+    if ((!url || url.length < 5) && trimmed.length > 8 && (trimmed.startsWith('http://') || trimmed.startsWith('https://'))) {
+      if (pasteTimeoutRef.current) clearTimeout(pasteTimeoutRef.current);
+      pasteTimeoutRef.current = setTimeout(() => {
+        handleCheckUrl(trimmed);
+      }, 150);
+    }
+  };
+
+  useEffect(() => {
+    if (open) {
+      const incomingUrl = initialData?.url ? initialData.url.trim() : '';
+      const incomingName = initialData?.fileName ? initialData.fileName.trim() : '';
+
+      setUrl(incomingUrl);
+      setFileName(incomingName);
+      setSavePath(defaultSavePath || '');
+      setPriority('NORMAL');
+      setProbeResult(null);
+      setErrorMsg('');
+
+      if (incomingUrl) {
+        handleCheckUrl(incomingUrl);
+      } else {
+        setTimeout(() => {
+          urlInputRef.current?.focus();
+        }, 100);
+      }
+    }
+  }, [open, defaultSavePath, initialData]);
+
+  // Handle URL probe
+  const handleCheckUrl = async (overrideUrl) => {
+    const targetUrl = (overrideUrl || url).trim();
+    if (!targetUrl) return;
+
+    setIsProbing(true);
+    setErrorMsg('');
+    try {
+      if (window.electronAPI?.probeUrl) {
+        const result = await window.electronAPI.probeUrl(targetUrl);
+        setProbeResult(result);
+        if (result.online) {
+          if (result.fileName && !fileName) {
+            setFileName(result.fileName);
+          }
+        } else {
+          setErrorMsg(result.error || 'The URL could not be reached or is offline.');
+        }
+      }
+    } catch (err) {
+      setErrorMsg(err.message || 'Error occurred while checking URL');
+    } finally {
+      setIsProbing(false);
+    }
+  };
+
+  // Browse save directory
+  const handleBrowseFolder = async () => {
+    if (window.electronAPI?.browseDirectory) {
+      const selected = await window.electronAPI.browseDirectory(savePath);
+      if (selected) {
+        setSavePath(selected);
+      }
+    }
+  };
+
+  // Submit download
+  const handleSubmit = (autoStart = true) => {
+    const trimmedUrl = url.trim();
+    if (!trimmedUrl) {
+      setErrorMsg('Please enter a valid download URL.');
+      return;
+    }
+
+    onAddDownload({
+      url: trimmedUrl,
+      fileName: fileName.trim() || probeResult?.fileName,
+      savePath: savePath.trim(),
+      priority,
+      autoStart
+    });
+
+    onClose();
+  };
+
+  // Handle Enter keypress
+  const handleKeyDown = (e) => {
+    if (e.key === 'Enter') {
+      e.preventDefault();
+      if (!probeResult && !isProbing && url.trim()) {
+        handleCheckUrl();
+      } else if (url.trim()) {
+        handleSubmit(true);
+      }
+    }
+  };
+
+  return (
+    <Dialog
+      open={open}
+      onClose={onClose}
+      maxWidth="sm"
+      fullWidth
+      PaperProps={{
+        className: '!bg-[#1D1616] !border !border-[#8E1616]/50 !rounded-2xl shadow-2xl overflow-hidden'
+      }}
+    >
+      {/* Modal Header */}
+      <DialogTitle className="!px-5 !py-3.5 flex items-center justify-between border-b border-[#8E1616]/35 bg-[#140e0e]">
+        <div className="flex items-center gap-2.5">
+          <div className="w-8 h-8 rounded-lg bg-[#8E1616]/30 border border-[#D84040]/30 text-[#D84040] flex items-center justify-center">
+            <Download className="w-4 h-4" />
+          </div>
+          <div>
+            <h3 className="text-sm font-bold text-[#EEEEEE] leading-tight">Add Download URL</h3>
+          </div>
+        </div>
+        <Tooltip title="Close" arrow>
+          <IconButton
+            size="small"
+            onClick={onClose}
+            className="!text-[#b8a5a5] hover:!text-[#EEEEEE] hover:!bg-[#2e1d1d] !p-1.5"
+          >
+            <X className="w-4 h-4" />
+          </IconButton>
+        </Tooltip>
+      </DialogTitle>
+
+      {/* Modal Content */}
+      <DialogContent className="!px-5 !py-4 space-y-3.5 bg-[#1D1616]">
+        {/* URL Input Box & Check Action */}
+        <div>
+          <label className="block text-[11px] font-semibold uppercase tracking-wider text-[#b8a5a5] mb-1">
+            Download URL
+          </label>
+          <div className="flex items-center gap-2">
+            <TextField
+              fullWidth
+              size="small"
+              inputRef={urlInputRef}
+              placeholder="https://example.com/archive.zip"
+              value={url}
+              onKeyDown={handleKeyDown}
+              onPaste={handlePasteUrl}
+              onChange={handleUrlChange}
+              className="!bg-[#140e0e] !rounded-lg"
+              InputProps={{
+                startAdornment: <Globe className="w-4 h-4 text-[#8E1616] mr-2 shrink-0" />,
+                className: '!text-xs font-mono !text-[#EEEEEE] !h-10 border border-[#8E1616]/30'
+              }}
+            />
+            <Button
+              variant="outlined"
+              onClick={() => handleCheckUrl()}
+              disabled={isProbing || !url.trim()}
+              startIcon={isProbing ? <CircularProgress size={13} color="inherit" /> : <RefreshCw className="w-3.5 h-3.5" />}
+              className="!h-10 !px-4 !shrink-0 !border-[#D84040]/50 !text-[#D84040] hover:!bg-[#8E1616]/20 !text-xs font-semibold whitespace-nowrap !rounded-lg"
+            >
+              {isProbing ? 'Checking...' : probeResult ? 'Recheck' : 'Check URL'}
+            </Button>
+          </div>
+        </div>
+
+        {/* Online / Offline & Probe Results Display */}
+        {probeResult && (
+          <div
+            className={`p-3 rounded-xl border transition-all ${
+              probeResult.online
+                ? 'bg-[#8E1616]/15 border-[#D84040]/40'
+                : 'bg-rose-950/20 border-rose-500/30'
+            }`}
+          >
+            <div className="flex flex-wrap items-center justify-between gap-2 mb-2">
+              <div className="flex items-center gap-1.5 flex-wrap">
+                {probeResult.online ? (
+                  <Chip
+                    icon={<CheckCircle2 className="w-3.5 h-3.5 !text-emerald-400" />}
+                    label="Online / Accessible"
+                    size="small"
+                    className="!bg-emerald-500/15 !text-emerald-300 !border !border-emerald-500/30 font-semibold !text-[11px] !h-6"
+                  />
+                ) : (
+                  <Chip
+                    icon={<XCircle className="w-3.5 h-3.5 !text-rose-400" />}
+                    label="Offline / Unreachable"
+                    size="small"
+                    className="!bg-rose-500/15 !text-rose-300 !border !border-rose-500/30 font-semibold !text-[11px] !h-6"
+                  />
+                )}
+
+                {probeResult.resumable && (
+                  <Chip
+                    icon={<ShieldCheck className="w-3.5 h-3.5 !text-[#D84040]" />}
+                    label="Resume Supported"
+                    size="small"
+                    className="!bg-[#8E1616]/30 !text-[#EEEEEE] !border !border-[#D84040]/40 font-semibold !text-[11px] !h-6"
+                  />
+                )}
+              </div>
+
+              {probeResult.statusCode && (
+                <span className="text-xs font-mono text-[#b8a5a5] bg-[#140e0e] px-2 py-0.5 rounded border border-[#8E1616]/30">
+                  HTTP {probeResult.statusCode}
+                </span>
+              )}
+            </div>
+
+            {probeResult.online && (
+              <div className="grid grid-cols-2 gap-2 text-xs pt-2 border-t border-[#8E1616]/30">
+                <div>
+                  <span className="text-[#b8a5a5]">Detected Size: </span>
+                  <span className="font-semibold text-[#EEEEEE] font-mono-stat">{probeResult.formattedSize}</span>
+                </div>
+                <div>
+                  <span className="text-[#b8a5a5]">Content Type: </span>
+                  <span className="font-semibold text-[#EEEEEE] truncate inline-block max-w-[160px] align-bottom">
+                    {probeResult.mimeType || 'application/octet-stream'}
+                  </span>
+                </div>
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* Error notice */}
+        {errorMsg && (
+          <div className="p-2.5 rounded-lg bg-[#8E1616]/20 border border-[#D84040]/40 text-[#D84040] text-xs flex items-center gap-2">
+            <AlertTriangle className="w-4 h-4 shrink-0 text-[#D84040]" />
+            <span className="truncate">{errorMsg}</span>
+          </div>
+        )}
+
+        {/* File Name */}
+        <div>
+          <label className="block text-[11px] font-semibold uppercase tracking-wider text-[#b8a5a5] mb-1">
+            File Name
+          </label>
+          <TextField
+            fullWidth
+            size="small"
+            placeholder="example-file.ext"
+            value={fileName}
+            onKeyDown={handleKeyDown}
+            onChange={(e) => setFileName(e.target.value)}
+            className="!bg-[#140e0e] !rounded-lg"
+            InputProps={{
+              startAdornment: <FileCode className="w-4 h-4 text-[#8E1616] mr-2 shrink-0" />,
+              className: '!text-xs !text-[#EEEEEE] !h-10 font-mono border border-[#8E1616]/30'
+            }}
+          />
+        </div>
+
+        {/* Save Location & Browse Button */}
+        <div>
+          <label className="block text-[11px] font-semibold uppercase tracking-wider text-[#b8a5a5] mb-1">
+            Save Location
+          </label>
+          <div className="flex items-center gap-2">
+            <TextField
+              fullWidth
+              size="small"
+              value={savePath}
+              onChange={(e) => setSavePath(e.target.value)}
+              className="!bg-[#140e0e] !rounded-lg"
+              InputProps={{
+                startAdornment: <HardDrive className="w-4 h-4 text-[#8E1616] mr-2 shrink-0" />,
+                className: '!text-xs font-mono !text-[#EEEEEE] !h-10 border border-[#8E1616]/30'
+              }}
+            />
+            <Button
+              variant="outlined"
+              onClick={handleBrowseFolder}
+              startIcon={<FolderOpen className="w-3.5 h-3.5" />}
+              className="!h-10 !px-4 !shrink-0 !border-[#8E1616]/50 !text-[#EEEEEE] hover:!bg-[#2e1d1d] !text-xs font-medium whitespace-nowrap !rounded-lg"
+            >
+              Browse...
+            </Button>
+          </div>
+        </div>
+
+        {/* Priority Selector */}
+        <div>
+          <label className="block text-[11px] font-semibold uppercase tracking-wider text-[#b8a5a5] mb-1">
+            Download Priority
+          </label>
+          <FormControl fullWidth size="small">
+            <Select
+              value={priority}
+              onChange={(e) => setPriority(e.target.value)}
+              className="!bg-[#140e0e] !text-xs !text-[#EEEEEE] !rounded-lg !h-10 border border-[#8E1616]/30"
+              sx={{
+                '& .MuiSelect-select': { py: '8px', fontSize: '0.75rem' }
+              }}
+            >
+              <MenuItem value="HIGH" className="!text-xs !text-[#D84040]">
+                High Priority (Starts first in queue)
+              </MenuItem>
+              <MenuItem value="NORMAL" className="!text-xs !text-[#EEEEEE]">
+                Normal Priority
+              </MenuItem>
+              <MenuItem value="LOW" className="!text-xs !text-emerald-400">
+                Low Priority (Queued behind others)
+              </MenuItem>
+            </Select>
+          </FormControl>
+        </div>
+      </DialogContent>
+
+      {/* Modal Actions */}
+      <DialogActions className="!px-5 !py-3 border-t border-[#8E1616]/35 bg-[#140e0e] flex items-center justify-between gap-2">
+        <Button
+          variant="outlined"
+          size="small"
+          onClick={onClose}
+          className="!border-[#8E1616]/40 !text-[#b8a5a5] hover:!text-[#EEEEEE] hover:!bg-[#2e1d1d] !text-xs !py-1.5 !px-3"
+        >
+          Cancel
+        </Button>
+
+        <div className="flex items-center gap-2">
+          <Button
+            variant="outlined"
+            onClick={() => handleSubmit(false)}
+            disabled={!url.trim()}
+            startIcon={<Clock className="w-3.5 h-3.5" />}
+            className="!border-[#8E1616]/50 !text-[#b8a5a5] hover:!text-[#EEEEEE] hover:!bg-[#2e1d1d] !text-xs !py-1.5 !px-3 whitespace-nowrap"
+          >
+            Add Paused
+          </Button>
+
+          <Button
+            variant="contained"
+            onClick={() => handleSubmit(true)}
+            disabled={!url.trim()}
+            startIcon={<Download className="w-3.5 h-3.5" />}
+            className="shadow-md shadow-[#8E1616]/40 !bg-[#D84040] hover:!bg-[#8E1616] !text-[#EEEEEE] !text-xs !py-1.5 !px-4 font-semibold whitespace-nowrap"
+          >
+            Download Now
+          </Button>
+        </div>
+      </DialogActions>
+    </Dialog>
+  );
+}

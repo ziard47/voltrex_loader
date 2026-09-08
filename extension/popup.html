@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Voltrex Loader</title>
+  <link rel="stylesheet" href="popup.css" />
+</head>
+<body>
+  <div class="popup-container">
+    <!-- Header -->
+    <header class="header">
+      <div class="brand">
+        <img src="icons/icon48.png" alt="Voltrex Logo" class="logo" />
+        <div class="brand-text">
+          <span class="title">VOLTREX <span class="accent">LOADER</span></span>
+          <span class="subtitle">Browser Integration</span>
+        </div>
+      </div>
+      <div id="status-pill" class="status-pill checking">
+        <span class="dot"></span>
+        <span id="status-text">Checking</span>
+      </div>
+    </header>
+
+    <!-- Main Content -->
+    <main class="content">
+      <!-- Toggle Card -->
+      <div class="setting-card">
+        <div class="setting-info">
+          <span class="setting-title">Auto-Capture Downloads</span>
+          <span class="setting-desc">Intercept browser clicks directly into app</span>
+        </div>
+        <label class="switch">
+          <input type="checkbox" id="toggle-capture" checked />
+          <span class="slider"></span>
+        </label>
+      </div>
+
+      <!-- Quick URL Sender -->
+      <div class="quick-send">
+        <label class="input-label" for="url-input">Send Link to App</label>
+        <div class="input-row">
+          <input
+            type="text"
+            id="url-input"
+            placeholder="Paste download URL here..."
+            autocomplete="off"
+            spellcheck="false"
+          />
+          <button id="btn-send" class="btn-primary">Send</button>
+        </div>
+        <div id="msg-feedback" class="feedback"></div>
+      </div>
+    </main>
+
+    <!-- Footer -->
+    <footer class="footer">
+      <span>Right-click any link to download with Voltrex Loader</span>
+    </footer>
+  </div>
+
+  <script src="popup.js"></script>
+</body>
+</html>
