@@ -28,7 +28,8 @@ import {
   KeyRound,
   Loader2,
   CheckCircle2,
-  AlertCircle
+  AlertCircle,
+  Download
 } from 'lucide-react';
 import Logo from './Logo';
 
@@ -256,13 +257,6 @@ export default function SettingsPage({ onBack, defaultSavePath, onSaveSuccess })
               </button>
             );
           })}
-
-          <div className="mt-auto pt-4 border-t border-[#8E1616]/20 px-3">
-            <div className="flex items-center gap-2 text-[#b8a5a5] text-[11px]">
-              <ShieldCheck className="w-4 h-4 text-emerald-400" />
-              <span>Voltrex Core Engine 1.0</span>
-            </div>
-          </div>
         </aside>
 
         {/* Tab Content Panel */}
@@ -482,46 +476,69 @@ export default function SettingsPage({ onBack, defaultSavePath, onSaveSuccess })
                 {/* Browser Installation Guide */}
                 <div className="p-4 rounded-xl bg-[#1D1616] border border-[#8E1616]/30 space-y-3">
                   <div className="text-xs font-semibold text-[#EEEEEE]">Installing the Chrome Extension</div>
-                  <div className="text-[11px] text-[#b8a5a5] space-y-2">
-                    <p>1. Open your Chromium browser (Chrome, Brave, Edge, Vivaldi) and navigate to:</p>
-                    <div className="flex items-center gap-2">
-                      <code className="px-2.5 py-1 rounded bg-[#140e0e] border border-[#8E1616]/30 text-xs font-mono-stat text-[#D84040]">
-                        chrome://extensions
-                      </code>
-                      <Button
-                        size="small"
-                        variant="outlined"
-                        onClick={() => copyToClipboard('chrome://extensions', 'URL copied!')}
-                        className="!border-[#8E1616]/40 !text-[#b8a5a5] !text-xs !py-0.5 !px-2"
-                      >
-                        Copy
-                      </Button>
+                  <div className="text-[11px] text-[#b8a5a5] space-y-2.5">
+                    <div>
+                      <p>1. Download the official Voltrex Loader browser extension package:</p>
+                      <div className="flex items-center gap-2 mt-1.5">
+                        <input
+                          readOnly
+                          value="https://github.com/ziard47/voltrex_loader/releases/download/v1.0.0/voltrex-loader-browser-extension.zip"
+                          className="flex-1 px-3 py-1.5 rounded bg-[#140e0e] border border-[#8E1616]/30 text-xs text-[#b8a5a5] font-mono-stat truncate"
+                        />
+                        <Button
+                          size="small"
+                          variant="contained"
+                          startIcon={<Download className="w-3.5 h-3.5" />}
+                          onClick={() => {
+                            if (window.electronAPI?.openExternal) {
+                              window.electronAPI.openExternal(
+                                'https://github.com/ziard47/voltrex_loader/releases/download/v1.0.0/voltrex-loader-browser-extension.zip'
+                              );
+                            }
+                          }}
+                          className="!bg-[#D84040] hover:!bg-[#8E1616] !text-white !text-xs !py-1 !px-3 shrink-0 !font-semibold"
+                        >
+                          Download (.zip)
+                        </Button>
+                        <Button
+                          size="small"
+                          variant="outlined"
+                          startIcon={<Copy className="w-3.5 h-3.5" />}
+                          onClick={() =>
+                            copyToClipboard(
+                              'https://github.com/ziard47/voltrex_loader/releases/download/v1.0.0/voltrex-loader-browser-extension.zip',
+                              'Download link copied to clipboard!'
+                            )
+                          }
+                          className="!border-[#8E1616]/40 !text-[#b8a5a5] hover:!text-white hover:!bg-[#8E1616]/20 !text-xs !py-1 !px-2.5 shrink-0"
+                        >
+                          Copy
+                        </Button>
+                      </div>
                     </div>
 
-                    <p className="pt-1">2. Enable <strong>Developer Mode</strong> using the toggle switch in the top-right corner.</p>
-                    <p>3. Click <strong>Load unpacked</strong> in the top-left and select the <code className="text-[#EEEEEE]">extension/</code> folder in this project:</p>
+                    <p>2. Extract / unzip the downloaded <code className="text-[#EEEEEE]">voltrex-loader-browser-extension.zip</code> file onto your computer.</p>
 
-                    <div className="flex items-center gap-2 mt-1">
-                      <input
-                        readOnly
-                        value="/var/mnt/gameext/Scratch Disk Backup/Lap Hard Backup/Project Files/Nodejs Projects/electron/voltrex_loader/extension"
-                        className="flex-1 px-3 py-1.5 rounded bg-[#140e0e] border border-[#8E1616]/30 text-xs text-[#b8a5a5] font-mono-stat truncate"
-                      />
-                      <Button
-                        size="small"
-                        variant="contained"
-                        startIcon={<Copy className="w-3.5 h-3.5" />}
-                        onClick={() =>
-                          copyToClipboard(
-                            '/var/mnt/gameext/Scratch Disk Backup/Lap Hard Backup/Project Files/Nodejs Projects/electron/voltrex_loader/extension',
-                            'Extension path copied to clipboard!'
-                          )
-                        }
-                        className="!bg-[#8E1616] hover:!bg-[#D84040] !text-white !text-xs !py-1 !px-3 shrink-0"
-                      >
-                        Copy Path
-                      </Button>
+                    <div>
+                      <p>3. Open your Chromium browser (Chrome, Brave, Edge, Vivaldi) and navigate to:</p>
+                      <div className="flex items-center gap-2 mt-1">
+                        <code className="px-2.5 py-1 rounded bg-[#140e0e] border border-[#8E1616]/30 text-xs font-mono-stat text-[#D84040]">
+                          chrome://extensions
+                        </code>
+                        <Button
+                          size="small"
+                          variant="outlined"
+                          onClick={() => copyToClipboard('chrome://extensions', 'URL copied to clipboard!')}
+                          className="!border-[#8E1616]/40 !text-[#b8a5a5] hover:!text-white hover:!bg-[#8E1616]/20 !text-xs !py-0.5 !px-2"
+                        >
+                          Copy
+                        </Button>
+                      </div>
                     </div>
+
+                    <p>4. Turn on the <strong>Developer mode</strong> toggle switch in the top-right corner.</p>
+
+                    <p>5. Click <strong>Load unpacked</strong> in the top-left and select the extracted extension folder.</p>
                   </div>
                 </div>
               </div>
@@ -948,6 +965,12 @@ export default function SettingsPage({ onBack, defaultSavePath, onSaveSuccess })
                   <p className="text-xs text-[#b8a5a5] max-w-md mx-auto leading-relaxed">
                     Engineered with HTTP Range byte streaming, automatic resume recovery, multi-task priority scheduling, and full Chromium browser integration.
                   </p>
+
+                  <div className="pt-2 border-t border-[#8E1616]/20 flex items-center justify-center gap-2 text-[11px] text-[#b8a5a5]">
+                    <span>Crafted by <strong className="text-[#EEEEEE]">Mohomed Ziard</strong></span>
+                    <span className="text-[#8E1616]">•</span>
+                    <span className="text-[#D84040] font-semibold">Voltrex Digital</span>
+                  </div>
                 </div>
               </div>
             )}
