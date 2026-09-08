@@ -53,6 +53,7 @@ export default function SettingsPage({ onBack, defaultSavePath, onSaveSuccess })
     maxRetries: 3,
     closeAction: 'ask',
     userAgent: 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36 VoltrexLoader/1.0',
+    startWithSystem: false,
     proxyMode: 'direct',
     proxyProtocol: 'http',
     proxyHost: '',
@@ -421,6 +422,25 @@ export default function SettingsPage({ onBack, defaultSavePath, onSaveSuccess })
                       }}
                     />
                   </div>
+
+                  <div className="border-t border-[#8E1616]/20" />
+
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <div className="text-xs font-semibold text-[#EEEEEE]">Start with System</div>
+                      <div className="text-[11px] text-[#b8a5a5]">
+                        Launch Voltrex Loader automatically in the background when your computer boots up.
+                      </div>
+                    </div>
+                    <Switch
+                      checked={Boolean(settings.startWithSystem)}
+                      onChange={(e) => setSettings({ ...settings, startWithSystem: e.target.checked })}
+                      sx={{
+                        '& .MuiSwitch-switchBase.Mui-checked': { color: '#D84040' },
+                        '& .MuiSwitch-switchBase.Mui-checked + .MuiSwitch-track': { backgroundColor: '#8E1616' }
+                      }}
+                    />
+                  </div>
                 </div>
               </div>
             )}
@@ -482,7 +502,7 @@ export default function SettingsPage({ onBack, defaultSavePath, onSaveSuccess })
                       <div className="flex items-center gap-2 mt-1.5">
                         <input
                           readOnly
-                          value="https://github.com/ziard47/voltrex_loader/releases/download/v1.0.0/voltrex-loader-browser-extension.zip"
+                          value="https://github.com/ziard47/voltrex_loader/releases/download/v1.0.1/voltrex-loader-browser-extension.zip"
                           className="flex-1 px-3 py-1.5 rounded bg-[#140e0e] border border-[#8E1616]/30 text-xs text-[#b8a5a5] font-mono-stat truncate"
                         />
                         <Button
@@ -492,7 +512,7 @@ export default function SettingsPage({ onBack, defaultSavePath, onSaveSuccess })
                           onClick={() => {
                             if (window.electronAPI?.openExternal) {
                               window.electronAPI.openExternal(
-                                'https://github.com/ziard47/voltrex_loader/releases/download/v1.0.0/voltrex-loader-browser-extension.zip'
+                                'https://github.com/ziard47/voltrex_loader/releases/download/v1.0.1/voltrex-loader-browser-extension.zip'
                               );
                             }
                           }}
@@ -959,7 +979,7 @@ export default function SettingsPage({ onBack, defaultSavePath, onSaveSuccess })
                     <h3 className="text-lg font-bold text-[#EEEEEE]">
                       VOLTREX <span className="text-[#D84040]">LOADER</span>
                     </h3>
-                    <p className="text-xs text-[#b8a5a5] mt-1">Version 1.0.0 (Production Release)</p>
+                    <p className="text-xs text-[#b8a5a5] mt-1">Version 1.0.1 (Production Release)</p>
                   </div>
 
                   <p className="text-xs text-[#b8a5a5] max-w-md mx-auto leading-relaxed">

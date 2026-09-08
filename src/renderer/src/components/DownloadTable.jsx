@@ -91,18 +91,20 @@ export default function DownloadTable({
     switch (status) {
       case 'DOWNLOADING':
         return (
-          <Chip
-            size="small"
-            label="Downloading"
-            className="!bg-[#8E1616]/25 !text-[#D84040] !border !border-[#D84040]/40 !font-semibold !text-[11px]"
-          />
+          <Tooltip title="Downloading (Active transfer)" arrow placement="top">
+            <Chip
+              size="small"
+              label="Active"
+              className="!bg-[#8E1616]/25 !text-[#D84040] !border !border-[#D84040]/40 !font-semibold !text-[10px] !h-5 !px-1"
+            />
+          </Tooltip>
         );
       case 'QUEUED':
         return (
           <Chip
             size="small"
             label="Queued"
-            className="!bg-[#2e1d1d] !text-[#EEEEEE] !border !border-[#8E1616]/40 !font-semibold !text-[11px]"
+            className="!bg-[#2e1d1d] !text-[#EEEEEE] !border !border-[#8E1616]/40 !font-semibold !text-[10px] !h-5 !px-1"
           />
         );
       case 'PAUSED':
@@ -110,7 +112,7 @@ export default function DownloadTable({
           <Chip
             size="small"
             label="Paused"
-            className="!bg-amber-500/15 !text-amber-400 !border !border-amber-500/30 !font-semibold !text-[11px]"
+            className="!bg-amber-500/15 !text-amber-400 !border !border-amber-500/30 !font-semibold !text-[10px] !h-5 !px-1"
           />
         );
       case 'COMPLETED':
@@ -118,7 +120,7 @@ export default function DownloadTable({
           <Chip
             size="small"
             label="Completed"
-            className="!bg-emerald-500/15 !text-emerald-400 !border !border-emerald-500/30 !font-semibold !text-[11px]"
+            className="!bg-emerald-500/15 !text-emerald-400 !border !border-emerald-500/30 !font-semibold !text-[10px] !h-5 !px-1"
           />
         );
       case 'ERROR':
@@ -126,7 +128,7 @@ export default function DownloadTable({
           <Chip
             size="small"
             label="Error"
-            className="!bg-[#8E1616]/40 !text-[#D84040] !border !border-[#D84040]/50 !font-semibold !text-[11px]"
+            className="!bg-[#8E1616]/40 !text-[#D84040] !border !border-[#D84040]/50 !font-semibold !text-[10px] !h-5 !px-1"
           />
         );
       case 'CANCELLED':
@@ -134,11 +136,11 @@ export default function DownloadTable({
           <Chip
             size="small"
             label="Cancelled"
-            className="!bg-[#241717] !text-[#b8a5a5] !border !border-[#8E1616]/30 !font-semibold !text-[11px]"
+            className="!bg-[#241717] !text-[#b8a5a5] !border !border-[#8E1616]/30 !font-semibold !text-[10px] !h-5 !px-1"
           />
         );
       default:
-        return <Chip size="small" label={status} className="!text-[11px]" />;
+        return <Chip size="small" label={status} className="!text-[10px] !h-5 !px-1" />;
     }
   };
 
@@ -190,7 +192,7 @@ export default function DownloadTable({
               <TableCell className="!bg-[#171010] !text-[#b8a5a5] !border-b !border-[#8E1616]/40 !text-[11px] !font-semibold !uppercase !tracking-wider w-[180px] whitespace-nowrap">
                 Progress
               </TableCell>
-              <TableCell className="!bg-[#171010] !text-[#b8a5a5] !border-b !border-[#8E1616]/40 !text-[11px] !font-semibold !uppercase !tracking-wider w-[110px] whitespace-nowrap">
+              <TableCell className="!bg-[#171010] !text-[#b8a5a5] !border-b !border-[#8E1616]/40 !text-[11px] !font-semibold !uppercase !tracking-wider w-[105px] whitespace-nowrap !px-2">
                 Status
               </TableCell>
               <TableCell className="!bg-[#171010] !text-[#b8a5a5] !border-b !border-[#8E1616]/40 !text-[11px] !font-semibold !uppercase !tracking-wider w-[100px] whitespace-nowrap">
@@ -289,7 +291,7 @@ export default function DownloadTable({
                   </TableCell>
 
                   {/* Status */}
-                  <TableCell className="!border-b !border-[#8E1616]/25 !py-3 whitespace-nowrap">
+                  <TableCell className="!border-b !border-[#8E1616]/25 !py-2.5 whitespace-nowrap !px-2">
                     {getStatusChip(task.status)}
                   </TableCell>
 

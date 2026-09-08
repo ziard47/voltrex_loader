@@ -54,9 +54,9 @@ async function main() {
   console.log('\n--- Step 1: Building Frontend Assets ---');
   execSync('npm run build', { cwd: rootDir, stdio: 'inherit' });
 
-  // 2. Run electron-builder for AppImage
-  console.log('\n--- Step 2: Packaging Electron AppImage ---');
-  execSync('npx electron-builder --linux AppImage', { cwd: rootDir, stdio: 'inherit' });
+  // 2. Run electron-builder for Linux targets (AppImage + unpacked dir)
+  console.log('\n--- Step 2: Packaging Electron AppImage & Linux Unpacked ---');
+  execSync('npx electron-builder --linux', { cwd: rootDir, stdio: 'inherit' });
 
   // 3. Prepare target release structure: release/linux/<version>/
   console.log('\n--- Step 3: Assembling Release Directory ---');
@@ -83,6 +83,12 @@ async function main() {
   fs.chmodSync(targetAppImagePath, 0o755);
   console.log(`✓ Placed AppImage at: ${path.relative(rootDir, targetAppImagePath)}`);
 
+  // Ensure linux-unpacked exists
+  const linuxUnpackedSrc = path.join(releaseRoot, 'linux-unpacked');
+  if (!fs.existsSync(linuxUnpackedSrc)) {
+    throw new Error(`Could not find linux-unpacked directory at ${linuxUnpackedSrc}`);
+  }
+
   // 4. Create staging folder for tar.gz archive
   const stagingDir = path.join(targetDir, `voltrex-loader-${chosenVersion}-linux`);
   if (fs.existsSync(stagingDir)) {
@@ -90,9 +96,11 @@ async function main() {
   }
   fs.mkdirSync(stagingDir, { recursive: true });
 
-  // Copy AppImage into staging
-  fs.copyFileSync(targetAppImagePath, path.join(stagingDir, targetAppImageName));
-  fs.chmodSync(path.join(stagingDir, targetAppImageName), 0o755);
+  // Copy linux-unpacked into staging as voltrex-loader-unpacked
+  console.log('--- Packing linux-unpacked into installer archive ---');
+  const unpackedDest = path.join(stagingDir, 'voltrex-loader-unpacked');
+  fs.cpSync(linuxUnpackedSrc, unpackedDest, { recursive: true });
+  console.log('✓ Copied linux-unpacked application files into installer package');
 
   // Copy App Icon
   const iconSrc = path.join(rootDir, 'build', 'icon.png');
@@ -116,7 +124,7 @@ MimeType=x-scheme-handler/voltrex;
 `;
   fs.writeFileSync(path.join(stagingDir, 'voltrex-loader.desktop'), desktopContent, 'utf8');
 
-  // Create install.sh inside staging
+  // Create install.sh inside staging (installs linux-unpacked, NOT copying AppImage)
   const installShContent = `#!/bin/bash
 set -e
 
@@ -125,14 +133,12 @@ echo " Installing Voltrex Loader ${chosenVersion}"
 echo "========================================="
 
 DIR="\$(cd "\$(dirname "\${BASH_SOURCE[0]}")" && pwd)"
-APPIMAGE=\$(find "\$DIR" -maxdepth 1 -name "*.AppImage" | head -n 1)
+UNPACKED_DIR="\$DIR/voltrex-loader-unpacked"
 
-if [ -z "\$APPIMAGE" ] || [ ! -f "\$APPIMAGE" ]; then
-  echo "Error: AppImage not found in \$DIR."
+if [ ! -d "\$UNPACKED_DIR" ] || [ ! -f "\$UNPACKED_DIR/voltrex-loader" ]; then
+  echo "Error: Unpacked application files not found in \$UNPACKED_DIR."
   exit 1
 fi
-
-chmod +x "\$APPIMAGE"
 
 INSTALL_DIR="\$HOME/.local/share/voltrex-loader"
 BIN_DIR="\$HOME/.local/bin"
@@ -145,12 +151,21 @@ mkdir -p "\$BIN_DIR"
 mkdir -p "\$ICONS_DIR"
 mkdir -p "\$APPS_DIR"
 
-APPIMAGE_DEST="\$INSTALL_DIR/voltrex-loader.AppImage"
-cp "\$APPIMAGE" "\$APPIMAGE_DEST"
-chmod +x "\$APPIMAGE_DEST"
+echo "Installing unpacked application files to \$INSTALL_DIR..."
+# Remove older binary files in target before copying
+rm -rf "\$INSTALL_DIR"/*
 
-# Symlink CLI command
-ln -sf "\$APPIMAGE_DEST" "\$BIN_DIR/voltrex-loader"
+# Copy full linux-unpacked files into destination
+cp -r "\$UNPACKED_DIR/"* "\$INSTALL_DIR/"
+
+# Ensure main binary and sandbox permissions
+chmod +x "\$INSTALL_DIR/voltrex-loader"
+if [ -f "\$INSTALL_DIR/chrome-sandbox" ]; then
+  chmod 4755 "\$INSTALL_DIR/chrome-sandbox" 2>/dev/null || chmod +x "\$INSTALL_DIR/chrome-sandbox"
+fi
+
+# Symlink CLI command directly to the unpacked executable
+ln -sf "\$INSTALL_DIR/voltrex-loader" "\$BIN_DIR/voltrex-loader"
 
 # Copy Icon
 if [ -f "\$DIR/voltrex-loader.png" ]; then
@@ -166,7 +181,7 @@ cat > "\$APPS_DIR/voltrex-loader.desktop" <<EOF
 Name=Voltrex Loader
 Comment=High-Performance Download Manager
 GenericName=Download Manager
-Exec="\$APPIMAGE_DEST" %U
+Exec="\$INSTALL_DIR/voltrex-loader" %U
 Icon=\$ICON_PATH
 Terminal=false
 Type=Application
@@ -189,7 +204,7 @@ if command -v update-desktop-database >/dev/null 2>&1; then
   update-desktop-database "\$APPS_DIR" 2>/dev/null || true
 fi
 
-echo "✓ Installed to: \$INSTALL_DIR"
+echo "✓ Installed unpacked files to: \$INSTALL_DIR"
 echo "✓ Terminal command: \$BIN_DIR/voltrex-loader"
 echo "✓ Added to Application Menu"
 echo ""
@@ -263,11 +278,13 @@ INSTALLATION:
   Run the automated install script:
     ./install.sh
 
-  This will:
-    - Install the application to ~/.local/share/voltrex-loader
-    - Create a terminal command launcher in ~/.local/bin/voltrex-loader
-    - Add Voltrex Loader to your Application Menu (under Network / Internet)
-    - Create a desktop shortcut on ~/Desktop (if available)
+  This installs the full linux-unpacked Voltrex Loader distribution to:
+    ~/.local/share/voltrex-loader
+
+  And configures:
+    - Executable symlink in ~/.local/bin/voltrex-loader
+    - Application menu entry (under Network / Internet)
+    - Desktop shortcut on ~/Desktop (if available)
 
 UNINSTALLATION:
   Run:
@@ -276,10 +293,11 @@ UNINSTALLATION:
   To also remove saved user settings and cache:
     ./uninstall.sh --purge
 
-STANDALONE RUN (No Installation Required):
-  You can also launch the AppImage directly without running install.sh:
-    chmod +x *.AppImage
-    ./*.AppImage
+STANDALONE RUN (AppImage):
+  If you prefer to run portable AppImage without installing:
+  Use the AppImage located alongside this archive in release/linux/${chosenVersion}/:
+    chmod +x "Voltrex Loader-${chosenVersion}.AppImage"
+    ./"Voltrex Loader-${chosenVersion}.AppImage"
 `;
   fs.writeFileSync(path.join(stagingDir, 'README.txt'), readmeContent, 'utf8');
 
@@ -307,7 +325,7 @@ STANDALONE RUN (No Installation Required):
   console.log(`\nOutput directory: release/linux/${chosenVersion}/\n`);
   console.log(`1. Standalone AppImage:`);
   console.log(`   ${path.relative(rootDir, targetAppImagePath)}`);
-  console.log(`2. Installer Archive (with install.sh, uninstall.sh, and files):`);
+  console.log(`2. Installer Archive (contains linux-unpacked files, install.sh, uninstall.sh):`);
   console.log(`   ${path.relative(rootDir, tarPath)}\n`);
 }
 

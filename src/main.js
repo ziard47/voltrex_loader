@@ -39,9 +39,27 @@ function createWindow() {
       preload: path.join(__dirname, 'preload.js'),
       contextIsolation: true,
       nodeIntegration: false,
-      sandbox: false
+      sandbox: false,
+      devTools: false
     },
     show: false
+  });
+
+  Menu.setApplicationMenu(null);
+
+  // Block DevTools shortcuts
+  mainWindow.webContents.on('before-input-event', (event, input) => {
+    const isDevTools =
+      input.key === 'F12' ||
+      ((input.control || input.meta) && input.shift && ['I', 'i', 'J', 'j', 'C', 'c'].includes(input.key)) ||
+      ((input.control || input.meta) && ['U', 'u'].includes(input.key));
+    if (isDevTools) {
+      event.preventDefault();
+    }
+  });
+
+  mainWindow.webContents.on('devtools-opened', () => {
+    mainWindow.webContents.closeDevTools();
   });
 
   // Determine whether to load from Vite dev server or built bundle
@@ -69,7 +87,10 @@ function createWindow() {
   }
 
   mainWindow.once('ready-to-show', () => {
-    mainWindow.show();
+    const isAutostart = process.argv.includes('--autostart') || process.argv.includes('--hidden');
+    if (!isAutostart) {
+      mainWindow.show();
+    }
   });
 
   mainWindow.on('close', async (event) => {
@@ -335,6 +356,7 @@ let settingsPath = null;
 function getDefaultSettings() {
   return {
     defaultDownloadPath: app.getPath('downloads'),
+    startWithSystem: false,
     concurrency: 3,
     autoStartDownloads: true,
     organizeByCategory: false,
@@ -421,6 +443,46 @@ function applyProxySettings(settings) {
   }
 }
 
+function applyStartWithSystem(enable) {
+  try {
+    if (process.platform === 'win32' || process.platform === 'darwin') {
+      app.setLoginItemSettings({
+        openAtLogin: Boolean(enable),
+        path: process.execPath,
+        args: ['--autostart']
+      });
+    } else if (process.platform === 'linux') {
+      const autostartDir = path.join(app.getPath('home'), '.config', 'autostart');
+      const desktopFile = path.join(autostartDir, 'voltrex-loader.desktop');
+      if (enable) {
+        if (!fs.existsSync(autostartDir)) {
+          fs.mkdirSync(autostartDir, { recursive: true });
+        }
+        const execTarget = process.env.APPIMAGE || process.execPath;
+        const desktopContent = [
+          '[Desktop Entry]',
+          'Type=Application',
+          'Version=1.0',
+          'Name=Voltrex Loader',
+          'Comment=Ultra-Fast Download Manager',
+          `Exec="${execTarget}" --autostart`,
+          'Icon=voltrex-loader',
+          'Terminal=false',
+          'Categories=Network;FileTransfer;',
+          'X-GNOME-Autostart-enabled=true'
+        ].join('\n') + '\n';
+        fs.writeFileSync(desktopFile, desktopContent, 'utf8');
+      } else {
+        if (fs.existsSync(desktopFile)) {
+          fs.unlinkSync(desktopFile);
+        }
+      }
+    }
+  } catch (err) {
+    console.error('Failed to configure start with system:', err);
+  }
+}
+
 function loadSettings() {
   try {
     if (!settingsPath) {
@@ -455,6 +517,9 @@ function saveSettings(newSettings) {
       }
     }
     applyProxySettings(merged);
+    if (typeof merged.startWithSystem === 'boolean') {
+      applyStartWithSystem(merged.startWithSystem);
+    }
     return merged;
   } catch (err) {
     console.error('Failed to save settings:', err);
@@ -597,6 +662,9 @@ app.whenReady().then(() => {
   bridgeServer = new BridgeServer(downloadEngine, () => mainWindow, initialSettings.bridgePort || 9580, loadSettings);
   bridgeServer.start();
   applyProxySettings(initialSettings);
+  if (typeof initialSettings.startWithSystem === 'boolean') {
+    applyStartWithSystem(initialSettings.startWithSystem);
+  }
   setupIpcHandlers();
   createWindow();
   createTray();

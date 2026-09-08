@@ -1,6 +1,6 @@
 {
   "name": "voltrex-downloader",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "High-performance cross-platform Download Manager using Electron, React, MUI, and Tailwind",
   "main": "src/main.js",
   "scripts": {
@@ -9,6 +9,7 @@
     "dev": "concurrently -k -s first \"npm run dev:vite\" \"npm run dev:electron\"",
     "build": "vite build",
     "package:linux": "node scripts/package-linux.mjs",
+    "package:win": "node scripts/package-win.mjs",
     "package:appimage": "npm run build && electron-builder --linux AppImage",
     "package:dir": "npm run build && electron-builder --linux dir",
     "install:desktop": "bash scripts/install-steamos-desktop.sh",
@@ -40,6 +41,32 @@
       "icon": "build/icons",
       "synopsis": "High-Performance Download Manager",
       "description": "Voltrex Loader is a high-performance download accelerator featuring multi-chunk range streaming, auto-retry recovery, and browser extension capture."
+    },
+    "win": {
+      "target": [
+        {
+          "target": "nsis",
+          "arch": [
+            "x64"
+          ]
+        },
+        {
+          "target": "portable",
+          "arch": [
+            "x64"
+          ]
+        }
+      ],
+      "icon": "build/icon.ico",
+      "signExecutable": false
+    },
+    "nsis": {
+      "oneClick": false,
+      "perMachine": false,
+      "allowToChangeInstallationDirectory": true,
+      "createDesktopShortcut": true,
+      "createStartMenuShortcut": true,
+      "shortcutName": "Voltrex Loader"
     }
   },
   "keywords": [
