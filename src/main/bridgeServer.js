@@ -1,11 +1,12 @@
 const http = require('node:http');
 
 class BridgeServer {
-  constructor(downloadEngine, getMainWindow, port = 9580, getSettings = null) {
+  constructor(downloadEngine, getMainWindow, port = 9580, getSettings = null, focusWindow = null) {
     this.downloadEngine = downloadEngine;
     this.getMainWindow = getMainWindow;
     this.port = port;
     this.getSettings = getSettings;
+    this.focusWindow = focusWindow;
     this.server = null;
   }
 
@@ -83,10 +84,24 @@ class BridgeServer {
               res.end(JSON.stringify({ success: true, autoAdded: true, taskId: task.id, fileName: task.fileName }));
             } else {
               // Bring Electron window to front & prompt Add Download modal
-              if (win && !win.isDestroyed()) {
+              if (typeof this.focusWindow === 'function') {
+                this.focusWindow();
+              } else if (win && !win.isDestroyed()) {
                 if (win.isMinimized()) win.restore();
+                if (!win.isVisible()) win.show();
+                win.setAlwaysOnTop(true);
                 win.show();
                 win.focus();
+                if (win.webContents) win.webContents.focus();
+                if (process.platform === 'win32') win.moveTop();
+                setTimeout(() => {
+                  if (win && !win.isDestroyed()) {
+                    win.setAlwaysOnTop(false);
+                  }
+                }, 150);
+              }
+
+              if (win && !win.isDestroyed()) {
                 win.webContents.send('download:captured-prompt', {
                   url: downloadUrl,
                   fileName: resolvedFileName,
