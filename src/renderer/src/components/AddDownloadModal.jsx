@@ -121,11 +121,10 @@ export default function AddDownloadModal({
 
       if (incomingUrl) {
         handleCheckUrl(incomingUrl);
-      } else {
-        setTimeout(() => {
-          urlInputRef.current?.focus();
-        }, 100);
       }
+      setTimeout(() => {
+        urlInputRef.current?.focus();
+      }, 100);
     }
   }, [open, defaultSavePath, initialData]);
 

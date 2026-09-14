@@ -10,14 +10,44 @@ let bridgeServer = null;
 let tray = null;
 let isQuitting = false;
 
+const gotTheLock = app.requestSingleInstanceLock();
+if (!gotTheLock) {
+  app.quit();
+} else {
+  app.on('second-instance', () => {
+    showAndFocusMainWindow();
+  });
+}
+
 function showAndFocusMainWindow() {
-  if (!mainWindow) {
+  if (!mainWindow || mainWindow.isDestroyed()) {
     createWindow();
     return;
   }
   if (mainWindow.isMinimized()) mainWindow.restore();
   if (!mainWindow.isVisible()) mainWindow.show();
+
+  // Windows-specific foreground activation workaround:
+  // Temporarily set always-on-top and call app.focus({ steal: true })
+  // to force Windows DWM to bring the window above active browser
+  mainWindow.setAlwaysOnTop(true);
+  mainWindow.show();
   mainWindow.focus();
+  if (mainWindow.webContents) {
+    mainWindow.webContents.focus();
+  }
+  if (process.platform === 'win32') {
+    mainWindow.moveTop();
+  }
+  try {
+    app.focus({ steal: true });
+  } catch {}
+
+  setTimeout(() => {
+    if (mainWindow && !mainWindow.isDestroyed()) {
+      mainWindow.setAlwaysOnTop(false);
+    }
+  }, 150);
 }
 
 function createWindow() {
@@ -659,7 +689,13 @@ app.whenReady().then(() => {
     downloadEngine.setConcurrency(initialSettings.concurrency);
   }
 
-  bridgeServer = new BridgeServer(downloadEngine, () => mainWindow, initialSettings.bridgePort || 9580, loadSettings);
+  bridgeServer = new BridgeServer(
+    downloadEngine,
+    () => mainWindow,
+    initialSettings.bridgePort || 9580,
+    loadSettings,
+    showAndFocusMainWindow
+  );
   bridgeServer.start();
   applyProxySettings(initialSettings);
   if (typeof initialSettings.startWithSystem === 'boolean') {

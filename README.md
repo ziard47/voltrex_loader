@@ -158,24 +158,20 @@ Artifacts are automatically organized under `release/linux/<version>/`:
 
 ## 🪟 Packaging for Windows
 
-You can build the Windows installer directly on Linux/SteamOS without switching operating systems:
+You can build the Windows distribution package directly on Linux/SteamOS without switching operating systems:
 
-### 1. Build Windows Setup
+### 1. Build Windows Package
 
 ```bash
 npm run package:win
 ```
 
-- **Interactive Version Prompt**: Same as Linux, prompts you to specify a version or press <kbd>Enter</kbd> to keep the current version.
-- **Automated Toolset**: Configured to package NSIS installer and portable executable on Linux without requiring Wine or Windows code-signing tools.
+- **Interactive Version Prompt**: Prompts you to specify a version or press <kbd>Enter</kbd> to build the current version from `package.json`.
+- **Pure Portable Packaging**: Builds the full Windows binaries (`win-unpacked`) using `electron-builder` and compresses the unpacked folder into a standard zip archive.
 
 ### 2. Output Structure
 
 Artifacts are organized inside `release/windows/<version>/`:
 
-- **`voltrex-loader-win-setup.zip`**: Complete Windows installer distribution zip package containing:
-  - **`setup.exe`**: Modern UI setup wizard executable.
-  - **`app.bin`**: Compressed LZMA2 archive of the entire unpacked Windows application.
-  - _When `setup.exe` is run_: It displays the install wizard, prompts for install folder (defaults to `%LOCALAPPDATA%\Programs\Voltrex Loader`), extracts `app.bin`, creates Desktop & Start Menu shortcuts, registers in Windows Add/Remove Programs, and creates `Uninstall.exe`.
-- **`setup.exe`** & **`app.bin`**: Unzipped copies available directly for individual use.
-- **`win-unpacked/`**: Raw unpacked Windows application directory.
+- **`voltrex-loader-<version>-win.zip`**: Complete portable Windows distribution zip archive containing the entire `win-unpacked` folder (`voltrex-loader.exe`, dependencies, resources, and libraries). Simply extract and run `voltrex-loader.exe` on Windows.
+- **`win-unpacked/`**: Staged raw unpacked Windows application directory for immediate local access or testing.
