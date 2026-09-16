@@ -14,13 +14,15 @@ import {
   Activity,
   PanelLeftClose,
   PanelLeftOpen,
-  Settings
+  Settings,
+  Layers
 } from 'lucide-react';
 import Logo from './Logo';
 import { formatSpeed } from '../utils/formatters';
 
 export default function TopBar({
   onAddClick,
+  onAddBatchClick,
   onPauseAll,
   onResumeAll,
   onStopAll,
@@ -74,6 +76,19 @@ export default function TopBar({
         >
           <span>Add URL</span>
         </Button>
+
+        <Tooltip title="Batch download multi-part files into a package folder" arrow>
+          <span>
+            <Button
+              variant="contained"
+              startIcon={<Layers className="w-3.5 h-3.5" />}
+              onClick={onAddBatchClick}
+              className="shadow-sm !bg-[#2e1c1c] hover:!bg-[#8E1616]/40 !border !border-[#8E1616]/60 !text-[#EEEEEE] !text-xs !py-1.5 !px-3 font-semibold whitespace-nowrap transition-colors"
+            >
+              <span>Batch Download</span>
+            </Button>
+          </span>
+        </Tooltip>
 
         <div className="h-5 w-[1px] bg-[#8E1616]/40 mx-1 hidden sm:block" />
 

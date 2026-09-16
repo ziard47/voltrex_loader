@@ -213,9 +213,19 @@ function setupIpcHandlers() {
     return await downloadEngine.probeUrl(url);
   });
 
+  // Batch Probe URLs
+  ipcMain.handle('download:batch-probe', async (_event, urls) => {
+    return await downloadEngine.batchProbeUrls(urls);
+  });
+
   // Add new download task
   ipcMain.handle('download:add', async (_event, payload) => {
     return await downloadEngine.addDownload(payload);
+  });
+
+  // Add batch download tasks
+  ipcMain.handle('download:add-batch', async (_event, payload) => {
+    return await downloadEngine.addBatchDownloads(payload);
   });
 
   // Individual task actions

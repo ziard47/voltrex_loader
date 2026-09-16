@@ -228,8 +228,46 @@ class DownloadEngine extends EventEmitter {
     return `${val.toFixed(i === 0 ? 0 : 2)} ${units[i]}`;
   }
 
+  // Batch URL Probe with controlled concurrency
+  async batchProbeUrls(urls) {
+    if (!Array.isArray(urls)) return [];
+    const results = new Array(urls.length);
+    const concurrency = 4;
+    let index = 0;
+
+    const probeWorker = async () => {
+      while (index < urls.length) {
+        const currentIndex = index++;
+        const item = urls[currentIndex];
+        const rawUrl = typeof item === 'string' ? item : item?.url;
+        if (!rawUrl) {
+          results[currentIndex] = { url: '', online: false, error: 'Empty URL' };
+          continue;
+        }
+        try {
+          const probe = await this.probeUrl(rawUrl);
+          results[currentIndex] = {
+            url: rawUrl,
+            ...probe
+          };
+        } catch (err) {
+          results[currentIndex] = {
+            url: rawUrl,
+            online: false,
+            error: err.message || 'Probe failed'
+          };
+        }
+      }
+    };
+
+    const workerCount = Math.min(concurrency, urls.length);
+    const workers = Array.from({ length: workerCount }, () => probeWorker());
+    await Promise.all(workers);
+    return results;
+  }
+
   // Task Management
-  async addDownload({ url, savePath, fileName, priority = 'NORMAL', autoStart = true }) {
+  async addDownload({ url, savePath, fileName, priority = 'NORMAL', autoStart = true, packageName = null }) {
     // Probe to ensure details
     const probe = await this.probeUrl(url);
     const resolvedSavePath = savePath || this.defaultDownloadPath;
@@ -253,6 +291,7 @@ class DownloadEngine extends EventEmitter {
     const task = {
       id: taskId,
       url,
+      packageName: packageName || null,
       savePath: resolvedSavePath,
       fileName: resolvedFileName,
       filePath: finalFilePath,
@@ -281,6 +320,91 @@ class DownloadEngine extends EventEmitter {
     }
 
     return task;
+  }
+
+  // Add multiple downloads in batch (e.g. multi-part archives)
+  async addBatchDownloads({
+    items = [],
+    baseSavePath,
+    packageName = '',
+    createSubfolder = true,
+    priority = 'NORMAL',
+    autoStart = true
+  }) {
+    if (!Array.isArray(items) || items.length === 0) {
+      return [];
+    }
+
+    const basePath = baseSavePath || this.defaultDownloadPath;
+    const sanitizedPackage = packageName ? this.sanitizeFileName(packageName).trim() : '';
+
+    let targetDir = basePath;
+    if (createSubfolder && sanitizedPackage) {
+      targetDir = path.join(basePath, sanitizedPackage);
+    }
+
+    // Ensure destination directory exists
+    try {
+      if (!fs.existsSync(targetDir)) {
+        fs.mkdirSync(targetDir, { recursive: true });
+      }
+    } catch (err) {
+      throw new Error(`Cannot create batch save directory: ${err.message}`);
+    }
+
+    const createdTasks = [];
+    const now = new Date().toISOString();
+
+    for (let i = 0; i < items.length; i++) {
+      const item = items[i];
+      const itemUrl = typeof item === 'string' ? item : item.url;
+      if (!itemUrl || typeof itemUrl !== 'string') continue;
+
+      let chosenName = item.fileName;
+      if (!chosenName) {
+        chosenName = this.extractFileName(itemUrl, null, item.mimeType);
+      }
+      const sanitizedItemName = this.sanitizeFileName(chosenName || `part_${i + 1}`);
+      const resolvedFileName = this.getUniqueFileName(targetDir, sanitizedItemName);
+      const finalFilePath = path.join(targetDir, resolvedFileName);
+      const partFilePath = `${finalFilePath}.part`;
+
+      const taskId = `task_${Date.now()}_${i}_${Math.random().toString(36).substring(2, 6)}`;
+      const task = {
+        id: taskId,
+        url: itemUrl,
+        packageName: sanitizedPackage || null,
+        savePath: targetDir,
+        fileName: resolvedFileName,
+        filePath: finalFilePath,
+        partPath: partFilePath,
+        totalBytes: item.fileSize || 0,
+        downloadedBytes: 0,
+        progress: 0,
+        speed: 0,
+        eta: 0,
+        status: autoStart ? 'QUEUED' : 'PAUSED',
+        priority: priority.toUpperCase(),
+        resumable: item.resumable ?? true,
+        mimeType: item.mimeType || 'application/octet-stream',
+        createdAt: now,
+        updatedAt: now,
+        completedAt: null,
+        error: null
+      };
+
+      this.tasks.set(taskId, task);
+      createdTasks.push(task);
+      this.emit('task-added', task);
+    }
+
+    this.saveState();
+
+    if (autoStart) {
+      this.scheduleQueue();
+    }
+
+    return createdTasks;
   }
 
   sanitizeFileName(name) {

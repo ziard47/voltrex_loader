@@ -24,8 +24,10 @@ import {
   AlertTriangle,
   X,
   FileCode,
-  Globe
+  Globe,
+  Layers
 } from 'lucide-react';
+import { extractUrlsFromText } from './BatchDownloadModal';
 
 function inferFileNameFromUrl(urlStr) {
   if (!urlStr || typeof urlStr !== 'string') return '';
@@ -57,7 +59,9 @@ export default function AddDownloadModal({
   onClose,
   onAddDownload,
   defaultSavePath,
-  initialData
+  initialData,
+  onSwitchToBatch,
+  onCurrentDataChange
 }) {
   const [url, setUrl] = useState('');
   const [fileName, setFileName] = useState('');
@@ -71,15 +75,27 @@ export default function AddDownloadModal({
   const urlInputRef = useRef(null);
   const pasteTimeoutRef = useRef(null);
 
+  useEffect(() => {
+    onCurrentDataChange?.({ url, fileName });
+  }, [url, fileName, onCurrentDataChange]);
+
   const handlePasteUrl = (e) => {
     const pastedText = e.clipboardData?.getData('text')?.trim();
-    if (pastedText && (pastedText.startsWith('http://') || pastedText.startsWith('https://'))) {
-      setUrl(pastedText);
-      const inferred = inferFileNameFromUrl(pastedText);
-      if (inferred) setFileName(inferred);
-      setProbeResult(null);
-      setErrorMsg('');
-      handleCheckUrl(pastedText);
+    if (pastedText) {
+      const detectedUrls = extractUrlsFromText(pastedText);
+      if (detectedUrls.length > 1 && onSwitchToBatch) {
+        e.preventDefault();
+        onSwitchToBatch(pastedText);
+        return;
+      }
+      if (pastedText.startsWith('http://') || pastedText.startsWith('https://')) {
+        setUrl(pastedText);
+        const inferred = inferFileNameFromUrl(pastedText);
+        if (inferred) setFileName(inferred);
+        setProbeResult(null);
+        setErrorMsg('');
+        handleCheckUrl(pastedText);
+      }
     }
   };
 
@@ -216,8 +232,25 @@ export default function AddDownloadModal({
             <Download className="w-4 h-4" />
           </div>
           <div>
-            <h3 className="text-sm font-bold text-[#EEEEEE] leading-tight">Add Download URL</h3>
+            <h3 className="text-sm font-bold text-[#EEEEEE] leading-tight">Add Download</h3>
           </div>
+
+          {/* Mode Switcher Tabs */}
+          {onSwitchToBatch && (
+            <div className="flex items-center ml-2 p-0.5 rounded-lg bg-[#1D1616] border border-[#8E1616]/40">
+              <span className="px-2.5 py-1 rounded-md text-[11px] font-semibold bg-[#8E1616]/30 text-[#EEEEEE] border border-[#D84040]/40">
+                Single URL
+              </span>
+              <button
+                type="button"
+                onClick={() => onSwitchToBatch(url)}
+                className="flex items-center gap-1 px-2.5 py-1 rounded-md text-[11px] font-semibold text-[#b8a5a5] hover:text-[#EEEEEE] hover:bg-[#2e1d1d] transition-colors cursor-pointer"
+              >
+                <Layers className="w-3 h-3 text-[#D84040]" />
+                <span>Batch</span>
+              </button>
+            </div>
+          )}
         </div>
         <Tooltip title="Close" arrow>
           <IconButton
