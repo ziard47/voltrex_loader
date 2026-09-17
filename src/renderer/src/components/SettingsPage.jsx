@@ -979,7 +979,7 @@ export default function SettingsPage({ onBack, defaultSavePath, onSaveSuccess })
                     <h3 className="text-lg font-bold text-[#EEEEEE]">
                       VOLTREX <span className="text-[#D84040]">LOADER</span>
                     </h3>
-                    <p className="text-xs text-[#b8a5a5] mt-1">Version 1.1.1 (Production Release)</p>
+                    <p className="text-xs text-[#b8a5a5] mt-1">Version 1.1.0 (Production Release)</p>
                   </div>
 
                   <p className="text-xs text-[#b8a5a5] max-w-md mx-auto leading-relaxed">
