@@ -3,9 +3,11 @@ const { contextBridge, ipcRenderer } = require('electron');
 contextBridge.exposeInMainWorld('electronAPI', {
   // Probing & inspection
   probeUrl: (url) => ipcRenderer.invoke('download:probe-url', url),
+  batchProbeUrls: (urls) => ipcRenderer.invoke('download:batch-probe', urls),
 
   // Download operations
   addDownload: (payload) => ipcRenderer.invoke('download:add', payload),
+  addBatchDownloads: (payload) => ipcRenderer.invoke('download:add-batch', payload),
   pauseDownload: (taskId) => ipcRenderer.invoke('download:pause', taskId),
   resumeDownload: (taskId) => ipcRenderer.invoke('download:resume', taskId),
   cancelDownload: (taskId) => ipcRenderer.invoke('download:cancel', taskId),
@@ -85,5 +87,10 @@ contextBridge.exposeInMainWorld('electronAPI', {
     const handler = () => callback();
     ipcRenderer.on('tray:open-settings', handler);
     return () => ipcRenderer.removeListener('tray:open-settings', handler);
+  },
+  onSettingsUpdated: (callback) => {
+    const handler = (_event, settings) => callback(settings);
+    ipcRenderer.on('settings:updated', handler);
+    return () => ipcRenderer.removeListener('settings:updated', handler);
   }
 });

@@ -233,12 +233,23 @@ export default function DownloadTable({
                         {renderFileIcon(task.fileName, task.mimeType)}
                       </div>
                       <div className="min-w-0 flex-1 overflow-hidden">
-                        <div
-                          className="text-xs font-semibold text-[#EEEEEE] truncate cursor-pointer hover:text-[#D84040] transition-colors"
-                          title={task.fileName}
-                          onClick={() => isCompleted ? onOpenFile(task.id) : null}
-                        >
-                          {task.fileName}
+                        <div className="flex items-center gap-1.5 flex-wrap">
+                          <span
+                            className="text-xs font-semibold text-[#EEEEEE] truncate cursor-pointer hover:text-[#D84040] transition-colors"
+                            title={task.fileName}
+                            onClick={() => isCompleted ? onOpenFile(task.id) : null}
+                          >
+                            {task.fileName}
+                          </span>
+                          {task.packageName && (
+                            <span
+                              className="inline-flex items-center gap-1 px-1.5 py-0.2 rounded text-[9px] font-medium bg-[#8E1616]/30 text-[#D84040] border border-[#D84040]/30 shrink-0"
+                              title={`Package: ${task.packageName}`}
+                            >
+                              <Folder className="w-2.5 h-2.5" />
+                              <span className="truncate max-w-[120px]">{task.packageName}</span>
+                            </span>
+                          )}
                         </div>
                         <div className="text-[10px] text-[#b8a5a5] truncate mt-0.5 font-mono" title={task.url}>
                           {task.url}

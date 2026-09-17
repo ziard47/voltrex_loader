@@ -213,9 +213,19 @@ function setupIpcHandlers() {
     return await downloadEngine.probeUrl(url);
   });
 
+  // Batch Probe URLs
+  ipcMain.handle('download:batch-probe', async (_event, urls) => {
+    return await downloadEngine.batchProbeUrls(urls);
+  });
+
   // Add new download task
   ipcMain.handle('download:add', async (_event, payload) => {
     return await downloadEngine.addDownload(payload);
+  });
+
+  // Add batch download tasks
+  ipcMain.handle('download:add-batch', async (_event, payload) => {
+    return await downloadEngine.addBatchDownloads(payload);
   });
 
   // Individual task actions
@@ -277,7 +287,8 @@ function setupIpcHandlers() {
   });
 
   ipcMain.handle('download:get-default-path', async () => {
-    return app.getPath('downloads');
+    const settings = loadSettings();
+    return settings.defaultDownloadPath || (downloadEngine && downloadEngine.defaultDownloadPath) || app.getPath('downloads');
   });
 
   // Native directory picker (cross platform Linux/SteamOS/Windows)
@@ -549,6 +560,9 @@ function saveSettings(newSettings) {
     applyProxySettings(merged);
     if (typeof merged.startWithSystem === 'boolean') {
       applyStartWithSystem(merged.startWithSystem);
+    }
+    if (mainWindow && !mainWindow.isDestroyed()) {
+      mainWindow.webContents.send('settings:updated', merged);
     }
     return merged;
   } catch (err) {

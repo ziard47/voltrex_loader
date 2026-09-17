@@ -1,8 +1,10 @@
-import React, { useState, useEffect, useMemo, useCallback } from 'react';
+import React, { useState, useEffect, useRef, useMemo, useCallback } from 'react';
 import TopBar from './components/TopBar';
 import Sidebar from './components/Sidebar';
 import DownloadTable from './components/DownloadTable';
 import AddDownloadModal from './components/AddDownloadModal';
+import BatchDownloadModal from './components/BatchDownloadModal';
+import CaptureBatchPromptModal from './components/CaptureBatchPromptModal';
 import SettingsPage from './components/SettingsPage';
 import { getFileCategory } from './utils/formatters';
 
@@ -15,7 +17,34 @@ export default function App() {
   const [concurrency, setConcurrency] = useState(3);
   const [defaultSavePath, setDefaultSavePath] = useState('');
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
+  const [isBatchModalOpen, setIsBatchModalOpen] = useState(false);
+  const [batchInitialUrls, setBatchInitialUrls] = useState('');
+  const [incomingAppendItem, setIncomingAppendItem] = useState(null);
   const [capturedData, setCapturedData] = useState(null);
+  const [pendingCapture, setPendingCapture] = useState(null);
+  const [currentSingleData, setCurrentSingleData] = useState(null);
+
+  const isAddModalOpenRef = useRef(false);
+  const isBatchModalOpenRef = useRef(false);
+  const currentSingleDataRef = useRef(null);
+  const capturedDataRef = useRef(null);
+
+  useEffect(() => {
+    isAddModalOpenRef.current = isAddModalOpen;
+  }, [isAddModalOpen]);
+
+  useEffect(() => {
+    isBatchModalOpenRef.current = isBatchModalOpen;
+  }, [isBatchModalOpen]);
+
+  useEffect(() => {
+    currentSingleDataRef.current = currentSingleData;
+  }, [currentSingleData]);
+
+  useEffect(() => {
+    capturedDataRef.current = capturedData;
+  }, [capturedData]);
+
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(() => {
     return window.innerWidth < 960;
   });
@@ -38,7 +67,18 @@ export default function App() {
         const list = await window.electronAPI.getAllDownloads();
         setDownloads(list || []);
       }
-      if (window.electronAPI?.getDefaultDownloadPath) {
+      if (window.electronAPI?.getSettings) {
+        const settings = await window.electronAPI.getSettings();
+        if (settings?.defaultDownloadPath) {
+          setDefaultSavePath(settings.defaultDownloadPath);
+        } else if (window.electronAPI?.getDefaultDownloadPath) {
+          const defaultPath = await window.electronAPI.getDefaultDownloadPath();
+          setDefaultSavePath(defaultPath || '');
+        }
+        if (settings?.concurrency) {
+          setConcurrency(settings.concurrency);
+        }
+      } else if (window.electronAPI?.getDefaultDownloadPath) {
         const defaultPath = await window.electronAPI.getDefaultDownloadPath();
         setDefaultSavePath(defaultPath || '');
       }
@@ -98,8 +138,15 @@ export default function App() {
     });
 
     const unsubCaptured = window.electronAPI?.onCapturedDownload?.((data) => {
-      setCapturedData(data);
-      setIsAddModalOpen(true);
+      if (data?.defaultSavePath) {
+        setDefaultSavePath(data.defaultSavePath);
+      }
+      if (isAddModalOpenRef.current || isBatchModalOpenRef.current) {
+        setPendingCapture(data);
+      } else {
+        setCapturedData(data);
+        setIsAddModalOpen(true);
+      }
     });
 
     const unsubTrayAdd = window.electronAPI?.onTrayOpenAddModal?.(() => {
@@ -112,6 +159,15 @@ export default function App() {
       setCurrentView('settings');
     });
 
+    const unsubSettings = window.electronAPI?.onSettingsUpdated?.((settings) => {
+      if (settings?.defaultDownloadPath) {
+        setDefaultSavePath(settings.defaultDownloadPath);
+      }
+      if (settings?.concurrency) {
+        setConcurrency(settings.concurrency);
+      }
+    });
+
     return () => {
       unsubProgress?.();
       unsubAdded?.();
@@ -122,6 +178,7 @@ export default function App() {
       unsubCaptured?.();
       unsubTrayAdd?.();
       unsubTraySettings?.();
+      unsubSettings?.();
     };
   }, [loadInitialData]);
 
@@ -134,6 +191,46 @@ export default function App() {
     } catch (err) {
       console.error('Failed to add download:', err);
     }
+  };
+
+  const handleAddBatchDownloads = async (payload) => {
+    try {
+      if (window.electronAPI?.addBatchDownloads) {
+        await window.electronAPI.addBatchDownloads(payload);
+      }
+    } catch (err) {
+      console.error('Failed to add batch downloads:', err);
+    }
+  };
+
+  // When another captured link arrives from browser while a modal is already open
+  const handleAddToBatchFromPrompt = () => {
+    if (!pendingCapture) return;
+
+    if (isBatchModalOpenRef.current) {
+      // Batch modal is already open: append this link to it
+      setIncomingAppendItem(pendingCapture);
+      setPendingCapture(null);
+    } else if (isAddModalOpenRef.current) {
+      // Single download modal is open: combine the previous link and this link into batch
+      const url1 = currentSingleDataRef.current?.url || capturedDataRef.current?.url || '';
+      const url2 = pendingCapture.url || '';
+      const combinedUrls = [url1, url2].filter(Boolean).join('\n');
+
+      setIsAddModalOpen(false);
+      setCapturedData(null);
+      setBatchInitialUrls(combinedUrls);
+      setIncomingAppendItem(null);
+      setIsBatchModalOpen(true);
+      setPendingCapture(null);
+    }
+  };
+
+  const handleOpenSeparatelyFromPrompt = () => {
+    if (!pendingCapture) return;
+    setCapturedData(pendingCapture);
+    setIsAddModalOpen(true);
+    setPendingCapture(null);
   };
 
   const handlePause = async (taskId) => {
@@ -260,6 +357,10 @@ export default function App() {
           setCapturedData(null);
           setIsAddModalOpen(true);
         }}
+        onAddBatchClick={() => {
+          setBatchInitialUrls('');
+          setIsBatchModalOpen(true);
+        }}
         onPauseAll={handlePauseAll}
         onResumeAll={handleResumeAll}
         onStopAll={handleStopAll}
@@ -326,10 +427,45 @@ export default function App() {
         onClose={() => {
           setIsAddModalOpen(false);
           setCapturedData(null);
+          setCurrentSingleData(null);
         }}
         onAddDownload={handleAddDownload}
         defaultSavePath={defaultSavePath}
         initialData={capturedData}
+        onCurrentDataChange={(data) => {
+          currentSingleDataRef.current = data;
+          setCurrentSingleData(data);
+        }}
+        onSwitchToBatch={(pastedUrls) => {
+          setIsAddModalOpen(false);
+          setBatchInitialUrls(pastedUrls || '');
+          setIsBatchModalOpen(true);
+        }}
+      />
+
+      {/* Batch Download Modal Dialog */}
+      <BatchDownloadModal
+        open={isBatchModalOpen}
+        onClose={() => {
+          setIsBatchModalOpen(false);
+          setBatchInitialUrls('');
+          setIncomingAppendItem(null);
+        }}
+        onAddBatchDownloads={handleAddBatchDownloads}
+        defaultSavePath={defaultSavePath}
+        initialUrls={batchInitialUrls}
+        incomingAppendItem={incomingAppendItem}
+      />
+
+      {/* Capture Prompt when a download is captured while modal is already open */}
+      <CaptureBatchPromptModal
+        open={Boolean(pendingCapture)}
+        onClose={() => setPendingCapture(null)}
+        incomingData={pendingCapture}
+        currentSingleData={currentSingleData}
+        isBatchOpen={isBatchModalOpen}
+        onAddToBatch={handleAddToBatchFromPrompt}
+        onOpenSeparately={handleOpenSeparatelyFromPrompt}
       />
     </div>
   );
