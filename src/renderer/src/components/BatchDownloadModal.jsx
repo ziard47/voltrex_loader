@@ -141,7 +141,15 @@ export default function BatchDownloadModal({
     if (open) {
       const textToUse = initialUrls || '';
       setRawText(textToUse);
-      setSavePath(defaultSavePath || '');
+      if (defaultSavePath) {
+        setSavePath(defaultSavePath);
+      } else if (window.electronAPI?.getDefaultDownloadPath) {
+        window.electronAPI.getDefaultDownloadPath().then((p) => {
+          if (p) setSavePath(p);
+        });
+      } else {
+        setSavePath('');
+      }
       setPriority('NORMAL');
       setCreateSubfolder(true);
       setErrorMessage('');

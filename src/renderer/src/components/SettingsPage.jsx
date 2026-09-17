@@ -502,7 +502,7 @@ export default function SettingsPage({ onBack, defaultSavePath, onSaveSuccess })
                       <div className="flex items-center gap-2 mt-1.5">
                         <input
                           readOnly
-                          value="https://github.com/ziard47/voltrex_loader/releases/download/v1.0.1/voltrex-loader-browser-extension.zip"
+                          value="https://github.com/ziard47/voltrex_loader/releases/download/v1.1.0/voltrex-loader-browser-extension.zip"
                           className="flex-1 px-3 py-1.5 rounded bg-[#140e0e] border border-[#8E1616]/30 text-xs text-[#b8a5a5] font-mono-stat truncate"
                         />
                         <Button
@@ -512,7 +512,7 @@ export default function SettingsPage({ onBack, defaultSavePath, onSaveSuccess })
                           onClick={() => {
                             if (window.electronAPI?.openExternal) {
                               window.electronAPI.openExternal(
-                                'https://github.com/ziard47/voltrex_loader/releases/download/v1.0.1/voltrex-loader-browser-extension.zip'
+                                'https://github.com/ziard47/voltrex_loader/releases/download/v1.1.0/voltrex-loader-browser-extension.zip'
                               );
                             }
                           }}
@@ -979,7 +979,7 @@ export default function SettingsPage({ onBack, defaultSavePath, onSaveSuccess })
                     <h3 className="text-lg font-bold text-[#EEEEEE]">
                       VOLTREX <span className="text-[#D84040]">LOADER</span>
                     </h3>
-                    <p className="text-xs text-[#b8a5a5] mt-1">Version 1.0.1 (Production Release)</p>
+                    <p className="text-xs text-[#b8a5a5] mt-1">Version 1.1.1 (Production Release)</p>
                   </div>
 
                   <p className="text-xs text-[#b8a5a5] max-w-md mx-auto leading-relaxed">

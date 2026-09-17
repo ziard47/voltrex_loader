@@ -67,7 +67,18 @@ export default function App() {
         const list = await window.electronAPI.getAllDownloads();
         setDownloads(list || []);
       }
-      if (window.electronAPI?.getDefaultDownloadPath) {
+      if (window.electronAPI?.getSettings) {
+        const settings = await window.electronAPI.getSettings();
+        if (settings?.defaultDownloadPath) {
+          setDefaultSavePath(settings.defaultDownloadPath);
+        } else if (window.electronAPI?.getDefaultDownloadPath) {
+          const defaultPath = await window.electronAPI.getDefaultDownloadPath();
+          setDefaultSavePath(defaultPath || '');
+        }
+        if (settings?.concurrency) {
+          setConcurrency(settings.concurrency);
+        }
+      } else if (window.electronAPI?.getDefaultDownloadPath) {
         const defaultPath = await window.electronAPI.getDefaultDownloadPath();
         setDefaultSavePath(defaultPath || '');
       }
@@ -127,6 +138,9 @@ export default function App() {
     });
 
     const unsubCaptured = window.electronAPI?.onCapturedDownload?.((data) => {
+      if (data?.defaultSavePath) {
+        setDefaultSavePath(data.defaultSavePath);
+      }
       if (isAddModalOpenRef.current || isBatchModalOpenRef.current) {
         setPendingCapture(data);
       } else {
@@ -145,6 +159,15 @@ export default function App() {
       setCurrentView('settings');
     });
 
+    const unsubSettings = window.electronAPI?.onSettingsUpdated?.((settings) => {
+      if (settings?.defaultDownloadPath) {
+        setDefaultSavePath(settings.defaultDownloadPath);
+      }
+      if (settings?.concurrency) {
+        setConcurrency(settings.concurrency);
+      }
+    });
+
     return () => {
       unsubProgress?.();
       unsubAdded?.();
@@ -155,6 +178,7 @@ export default function App() {
       unsubCaptured?.();
       unsubTrayAdd?.();
       unsubTraySettings?.();
+      unsubSettings?.();
     };
   }, [loadInitialData]);
 

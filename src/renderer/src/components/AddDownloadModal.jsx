@@ -130,7 +130,16 @@ export default function AddDownloadModal({
 
       setUrl(incomingUrl);
       setFileName(incomingName);
-      setSavePath(defaultSavePath || '');
+      const resolvedPath = initialData?.savePath || initialData?.defaultSavePath || defaultSavePath;
+      if (resolvedPath) {
+        setSavePath(resolvedPath);
+      } else if (window.electronAPI?.getDefaultDownloadPath) {
+        window.electronAPI.getDefaultDownloadPath().then((p) => {
+          if (p) setSavePath(p);
+        });
+      } else {
+        setSavePath('');
+      }
       setPriority('NORMAL');
       setProbeResult(null);
       setErrorMsg('');

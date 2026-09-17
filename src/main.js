@@ -287,7 +287,8 @@ function setupIpcHandlers() {
   });
 
   ipcMain.handle('download:get-default-path', async () => {
-    return app.getPath('downloads');
+    const settings = loadSettings();
+    return settings.defaultDownloadPath || (downloadEngine && downloadEngine.defaultDownloadPath) || app.getPath('downloads');
   });
 
   // Native directory picker (cross platform Linux/SteamOS/Windows)
@@ -559,6 +560,9 @@ function saveSettings(newSettings) {
     applyProxySettings(merged);
     if (typeof merged.startWithSystem === 'boolean') {
       applyStartWithSystem(merged.startWithSystem);
+    }
+    if (mainWindow && !mainWindow.isDestroyed()) {
+      mainWindow.webContents.send('settings:updated', merged);
     }
     return merged;
   } catch (err) {

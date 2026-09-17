@@ -102,10 +102,12 @@ class BridgeServer {
               }
 
               if (win && !win.isDestroyed()) {
+                const effectiveDefaultPath = this.downloadEngine?.defaultDownloadPath || (settings && settings.defaultDownloadPath);
                 win.webContents.send('download:captured-prompt', {
                   url: downloadUrl,
                   fileName: resolvedFileName,
-                  referrer: data.referrer
+                  referrer: data.referrer,
+                  defaultSavePath: effectiveDefaultPath
                 });
               }
               res.writeHead(200, { 'Content-Type': 'application/json' });
