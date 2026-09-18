@@ -393,11 +393,11 @@ export default function BatchDownloadModal({
       maxWidth="md"
       fullWidth
       PaperProps={{
-        className: '!bg-[#1D1616] !border !border-[#8E1616]/50 !rounded-2xl shadow-2xl overflow-hidden'
+        className: '!bg-[#1D1616] !border !border-[#8E1616]/50 !rounded-2xl shadow-2xl overflow-hidden max-h-[90vh] flex flex-col'
       }}
     >
       {/* Modal Header */}
-      <DialogTitle className="!px-5 !py-3.5 flex items-center justify-between border-b border-[#8E1616]/35 bg-[#140e0e]">
+      <DialogTitle className="!px-5 !py-3.5 flex items-center justify-between border-b border-[#8E1616]/35 bg-[#140e0e] shrink-0">
         <div className="flex items-center gap-2.5">
           <div className="w-8 h-8 rounded-lg bg-[#8E1616]/30 border border-[#D84040]/30 text-[#D84040] flex items-center justify-center">
             <Layers className="w-4 h-4" />
@@ -428,7 +428,7 @@ export default function BatchDownloadModal({
       </DialogTitle>
 
       {/* Modal Content */}
-      <DialogContent className="!px-5 !py-4 space-y-4 bg-[#1D1616] max-h-[75vh] overflow-y-auto">
+      <DialogContent className="!px-5 !py-3.5 space-y-3.5 bg-[#1D1616] overflow-y-auto flex-1 min-h-0">
         {/* Step 1: Multi-line URLs input */}
         <div>
           <div className="flex items-center justify-between mb-1.5">
@@ -736,7 +736,7 @@ export default function BatchDownloadModal({
       </DialogContent>
 
       {/* Modal Actions */}
-      <DialogActions className="!px-5 !py-3 border-t border-[#8E1616]/35 bg-[#140e0e] flex items-center justify-between gap-2">
+      <DialogActions className="!px-5 !py-3 border-t border-[#8E1616]/35 bg-[#140e0e] flex items-center justify-between gap-2 shrink-0">
         <Button
           variant="outlined"
           size="small"

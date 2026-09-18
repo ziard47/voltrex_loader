@@ -5,6 +5,7 @@ import DownloadTable from './components/DownloadTable';
 import AddDownloadModal from './components/AddDownloadModal';
 import BatchDownloadModal from './components/BatchDownloadModal';
 import CaptureBatchPromptModal from './components/CaptureBatchPromptModal';
+import WhatsNewModal from './components/WhatsNewModal';
 import SettingsPage from './components/SettingsPage';
 import { getFileCategory } from './utils/formatters';
 
@@ -23,6 +24,8 @@ export default function App() {
   const [capturedData, setCapturedData] = useState(null);
   const [pendingCapture, setPendingCapture] = useState(null);
   const [currentSingleData, setCurrentSingleData] = useState(null);
+  const [appVersion, setAppVersion] = useState('1.1.1');
+  const [isWhatsNewOpen, setIsWhatsNewOpen] = useState(false);
 
   const isAddModalOpenRef = useRef(false);
   const isBatchModalOpenRef = useRef(false);
@@ -82,10 +85,34 @@ export default function App() {
         const defaultPath = await window.electronAPI.getDefaultDownloadPath();
         setDefaultSavePath(defaultPath || '');
       }
+
+      // Check app version and display "What's New" modal if updated
+      try {
+        let ver = '1.1.1';
+        if (window.electronAPI?.getAppVersion) {
+          ver = await window.electronAPI.getAppVersion() || '1.1.1';
+        }
+        setAppVersion(ver);
+        const lastSeen = localStorage.getItem('voltrex_last_seen_version');
+        if (lastSeen !== ver) {
+          setIsWhatsNewOpen(true);
+        }
+      } catch (verErr) {
+        console.error('Error verifying app version:', verErr);
+      }
     } catch (err) {
       console.error('Failed to load initial data:', err);
     }
   }, []);
+
+  const handleCloseWhatsNew = useCallback(() => {
+    setIsWhatsNewOpen(false);
+    try {
+      localStorage.setItem('voltrex_last_seen_version', appVersion);
+    } catch (e) {
+      console.error('Error saving last seen version:', e);
+    }
+  }, [appVersion]);
 
   useEffect(() => {
     loadInitialData();
@@ -401,6 +428,8 @@ export default function App() {
             <SettingsPage
               onBack={() => setCurrentView('downloads')}
               defaultSavePath={defaultSavePath}
+              appVersion={appVersion}
+              onOpenWhatsNew={() => setIsWhatsNewOpen(true)}
               onSaveSuccess={(newSettings) => {
                 if (newSettings.defaultDownloadPath) setDefaultSavePath(newSettings.defaultDownloadPath);
                 if (newSettings.concurrency) setConcurrency(newSettings.concurrency);
@@ -466,6 +495,13 @@ export default function App() {
         isBatchOpen={isBatchModalOpen}
         onAddToBatch={handleAddToBatchFromPrompt}
         onOpenSeparately={handleOpenSeparatelyFromPrompt}
+      />
+
+      {/* What's New on Version Update Modal Dialog */}
+      <WhatsNewModal
+        open={isWhatsNewOpen}
+        onClose={handleCloseWhatsNew}
+        version={appVersion}
       />
     </div>
   );

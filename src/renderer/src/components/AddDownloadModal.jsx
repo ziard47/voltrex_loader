@@ -231,11 +231,11 @@ export default function AddDownloadModal({
       maxWidth="sm"
       fullWidth
       PaperProps={{
-        className: '!bg-[#1D1616] !border !border-[#8E1616]/50 !rounded-2xl shadow-2xl overflow-hidden'
+        className: '!bg-[#1D1616] !border !border-[#8E1616]/50 !rounded-2xl shadow-2xl overflow-hidden max-h-[90vh] flex flex-col'
       }}
     >
       {/* Modal Header */}
-      <DialogTitle className="!px-5 !py-3.5 flex items-center justify-between border-b border-[#8E1616]/35 bg-[#140e0e]">
+      <DialogTitle className="!px-5 !py-3.5 flex items-center justify-between border-b border-[#8E1616]/35 bg-[#140e0e] shrink-0">
         <div className="flex items-center gap-2.5">
           <div className="w-8 h-8 rounded-lg bg-[#8E1616]/30 border border-[#D84040]/30 text-[#D84040] flex items-center justify-center">
             <Download className="w-4 h-4" />
@@ -273,7 +273,7 @@ export default function AddDownloadModal({
       </DialogTitle>
 
       {/* Modal Content */}
-      <DialogContent className="!px-5 !py-4 space-y-3.5 bg-[#1D1616]">
+      <DialogContent className="!px-5 !py-3.5 space-y-3 bg-[#1D1616] overflow-y-auto flex-1 min-h-0">
         {/* URL Input Box & Check Action */}
         <div>
           <label className="block text-[11px] font-semibold uppercase tracking-wider text-[#b8a5a5] mb-1">
@@ -453,7 +453,7 @@ export default function AddDownloadModal({
       </DialogContent>
 
       {/* Modal Actions */}
-      <DialogActions className="!px-5 !py-3 border-t border-[#8E1616]/35 bg-[#140e0e] flex items-center justify-between gap-2">
+      <DialogActions className="!px-5 !py-3 border-t border-[#8E1616]/35 bg-[#140e0e] flex items-center justify-between gap-2 shrink-0">
         <Button
           variant="outlined"
           size="small"

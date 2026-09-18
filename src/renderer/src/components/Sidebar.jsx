@@ -52,12 +52,12 @@ export default function Sidebar({
   return (
     <aside
       className={`glass-panel border-r border-[#8E1616]/30 flex flex-col justify-between overflow-y-auto select-none transition-all duration-200 shrink-0 bg-[#1D1616] ${
-        isCollapsed ? 'w-16 p-2 items-center' : 'w-56 lg:w-60 p-3'
+        isCollapsed ? 'w-16 p-2 items-center' : 'w-52 lg:w-56 p-2.5 sm:p-3'
       }`}
     >
-      <div className="space-y-5 w-full">
+      <div className="space-y-3.5 sm:space-y-4 w-full">
         {/* Header / Collapse Toggle */}
-        <div className={`flex items-center ${isCollapsed ? 'justify-center' : 'justify-between px-1'} mb-1`}>
+        <div className={`flex items-center ${isCollapsed ? 'justify-center' : 'justify-between px-1'} mb-0.5`}>
           {!isCollapsed && (
             <span className="text-[11px] font-bold tracking-wider uppercase text-[#b8a5a5]">
               Filters
@@ -77,11 +77,11 @@ export default function Sidebar({
         {/* Status Filters */}
         <div className="w-full">
           {!isCollapsed && (
-            <div className="text-[10px] font-semibold tracking-wider uppercase text-[#b8a5a5] mb-1.5 px-2">
+            <div className="text-[10px] font-semibold tracking-wider uppercase text-[#b8a5a5] mb-1 px-2">
               Status
             </div>
           )}
-          <div className="space-y-1 w-full">
+          <div className="space-y-0.5 sm:space-y-1 w-full">
             {statusFilters.map((item) => {
               const Icon = item.icon;
               const isSelected = selectedCategory === item.id;
@@ -91,7 +91,7 @@ export default function Sidebar({
                   onMouseDown={(e) => e.preventDefault()}
                   onClick={() => onSelectCategory(item.id)}
                   className={`w-full flex items-center ${
-                    isCollapsed ? 'justify-center py-2 px-1' : 'justify-between px-2.5 py-1.5'
+                    isCollapsed ? 'justify-center py-1.5 px-1' : 'justify-between px-2.5 py-1 sm:py-1.5'
                   } rounded-lg text-xs font-medium transition-all border outline-none focus:outline-none focus:ring-0 ${
                     isSelected
                       ? '!border-[#D84040]/50 bg-[#8E1616]/25 text-[#EEEEEE] shadow-sm'
@@ -133,11 +133,11 @@ export default function Sidebar({
         {/* Categories */}
         <div className="w-full">
           {!isCollapsed && (
-            <div className="text-[10px] font-semibold tracking-wider uppercase text-[#b8a5a5] mb-1.5 px-2">
+            <div className="text-[10px] font-semibold tracking-wider uppercase text-[#b8a5a5] mb-1 px-2">
               Categories
             </div>
           )}
-          <div className="space-y-1 w-full">
+          <div className="space-y-0.5 sm:space-y-1 w-full">
             {typeFilters.map((item) => {
               const Icon = item.icon;
               const isSelected = selectedType === item.id;
@@ -147,7 +147,7 @@ export default function Sidebar({
                   onMouseDown={(e) => e.preventDefault()}
                   onClick={() => onSelectType(item.id)}
                   className={`w-full flex items-center ${
-                    isCollapsed ? 'justify-center py-2 px-1' : 'justify-between px-2.5 py-1.5'
+                    isCollapsed ? 'justify-center py-1.5 px-1' : 'justify-between px-2.5 py-1 sm:py-1.5'
                   } rounded-lg text-xs font-medium transition-all border outline-none focus:outline-none focus:ring-0 ${
                     isSelected
                       ? '!border-[#D84040]/50 bg-[#8E1616]/25 text-[#EEEEEE] shadow-sm'
@@ -184,7 +184,8 @@ export default function Sidebar({
       </div>
 
       {/* Settings Navigation Button */}
-      <div className="pt-3 border-t border-[#8E1616]/30 w-full mt-auto">
+      <div className="pt-2 sm:pt-3 border-t border-[#8E1616]/30 w-full mt-auto">
+
         {isCollapsed ? (
           <Tooltip title="Preferences & Settings" placement="right" arrow>
             <button

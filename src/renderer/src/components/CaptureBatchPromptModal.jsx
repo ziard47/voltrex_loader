@@ -39,11 +39,11 @@ export default function CaptureBatchPromptModal({
       maxWidth="xs"
       fullWidth
       PaperProps={{
-        className: '!bg-[#1D1616] !border !border-[#8E1616]/70 !rounded-2xl shadow-2xl overflow-hidden'
+        className: '!bg-[#1D1616] !border !border-[#8E1616]/70 !rounded-2xl shadow-2xl overflow-hidden max-h-[90vh] flex flex-col'
       }}
     >
       {/* Header */}
-      <DialogTitle className="!px-5 !py-3.5 flex items-center justify-between border-b border-[#8E1616]/35 bg-[#140e0e]">
+      <DialogTitle className="!px-5 !py-3.5 flex items-center justify-between border-b border-[#8E1616]/35 bg-[#140e0e] shrink-0">
         <div className="flex items-center gap-2.5">
           <div className="w-8 h-8 rounded-lg bg-[#8E1616]/30 border border-[#D84040]/30 text-[#D84040] flex items-center justify-center">
             <Layers className="w-4 h-4" />
@@ -69,7 +69,7 @@ export default function CaptureBatchPromptModal({
       </DialogTitle>
 
       {/* Content */}
-      <DialogContent className="!px-5 !py-4 space-y-3 bg-[#1D1616]">
+      <DialogContent className="!px-5 !py-3.5 space-y-3 bg-[#1D1616] overflow-y-auto flex-1 min-h-0">
         <p className="text-xs text-[#EEEEEE] leading-relaxed">
           {isBatchOpen ? (
             <>
@@ -101,7 +101,7 @@ export default function CaptureBatchPromptModal({
       </DialogContent>
 
       {/* Actions */}
-      <DialogActions className="!px-5 !py-3 border-t border-[#8E1616]/35 bg-[#140e0e] flex items-center justify-between gap-2">
+      <DialogActions className="!px-5 !py-3 border-t border-[#8E1616]/35 bg-[#140e0e] flex items-center justify-between gap-2 shrink-0">
         <Button
           variant="outlined"
           size="small"
