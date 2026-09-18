@@ -38,7 +38,7 @@ async function main() {
 
   const pkgPath = path.join(rootDir, 'package.json');
   const pkgData = JSON.parse(fs.readFileSync(pkgPath, 'utf8'));
-  const currentVersion = pkgData.version || '1.1.0';
+  const currentVersion = pkgData.version || '1.1.1';
 
   const chosenVersion = await askVersion(currentVersion);
   console.log(`\nBuilding Voltrex Loader Windows version: ${chosenVersion}\n`);

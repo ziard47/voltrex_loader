@@ -1,4 +1,4 @@
-const { app, BrowserWindow, ipcMain, dialog, shell, Tray, Menu, nativeImage, session } = require('electron');
+const { app, BrowserWindow, ipcMain, dialog, shell, Tray, Menu, nativeImage, session, screen } = require('electron');
 const path = require('node:path');
 const fs = require('node:fs');
 const { DownloadEngine } = require('./main/downloadEngine');
@@ -51,15 +51,21 @@ function showAndFocusMainWindow() {
 }
 
 function createWindow() {
+  const primaryDisplay = screen.getPrimaryDisplay();
+  const { width: workWidth, height: workHeight } = primaryDisplay.workAreaSize;
+  const scaleFactor = primaryDisplay.scaleFactor || 1;
+
+  // On compact displays (such as 1360x768 / 1366x768), ensure window fits within work area
+  const targetWidth = Math.min(1200, Math.max(860, Math.floor(workWidth * 0.95)));
+  const targetHeight = Math.min(800, Math.max(520, Math.floor(workHeight * 0.92)));
+
   mainWindow = new BrowserWindow({
-    width: 1200,
-    height: 800,
-    resizable: false,
-    maximizable: false,
-    minWidth: 1200,
-    minHeight: 800,
-    maxWidth: 1200,
-    maxHeight: 800,
+    width: targetWidth,
+    height: targetHeight,
+    resizable: true,
+    maximizable: true,
+    minWidth: 840,
+    minHeight: 480,
     backgroundColor: '#1D1616',
     title: 'Voltrex Loader',
     icon: path.join(__dirname, 'assets/icon.png'),
@@ -77,8 +83,40 @@ function createWindow() {
 
   Menu.setApplicationMenu(null);
 
-  // Block DevTools shortcuts
+  // On compact displays (like 1360x768 or when display scale >= 1.25), scale down UI so it isn't oversized
+  mainWindow.webContents.on('did-finish-load', () => {
+    if (workHeight <= 768 || workWidth <= 1366 || (workHeight <= 820 && scaleFactor > 1)) {
+      const defaultZoom = scaleFactor >= 1.25 ? 0.85 : 0.9;
+      mainWindow.webContents.setZoomFactor(defaultZoom);
+    }
+  });
+
+  // Zoom shortcuts & Block DevTools shortcuts
   mainWindow.webContents.on('before-input-event', (event, input) => {
+    // Zoom in (Ctrl + Plus / Equal)
+    if ((input.control || input.meta) && (input.key === '=' || input.key === '+')) {
+      const cur = mainWindow.webContents.getZoomFactor();
+      mainWindow.webContents.setZoomFactor(Math.min(1.5, Math.round((cur + 0.05) * 100) / 100));
+      event.preventDefault();
+      return;
+    }
+    // Zoom out (Ctrl + Minus / Underscore)
+    if ((input.control || input.meta) && (input.key === '-' || input.key === '_')) {
+      const cur = mainWindow.webContents.getZoomFactor();
+      mainWindow.webContents.setZoomFactor(Math.max(0.65, Math.round((cur - 0.05) * 100) / 100));
+      event.preventDefault();
+      return;
+    }
+    // Zoom reset (Ctrl + 0)
+    if ((input.control || input.meta) && input.key === '0') {
+      const defaultZoom = (workHeight <= 768 || workWidth <= 1366 || (workHeight <= 820 && scaleFactor > 1))
+        ? (scaleFactor >= 1.25 ? 0.85 : 0.9)
+        : 1.0;
+      mainWindow.webContents.setZoomFactor(defaultZoom);
+      event.preventDefault();
+      return;
+    }
+
     const isDevTools =
       input.key === 'F12' ||
       ((input.control || input.meta) && input.shift && ['I', 'i', 'J', 'j', 'C', 'c'].includes(input.key)) ||
@@ -326,6 +364,11 @@ function setupIpcHandlers() {
     return false;
   });
 
+  // App Version IPC
+  ipcMain.handle('app:get-version', () => {
+    return app.getVersion();
+  });
+
   // Settings Management IPC
   ipcMain.handle('settings:get', async () => {
     return loadSettings();
@@ -348,6 +391,25 @@ function setupIpcHandlers() {
         body: 'Notifications are functioning properly!'
       }).show();
       return true;
+    }
+    return false;
+  });
+
+  // Window Zoom & Scaling IPC
+  ipcMain.handle('window:get-zoom', async () => {
+    if (mainWindow && !mainWindow.isDestroyed()) {
+      return mainWindow.webContents.getZoomFactor();
+    }
+    return 1.0;
+  });
+
+  ipcMain.handle('window:set-zoom', async (_event, zoom) => {
+    if (mainWindow && !mainWindow.isDestroyed()) {
+      const zoomVal = Number(zoom);
+      if (!isNaN(zoomVal) && zoomVal >= 0.5 && zoomVal <= 2.0) {
+        mainWindow.webContents.setZoomFactor(zoomVal);
+        return true;
+      }
     }
     return false;
   });
