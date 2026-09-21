@@ -29,11 +29,12 @@ import {
   Loader2,
   CheckCircle2,
   AlertCircle,
-  Download
+  Download,
+  Sparkles
 } from 'lucide-react';
 import Logo from './Logo';
 
-export default function SettingsPage({ onBack, defaultSavePath, onSaveSuccess }) {
+export default function SettingsPage({ onBack, defaultSavePath, onSaveSuccess, appVersion = '1.1.1', onOpenWhatsNew }) {
   const [activeTab, setActiveTab] = useState('general');
   const [toast, setToast] = useState({ open: false, message: '' });
   const [isSaving, setIsSaving] = useState(false);
@@ -66,8 +67,9 @@ export default function SettingsPage({ onBack, defaultSavePath, onSaveSuccess })
 
   const [isTestingProxy, setIsTestingProxy] = useState(false);
   const [proxyTestResult, setProxyTestResult] = useState(null);
+  const [zoomFactor, setZoomFactor] = useState(1.0);
 
-  // Load settings on mount
+  // Load settings and zoom factor on mount
   useEffect(() => {
     async function fetchSettings() {
       try {
@@ -77,12 +79,26 @@ export default function SettingsPage({ onBack, defaultSavePath, onSaveSuccess })
             setSettings(loaded);
           }
         }
+        if (window.electronAPI?.getZoomFactor) {
+          const factor = await window.electronAPI.getZoomFactor();
+          if (factor) {
+            setZoomFactor(Math.round(factor * 100) / 100);
+          }
+        }
       } catch (err) {
         console.error('Failed to load settings:', err);
       }
     }
     fetchSettings();
   }, []);
+
+  const handleZoomChange = async (newZoom) => {
+    const val = Number(newZoom);
+    setZoomFactor(val);
+    if (window.electronAPI?.setZoomFactor) {
+      await window.electronAPI.setZoomFactor(val);
+    }
+  };
 
   const handleBrowseFolder = async () => {
     try {
@@ -336,6 +352,30 @@ export default function SettingsPage({ onBack, defaultSavePath, onSaveSuccess })
                     <MenuItem value={5}>5 Downloads</MenuItem>
                     <MenuItem value={8}>8 Downloads</MenuItem>
                     <MenuItem value={10}>10 Downloads</MenuItem>
+                  </Select>
+                </div>
+
+                {/* Display Scale & Zoom Factor */}
+                <div className="p-4 rounded-xl bg-[#1D1616] border border-[#8E1616]/30 flex items-center justify-between">
+                  <div>
+                    <div className="text-xs font-semibold text-[#EEEEEE]">Display Scale & UI Zoom</div>
+                    <div className="text-[11px] text-[#b8a5a5]">
+                      Adjust interface scaling for smaller laptop screens (e.g. 1360x768) or high-DPI displays. (Keyboard: Ctrl + / - / 0)
+                    </div>
+                  </div>
+                  <Select
+                    size="small"
+                    value={zoomFactor}
+                    onChange={(e) => handleZoomChange(e.target.value)}
+                    className="!text-xs !bg-[#140e0e] !text-[#EEEEEE] border border-[#8E1616]/30 !w-36"
+                    sx={{ height: 32 }}
+                  >
+                    <MenuItem value={0.75}>75% (Compact)</MenuItem>
+                    <MenuItem value={0.85}>85% (Small Screen)</MenuItem>
+                    <MenuItem value={0.9}>90% (Laptop 768p)</MenuItem>
+                    <MenuItem value={1.0}>100% (Default)</MenuItem>
+                    <MenuItem value={1.1}>110%</MenuItem>
+                    <MenuItem value={1.25}>125% (Large)</MenuItem>
                   </Select>
                 </div>
 
@@ -979,7 +1019,20 @@ export default function SettingsPage({ onBack, defaultSavePath, onSaveSuccess })
                     <h3 className="text-lg font-bold text-[#EEEEEE]">
                       VOLTREX <span className="text-[#D84040]">LOADER</span>
                     </h3>
-                    <p className="text-xs text-[#b8a5a5] mt-1">Version 1.1.0 (Production Release)</p>
+                    <p className="text-xs text-[#b8a5a5] mt-1">Version {appVersion} (Production Release)</p>
+                    {onOpenWhatsNew && (
+                      <div className="pt-2">
+                        <Button
+                          size="small"
+                          variant="outlined"
+                          onClick={onOpenWhatsNew}
+                          startIcon={<Sparkles className="w-3.5 h-3.5 text-[#D84040]" />}
+                          className="!border-[#8E1616]/50 hover:!border-[#D84040] !text-[#EEEEEE] !text-xs !py-1 !px-3 !rounded-lg"
+                        >
+                          What's New in v{appVersion}
+                        </Button>
+                      </div>
+                    )}
                   </div>
 
                   <p className="text-xs text-[#b8a5a5] max-w-md mx-auto leading-relaxed">

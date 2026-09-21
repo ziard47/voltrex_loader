@@ -29,6 +29,9 @@ contextBridge.exposeInMainWorld('electronAPI', {
   browseDirectory: (currentPath) => ipcRenderer.invoke('dialog:browse-directory', currentPath),
   openPath: (folderPath) => ipcRenderer.invoke('shell:open-path', folderPath),
   openExternal: (url) => ipcRenderer.invoke('shell:open-external', url),
+  getZoomFactor: () => ipcRenderer.invoke('window:get-zoom'),
+  setZoomFactor: (zoom) => ipcRenderer.invoke('window:set-zoom', zoom),
+  getAppVersion: () => ipcRenderer.invoke('app:get-version'),
 
   // Settings API
   getSettings: () => ipcRenderer.invoke('settings:get'),

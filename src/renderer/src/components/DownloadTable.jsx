@@ -179,26 +179,26 @@ export default function DownloadTable({
 
   return (
     <div className="flex-1 w-full h-full overflow-hidden">
-      <TableContainer className="w-full h-full select-none overflow-x-hidden overflow-y-auto">
-        <Table stickyHeader size="small" className="w-full table-fixed">
+      <TableContainer className="w-full h-full select-none overflow-x-auto overflow-y-auto">
+        <Table stickyHeader size="small" className="w-full table-fixed min-w-[620px]">
           <TableHead>
             <TableRow>
-              <TableCell className="!bg-[#171010] !text-[#b8a5a5] !border-b !border-[#8E1616]/40 !text-[11px] !font-semibold !uppercase !tracking-wider w-auto min-w-[240px]">
+              <TableCell className="!bg-[#171010] !text-[#b8a5a5] !border-b !border-[#8E1616]/40 !text-[11px] !font-semibold !uppercase !tracking-wider w-auto min-w-[180px]">
                 File Name
               </TableCell>
-              <TableCell className="!bg-[#171010] !text-[#b8a5a5] !border-b !border-[#8E1616]/40 !text-[11px] !font-semibold !uppercase !tracking-wider w-[120px] whitespace-nowrap">
+              <TableCell className="!bg-[#171010] !text-[#b8a5a5] !border-b !border-[#8E1616]/40 !text-[11px] !font-semibold !uppercase !tracking-wider w-[95px] whitespace-nowrap">
                 Size
               </TableCell>
-              <TableCell className="!bg-[#171010] !text-[#b8a5a5] !border-b !border-[#8E1616]/40 !text-[11px] !font-semibold !uppercase !tracking-wider w-[180px] whitespace-nowrap">
+              <TableCell className="!bg-[#171010] !text-[#b8a5a5] !border-b !border-[#8E1616]/40 !text-[11px] !font-semibold !uppercase !tracking-wider w-[140px] whitespace-nowrap">
                 Progress
               </TableCell>
-              <TableCell className="!bg-[#171010] !text-[#b8a5a5] !border-b !border-[#8E1616]/40 !text-[11px] !font-semibold !uppercase !tracking-wider w-[105px] whitespace-nowrap !px-2">
+              <TableCell className="!bg-[#171010] !text-[#b8a5a5] !border-b !border-[#8E1616]/40 !text-[11px] !font-semibold !uppercase !tracking-wider w-[90px] whitespace-nowrap !px-1.5">
                 Status
               </TableCell>
-              <TableCell className="!bg-[#171010] !text-[#b8a5a5] !border-b !border-[#8E1616]/40 !text-[11px] !font-semibold !uppercase !tracking-wider w-[100px] whitespace-nowrap">
+              <TableCell className="!bg-[#171010] !text-[#b8a5a5] !border-b !border-[#8E1616]/40 !text-[11px] !font-semibold !uppercase !tracking-wider w-[90px] whitespace-nowrap">
                 Speed
               </TableCell>
-              <TableCell className="!bg-[#171010] !text-[#b8a5a5] !border-b !border-[#8E1616]/40 !text-[11px] !font-semibold !uppercase !tracking-wider w-[80px] whitespace-nowrap">
+              <TableCell className="!bg-[#171010] !text-[#b8a5a5] !border-b !border-[#8E1616]/40 !text-[11px] !font-semibold !uppercase !tracking-wider w-[70px] whitespace-nowrap">
                 ETA
               </TableCell>
             </TableRow>
