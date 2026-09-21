@@ -150,7 +150,7 @@ export default function WhatsNewModal({ open, onClose, version = '1.1.1' }) {
           size="small"
           onClick={onClose}
           endIcon={<ArrowRight className="w-3.5 h-3.5" />}
-          className="shadow-md shadow-[#8E1616]/40 !bg-[#D84040] hover:!bg-[#8E1616] !text-[#EEEEEE] !text-xs !py-1.5 !px-4 font-semibold whitespace-nowrap !rounded-lg"
+          className="btn-theme-primary !text-white !text-xs !py-1.5 !px-4 font-semibold whitespace-nowrap !rounded-lg"
         >
           Got it, Continue
         </Button>

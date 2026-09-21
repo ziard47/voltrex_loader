@@ -7,6 +7,21 @@
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet" />
+  <script>
+    try {
+      var c = JSON.parse(localStorage.getItem('voltrex_theme_cache'));
+      if (c) {
+        var isDark = c.themeMode === 'light' ? false : (c.themeMode === 'dark' ? true : window.matchMedia('(prefers-color-scheme: dark)').matches);
+        if (isDark) {
+          document.documentElement.classList.add('dark');
+          document.documentElement.classList.remove('light');
+        } else {
+          document.documentElement.classList.add('light');
+          document.documentElement.classList.remove('dark');
+        }
+      }
+    } catch (e) {}
+  </script>
 </head>
 <body class="bg-[#1D1616] text-[#EEEEEE] overflow-hidden select-none">
   <div id="root"></div>

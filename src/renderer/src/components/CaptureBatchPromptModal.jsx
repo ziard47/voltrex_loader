@@ -106,7 +106,7 @@ export default function CaptureBatchPromptModal({
           variant="outlined"
           size="small"
           onClick={onClose}
-          className="!border-[#8E1616]/40 !text-[#b8a5a5] hover:!text-[#EEEEEE] hover:!bg-[#2e1d1d] !text-xs !py-1.5 !px-3"
+          className="border border-[var(--theme-border-accent)] text-slate-600 dark:text-[#b8a5a5] hover:!border-[var(--theme-primary)] hover:!text-[var(--theme-primary)] hover:!bg-[var(--theme-secondary-subtle)] !text-xs !py-1.5 !px-3 rounded-lg transition-all"
         >
           Dismiss
         </Button>
@@ -117,7 +117,7 @@ export default function CaptureBatchPromptModal({
               variant="outlined"
               size="small"
               onClick={onOpenSeparately}
-              className="!border-[#8E1616]/50 !text-[#b8a5a5] hover:!text-[#EEEEEE] hover:!bg-[#2e1d1d] !text-xs !py-1.5 !px-3 whitespace-nowrap"
+              className="border border-[var(--theme-border-accent)] text-slate-600 dark:text-[#b8a5a5] hover:!border-[var(--theme-primary)] hover:!text-[var(--theme-primary)] hover:!bg-[var(--theme-secondary-subtle)] !text-xs !py-1.5 !px-3 whitespace-nowrap rounded-lg transition-all"
             >
               Separate
             </Button>
@@ -128,7 +128,7 @@ export default function CaptureBatchPromptModal({
             size="small"
             onClick={onAddToBatch}
             startIcon={<Plus className="w-3.5 h-3.5" />}
-            className="shadow-md shadow-[#8E1616]/40 !bg-[#D84040] hover:!bg-[#8E1616] !text-[#EEEEEE] !text-xs !py-1.5 !px-4 font-semibold whitespace-nowrap"
+            className="btn-theme-primary !text-white !text-xs !py-1.5 !px-4 font-semibold whitespace-nowrap rounded-lg"
           >
             Add to Batch
           </Button>
