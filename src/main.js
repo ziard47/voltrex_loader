@@ -458,6 +458,7 @@ let settingsPath = null;
 
 function getDefaultSettings() {
   return {
+    setupWizardCompleted: false,
     defaultDownloadPath: app.getPath('downloads'),
     startWithSystem: false,
     concurrency: 3,

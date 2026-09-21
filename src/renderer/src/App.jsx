@@ -6,6 +6,7 @@ import AddDownloadModal from './components/AddDownloadModal';
 import BatchDownloadModal from './components/BatchDownloadModal';
 import CaptureBatchPromptModal from './components/CaptureBatchPromptModal';
 import WhatsNewModal from './components/WhatsNewModal';
+import SetupWizardModal from './components/SetupWizardModal';
 import SettingsPage from './components/SettingsPage';
 import { getFileCategory } from './utils/formatters';
 
@@ -24,8 +25,9 @@ export default function App() {
   const [capturedData, setCapturedData] = useState(null);
   const [pendingCapture, setPendingCapture] = useState(null);
   const [currentSingleData, setCurrentSingleData] = useState(null);
-  const [appVersion, setAppVersion] = useState('1.1.1');
+  const [appVersion, setAppVersion] = useState('1.1.2');
   const [isWhatsNewOpen, setIsWhatsNewOpen] = useState(false);
+  const [isSetupWizardOpen, setIsSetupWizardOpen] = useState(false);
 
   const isAddModalOpenRef = useRef(false);
   const isBatchModalOpenRef = useRef(false);
@@ -86,19 +88,25 @@ export default function App() {
         setDefaultSavePath(defaultPath || '');
       }
 
-      // Check app version and display "What's New" modal if updated
-      try {
-        let ver = '1.1.1';
-        if (window.electronAPI?.getAppVersion) {
-          ver = await window.electronAPI.getAppVersion() || '1.1.1';
+      // Check first-time setup wizard
+      const isWizardDone = settings?.setupWizardCompleted || localStorage.getItem('voltrex_setup_completed') === 'true';
+      if (!isWizardDone) {
+        setIsSetupWizardOpen(true);
+      } else {
+        // Check app version and display "What's New" modal if updated
+        try {
+          let ver = '1.1.2';
+          if (window.electronAPI?.getAppVersion) {
+            ver = await window.electronAPI.getAppVersion() || '1.1.2';
+          }
+          setAppVersion(ver);
+          const lastSeen = localStorage.getItem('voltrex_last_seen_version');
+          if (lastSeen !== ver) {
+            setIsWhatsNewOpen(true);
+          }
+        } catch (verErr) {
+          console.error('Error verifying app version:', verErr);
         }
-        setAppVersion(ver);
-        const lastSeen = localStorage.getItem('voltrex_last_seen_version');
-        if (lastSeen !== ver) {
-          setIsWhatsNewOpen(true);
-        }
-      } catch (verErr) {
-        console.error('Error verifying app version:', verErr);
       }
     } catch (err) {
       console.error('Failed to load initial data:', err);
@@ -113,6 +121,17 @@ export default function App() {
       console.error('Error saving last seen version:', e);
     }
   }, [appVersion]);
+
+  const handleCloseSetupWizard = useCallback(() => {
+    setIsSetupWizardOpen(false);
+  }, []);
+
+  const handleFinishSetupWizard = useCallback((appliedSettings) => {
+    setIsSetupWizardOpen(false);
+    if (appliedSettings?.defaultDownloadPath) {
+      setDefaultSavePath(appliedSettings.defaultDownloadPath);
+    }
+  }, []);
 
   useEffect(() => {
     loadInitialData();
@@ -430,6 +449,7 @@ export default function App() {
               defaultSavePath={defaultSavePath}
               appVersion={appVersion}
               onOpenWhatsNew={() => setIsWhatsNewOpen(true)}
+              onOpenSetupWizard={() => setIsSetupWizardOpen(true)}
               onSaveSuccess={(newSettings) => {
                 if (newSettings.defaultDownloadPath) setDefaultSavePath(newSettings.defaultDownloadPath);
                 if (newSettings.concurrency) setConcurrency(newSettings.concurrency);
@@ -502,6 +522,13 @@ export default function App() {
         open={isWhatsNewOpen}
         onClose={handleCloseWhatsNew}
         version={appVersion}
+      />
+
+      {/* First-Time Setup Wizard Modal Dialog */}
+      <SetupWizardModal
+        open={isSetupWizardOpen}
+        onClose={handleCloseSetupWizard}
+        onFinish={handleFinishSetupWizard}
       />
     </div>
   );

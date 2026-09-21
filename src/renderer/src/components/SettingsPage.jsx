@@ -34,12 +34,13 @@ import {
   Palette,
   Sun,
   Moon,
-  Monitor
+  Monitor,
+  Rocket
 } from 'lucide-react';
 import Logo from './Logo';
 import { useTheme } from '../context/ThemeContext';
 
-export default function SettingsPage({ onBack, defaultSavePath, onSaveSuccess, appVersion = '1.1.1', onOpenWhatsNew }) {
+export default function SettingsPage({ onBack, defaultSavePath, onSaveSuccess, appVersion = '1.1.2', onOpenWhatsNew, onOpenSetupWizard }) {
   const [activeTab, setActiveTab] = useState('general');
   const [toast, setToast] = useState({ open: false, message: '' });
   const [isSaving, setIsSaving] = useState(false);
@@ -764,7 +765,7 @@ export default function SettingsPage({ onBack, defaultSavePath, onSaveSuccess, a
                           startIcon={<Copy className="w-3.5 h-3.5" />}
                           onClick={() =>
                             copyToClipboard(
-                              'https://github.com/ziard47/voltrex_loader/releases/download/v1.0.0/voltrex-loader-browser-extension.zip',
+                              'https://github.com/ziard47/voltrex_loader/releases/download/v1.1.0/voltrex-loader-browser-extension.zip',
                               'Download link copied to clipboard!'
                             )
                           }
@@ -1230,19 +1231,30 @@ export default function SettingsPage({ onBack, defaultSavePath, onSaveSuccess, a
                       VOLTREX <span className="text-[var(--theme-primary)]">LOADER</span>
                     </h3>
                     <p className="text-xs text-[#b8a5a5] mt-1">Version {appVersion} (Production Release)</p>
-                    {onOpenWhatsNew && (
-                      <div className="pt-2">
+                    <div className="pt-2 flex items-center justify-center gap-2 flex-wrap">
+                      {onOpenWhatsNew && (
                         <Button
                           size="small"
                           variant="outlined"
                           onClick={onOpenWhatsNew}
                           startIcon={<Sparkles className="w-3.5 h-3.5 text-[var(--theme-primary)]" />}
-                          className="!border-[#8E1616]/50 hover:!border-[var(--theme-primary)] !text-[#EEEEEE] !text-xs !py-1 !px-3 !rounded-lg"
+                          className="border border-[var(--theme-border-accent)] hover:!border-[var(--theme-primary)] hover:!text-[var(--theme-primary)] hover:!bg-[var(--theme-secondary-subtle)] text-[#EEEEEE] !text-xs !py-1 !px-3 rounded-lg"
                         >
                           What's New in v{appVersion}
                         </Button>
-                      </div>
-                    )}
+                      )}
+                      {onOpenSetupWizard && (
+                        <Button
+                          size="small"
+                          variant="outlined"
+                          onClick={onOpenSetupWizard}
+                          startIcon={<Rocket className="w-3.5 h-3.5 text-[var(--theme-primary)]" />}
+                          className="border border-[var(--theme-border-accent)] hover:!border-[var(--theme-primary)] hover:!text-[var(--theme-primary)] hover:!bg-[var(--theme-secondary-subtle)] text-[#EEEEEE] !text-xs !py-1 !px-3 rounded-lg"
+                        >
+                          Run Setup Wizard
+                        </Button>
+                      )}
+                    </div>
                   </div>
 
                   <p className="text-xs text-[#b8a5a5] max-w-md mx-auto leading-relaxed">
