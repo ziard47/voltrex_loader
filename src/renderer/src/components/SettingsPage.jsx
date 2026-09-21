@@ -30,14 +30,31 @@ import {
   CheckCircle2,
   AlertCircle,
   Download,
-  Sparkles
+  Sparkles,
+  Palette,
+  Sun,
+  Moon,
+  Monitor,
+  Rocket
 } from 'lucide-react';
 import Logo from './Logo';
+import { useTheme } from '../context/ThemeContext';
 
-export default function SettingsPage({ onBack, defaultSavePath, onSaveSuccess, appVersion = '1.1.1', onOpenWhatsNew }) {
+export default function SettingsPage({ onBack, defaultSavePath, onSaveSuccess, appVersion = '1.1.2', onOpenWhatsNew, onOpenSetupWizard }) {
   const [activeTab, setActiveTab] = useState('general');
   const [toast, setToast] = useState({ open: false, message: '' });
   const [isSaving, setIsSaving] = useState(false);
+
+  // Theme Context
+  const {
+    themeMode,
+    setThemeMode,
+    effectiveMode,
+    themePreset,
+    setThemePreset,
+    resetTheme,
+    THEME_PRESETS
+  } = useTheme();
 
   // Settings State
   const [settings, setSettings] = useState({
@@ -126,13 +143,18 @@ export default function SettingsPage({ onBack, defaultSavePath, onSaveSuccess, a
   const handleSave = async () => {
     setIsSaving(true);
     try {
+      const toSave = {
+        ...settings,
+        themeMode,
+        themePreset
+      };
       if (window.electronAPI?.saveSettings) {
-        const saved = await window.electronAPI.saveSettings(settings);
+        const saved = await window.electronAPI.saveSettings(toSave);
         if (saved) {
           setSettings(saved);
         }
       }
-      if (onSaveSuccess) onSaveSuccess(settings);
+      if (onSaveSuccess) onSaveSuccess(toSave);
       setToast({ open: true, message: 'Settings saved successfully!' });
     } catch (err) {
       console.error('Failed to save settings:', err);
@@ -144,6 +166,7 @@ export default function SettingsPage({ onBack, defaultSavePath, onSaveSuccess, a
 
   const handleReset = async () => {
     try {
+      resetTheme();
       if (window.electronAPI?.resetSettings) {
         const defaults = await window.electronAPI.resetSettings();
         if (defaults) {
@@ -198,6 +221,7 @@ export default function SettingsPage({ onBack, defaultSavePath, onSaveSuccess, a
 
   const tabs = [
     { id: 'general', label: 'General & Downloads', icon: Sliders },
+    { id: 'appearance', label: 'Appearance & Themes', icon: Palette },
     { id: 'browser', label: 'Browser Integration', icon: Globe },
     { id: 'proxy', label: 'Proxy Settings', icon: Server },
     { id: 'notifications', label: 'Notifications & Sound', icon: Bell },
@@ -221,8 +245,8 @@ export default function SettingsPage({ onBack, defaultSavePath, onSaveSuccess, a
           </Button>
           <div className="h-4 w-[1px] bg-[#8E1616]/30" />
           <div className="flex items-center gap-2">
-            <Settings className="w-4 h-4 text-[#D84040]" />
-            <h1 className="text-sm font-bold text-[#EEEEEE] tracking-wide">Preferences & Settings</h1>
+            <Settings className="w-4 h-4 text-[var(--theme-primary)]" />
+            <h1 className="text-sm font-bold text-slate-800 dark:text-[#EEEEEE] tracking-wide">Preferences & Settings</h1>
           </div>
         </div>
 
@@ -239,10 +263,10 @@ export default function SettingsPage({ onBack, defaultSavePath, onSaveSuccess, a
           <Button
             size="small"
             variant="contained"
-            startIcon={<Check className="w-4 h-4" />}
+            startIcon={<Check className="w-4 h-4 !text-white" />}
             onClick={handleSave}
             disabled={isSaving}
-            className="!bg-[#D84040] hover:!bg-[#8E1616] !text-[#EEEEEE] !text-xs !py-1.5 !px-4 !font-semibold shadow-md shadow-[#8E1616]/30"
+            className="btn-theme-primary !text-white !text-xs !py-1.5 !px-4 !font-semibold rounded-lg"
           >
             {isSaving ? 'Saving...' : 'Save Settings'}
           </Button>
@@ -263,13 +287,13 @@ export default function SettingsPage({ onBack, defaultSavePath, onSaveSuccess, a
               <button
                 key={tab.id}
                 onClick={() => setActiveTab(tab.id)}
-                className={`w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-xs font-medium transition-all text-left ${
+                className={`w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-xs font-medium transition-all text-left border ${
                   isCur
-                    ? 'bg-[#8E1616]/30 text-[#EEEEEE] border border-[#D84040]/40 font-semibold'
-                    : 'text-[#b8a5a5] hover:text-[#EEEEEE] hover:bg-[#271a1a] border border-transparent'
+                    ? 'border-[var(--theme-border-accent)] bg-[var(--theme-secondary-subtle)] text-[var(--theme-primary)] dark:text-[#EEEEEE] font-bold shadow-sm'
+                    : 'border-transparent text-slate-700 dark:text-[#b8a5a5] hover:text-slate-900 dark:hover:text-[#EEEEEE] hover:bg-slate-200/60 dark:hover:bg-[#271a1a]'
                 }`}
               >
-                <Icon className={`w-4 h-4 ${isCur ? 'text-[#D84040]' : 'text-[#b8a5a5]'}`} />
+                <Icon className={`w-4 h-4 ${isCur ? 'text-[var(--theme-primary)]' : 'text-slate-500 dark:text-[#b8a5a5]'}`} />
                 <span>{tab.label}</span>
               </button>
             );
@@ -317,14 +341,14 @@ export default function SettingsPage({ onBack, defaultSavePath, onSaveSuccess, a
                       onChange={(e) => setSettings({ ...settings, defaultDownloadPath: e.target.value })}
                       InputProps={{
                         readOnly: true,
-                        startAdornment: <Folder className="w-4 h-4 text-[#D84040] mr-2 shrink-0" />,
+                        startAdornment: <Folder className="w-4 h-4 text-[var(--theme-primary)] mr-2 shrink-0" />,
                         className: '!bg-[#140e0e] !text-xs !text-[#EEEEEE] font-mono-stat border border-[#8E1616]/30 rounded-lg'
                       }}
                     />
                     <Button
                       variant="contained"
                       onClick={handleBrowseFolder}
-                      className="!bg-[#8E1616] hover:!bg-[#D84040] !text-[#EEEEEE] !text-xs !px-4 !py-2 shrink-0 font-medium"
+                      className="!bg-[#8E1616] hover:!bg-[#D84040] !text-white !text-xs !px-4 !py-2 shrink-0 font-medium"
                     >
                       Browse...
                     </Button>
@@ -438,8 +462,8 @@ export default function SettingsPage({ onBack, defaultSavePath, onSaveSuccess, a
                       checked={settings.autoStartDownloads}
                       onChange={(e) => setSettings({ ...settings, autoStartDownloads: e.target.checked })}
                       sx={{
-                        '& .MuiSwitch-switchBase.Mui-checked': { color: '#D84040' },
-                        '& .MuiSwitch-switchBase.Mui-checked + .MuiSwitch-track': { backgroundColor: '#8E1616' }
+                        '& .MuiSwitch-switchBase.Mui-checked': { color: 'var(--theme-primary)' },
+                        '& .MuiSwitch-switchBase.Mui-checked + .MuiSwitch-track': { backgroundColor: 'var(--theme-primary)', opacity: 0.6 }
                       }}
                     />
                   </div>
@@ -457,8 +481,8 @@ export default function SettingsPage({ onBack, defaultSavePath, onSaveSuccess, a
                       checked={settings.organizeByCategory}
                       onChange={(e) => setSettings({ ...settings, organizeByCategory: e.target.checked })}
                       sx={{
-                        '& .MuiSwitch-switchBase.Mui-checked': { color: '#D84040' },
-                        '& .MuiSwitch-switchBase.Mui-checked + .MuiSwitch-track': { backgroundColor: '#8E1616' }
+                        '& .MuiSwitch-switchBase.Mui-checked': { color: 'var(--theme-primary)' },
+                        '& .MuiSwitch-switchBase.Mui-checked + .MuiSwitch-track': { backgroundColor: 'var(--theme-primary)', opacity: 0.6 }
                       }}
                     />
                   </div>
@@ -476,10 +500,185 @@ export default function SettingsPage({ onBack, defaultSavePath, onSaveSuccess, a
                       checked={Boolean(settings.startWithSystem)}
                       onChange={(e) => setSettings({ ...settings, startWithSystem: e.target.checked })}
                       sx={{
-                        '& .MuiSwitch-switchBase.Mui-checked': { color: '#D84040' },
-                        '& .MuiSwitch-switchBase.Mui-checked + .MuiSwitch-track': { backgroundColor: '#8E1616' }
+                        '& .MuiSwitch-switchBase.Mui-checked': { color: 'var(--theme-primary)' },
+                        '& .MuiSwitch-switchBase.Mui-checked + .MuiSwitch-track': { backgroundColor: 'var(--theme-primary)', opacity: 0.6 }
                       }}
                     />
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* APPEARANCE & THEMES */}
+            {activeTab === 'appearance' && (
+              <div className="space-y-6">
+                <div>
+                  <h2 className="text-base font-bold text-slate-800 dark:text-[#EEEEEE] flex items-center gap-2">
+                    <Palette className="w-5 h-5 text-[var(--theme-primary)]" />
+                    Appearance & Themes
+                  </h2>
+                  <p className="text-xs text-slate-500 dark:text-[#b8a5a5] mt-0.5">
+                    Customize color modes and select from curated color palettes.
+                  </p>
+                </div>
+
+                {/* Section 1: Color Scheme Mode */}
+                <div className="p-4 rounded-xl bg-[#1D1616] border border-[#8E1616]/30 space-y-3.5">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <div className="text-xs font-semibold text-slate-800 dark:text-[#EEEEEE]">Theme Mode</div>
+                      <div className="text-[11px] text-slate-500 dark:text-[#b8a5a5]">
+                        Choose your interface brightness mode. System default adapts dynamically to your OS theme.
+                      </div>
+                    </div>
+                    <span className="text-[10px] font-mono uppercase bg-slate-100 dark:bg-[#140e0e] text-[var(--theme-primary)] border border-slate-200 dark:border-[#8E1616]/40 px-2 py-0.5 rounded-full font-bold">
+                      Active: {effectiveMode === 'dark' ? 'Dark' : 'Light'}
+                    </span>
+                  </div>
+
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 pt-1">
+                    {/* System Default */}
+                    <button
+                      type="button"
+                      onClick={() => setThemeMode('system')}
+                      className={`p-3 rounded-xl border text-left flex flex-col justify-between transition-all cursor-pointer ${
+                        themeMode === 'system'
+                          ? '!border-[var(--theme-primary)] bg-[var(--theme-secondary-subtle)] shadow-md'
+                          : 'border-slate-200 dark:border-[#8E1616]/30 bg-white dark:bg-[#140e0e] hover:border-[var(--theme-border-accent)] hover:bg-slate-50 dark:hover:bg-[#1D1616]'
+                      }`}
+                    >
+                      <div className="flex items-center justify-between w-full mb-2">
+                        <Monitor className={`w-5 h-5 ${themeMode === 'system' ? 'text-[var(--theme-primary)]' : 'text-slate-400 dark:text-[#b8a5a5]'}`} />
+                        {themeMode === 'system' && (
+                          <span className="w-2 h-2 rounded-full" style={{ backgroundColor: 'var(--theme-primary)' }} />
+                        )}
+                      </div>
+                      <div>
+                        <div className={`text-xs font-bold ${themeMode === 'system' ? 'text-[var(--theme-primary)] dark:text-white' : 'text-slate-800 dark:text-[#EEEEEE]'}`}>
+                          System Default
+                        </div>
+                        <div className="text-[10px] text-slate-500 dark:text-[#b8a5a5] mt-0.5 leading-tight">
+                          Sync with operating system appearance
+                        </div>
+                      </div>
+                    </button>
+
+                    {/* Dark Mode */}
+                    <button
+                      type="button"
+                      onClick={() => setThemeMode('dark')}
+                      className={`p-3 rounded-xl border text-left flex flex-col justify-between transition-all cursor-pointer ${
+                        themeMode === 'dark'
+                          ? '!border-[var(--theme-primary)] bg-[var(--theme-secondary-subtle)] shadow-md'
+                          : 'border-slate-200 dark:border-[#8E1616]/30 bg-white dark:bg-[#140e0e] hover:border-[var(--theme-border-accent)] hover:bg-slate-50 dark:hover:bg-[#1D1616]'
+                      }`}
+                    >
+                      <div className="flex items-center justify-between w-full mb-2">
+                        <Moon className={`w-5 h-5 ${themeMode === 'dark' ? 'text-[var(--theme-primary)]' : 'text-slate-400 dark:text-[#b8a5a5]'}`} />
+                        {themeMode === 'dark' && (
+                          <span className="w-2 h-2 rounded-full" style={{ backgroundColor: 'var(--theme-primary)' }} />
+                        )}
+                      </div>
+                      <div>
+                        <div className={`text-xs font-bold ${themeMode === 'dark' ? 'text-[var(--theme-primary)] dark:text-white' : 'text-slate-800 dark:text-[#EEEEEE]'}`}>
+                          Dark Mode
+                        </div>
+                        <div className="text-[10px] text-slate-500 dark:text-[#b8a5a5] mt-0.5 leading-tight">
+                          High contrast deep dark aesthetic
+                        </div>
+                      </div>
+                    </button>
+
+                    {/* Light Mode */}
+                    <button
+                      type="button"
+                      onClick={() => setThemeMode('light')}
+                      className={`p-3 rounded-xl border text-left flex flex-col justify-between transition-all cursor-pointer ${
+                        themeMode === 'light'
+                          ? '!border-[var(--theme-primary)] bg-[var(--theme-secondary-subtle)] shadow-md'
+                          : 'border-slate-200 dark:border-[#8E1616]/30 bg-white dark:bg-[#140e0e] hover:border-[var(--theme-border-accent)] hover:bg-slate-50 dark:hover:bg-[#1D1616]'
+                      }`}
+                    >
+                      <div className="flex items-center justify-between w-full mb-2">
+                        <Sun className={`w-5 h-5 ${themeMode === 'light' ? 'text-[var(--theme-primary)]' : 'text-slate-400 dark:text-[#b8a5a5]'}`} />
+                        {themeMode === 'light' && (
+                          <span className="w-2 h-2 rounded-full" style={{ backgroundColor: 'var(--theme-primary)' }} />
+                        )}
+                      </div>
+                      <div>
+                        <div className={`text-xs font-bold ${themeMode === 'light' ? 'text-[var(--theme-primary)] dark:text-white' : 'text-slate-800 dark:text-[#EEEEEE]'}`}>
+                          Light Mode
+                        </div>
+                        <div className="text-[10px] text-slate-500 dark:text-[#b8a5a5] mt-0.5 leading-tight">
+                          Clean, crisp daytime interface
+                        </div>
+                      </div>
+                    </button>
+                  </div>
+                </div>
+
+                {/* Section 2: Curated Theme Palettes */}
+                <div className="p-4 rounded-xl bg-[#1D1616] border border-[#8E1616]/30 space-y-3.5">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <div className="text-xs font-semibold text-slate-800 dark:text-[#EEEEEE]">Curated Color Palettes</div>
+                      <div className="text-[11px] text-slate-500 dark:text-[#b8a5a5]">
+                        Select from 8 color palettes tailored for maximum visual aesthetic.
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 pt-1">
+                    {THEME_PRESETS.map((preset) => {
+                      const isSelected = themePreset === preset.id;
+                      return (
+                        <button
+                          key={preset.id}
+                          type="button"
+                          onClick={() => setThemePreset(preset.id)}
+                          className={`p-3 rounded-xl border text-left flex flex-col justify-between transition-all cursor-pointer relative overflow-hidden group ${
+                            isSelected
+                              ? '!border-[var(--theme-primary)] bg-[var(--theme-secondary-subtle)] shadow-md ring-1 ring-[var(--theme-primary)]'
+                              : 'border-slate-200 dark:border-[#8E1616]/30 bg-white dark:bg-[#140e0e] hover:border-[var(--theme-border-accent)] hover:bg-slate-50 dark:hover:bg-[#1A1212]'
+                          }`}
+                        >
+                          <div className="flex items-center justify-between mb-2">
+                            <div className="flex items-center gap-1.5">
+                              <span
+                                className="w-4 h-4 rounded-full border border-white/20 shadow-sm shrink-0"
+                                style={{ backgroundColor: preset.primary }}
+                              />
+                              <span
+                                className="w-3 h-3 rounded-full border border-white/20 shadow-sm -ml-2 shrink-0 opacity-80"
+                                style={{ backgroundColor: preset.secondary }}
+                              />
+                            </div>
+                            {isSelected && (
+                              <span
+                                className="flex items-center justify-center w-4 h-4 rounded-full text-white shadow-sm"
+                                style={{ backgroundColor: 'var(--theme-primary)' }}
+                              >
+                                <Check className="w-2.5 h-2.5" />
+                              </span>
+                            )}
+                          </div>
+                          <div>
+                            <div className={`text-xs font-bold ${isSelected ? 'text-[var(--theme-primary)] dark:text-white' : 'text-slate-800 dark:text-[#EEEEEE]'}`}>
+                              {preset.name}
+                            </div>
+                            <div className="text-[10px] text-slate-500 dark:text-[#b8a5a5] mt-0.5 line-clamp-1">
+                              {preset.description}
+                            </div>
+                          </div>
+                          <div
+                            className="h-1 w-full rounded-full mt-2.5 opacity-70"
+                            style={{
+                              background: `linear-gradient(90deg, ${preset.secondary}, ${preset.primary})`
+                            }}
+                          />
+                        </button>
+                      );
+                    })}
                   </div>
                 </div>
               </div>
@@ -498,17 +697,17 @@ export default function SettingsPage({ onBack, defaultSavePath, onSaveSuccess, a
                 {/* Bridge Server Status Card */}
                 <div className="p-4 rounded-xl bg-[#1D1616] border border-[#8E1616]/30 flex items-center justify-between">
                   <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 rounded-xl bg-[#281919] border border-[#8E1616]/40 flex items-center justify-center">
-                      <Globe className="w-5 h-5 text-[#D84040]" />
+                    <div className="w-10 h-10 rounded-xl bg-[var(--theme-secondary-subtle)] border border-[var(--theme-border-accent)] flex items-center justify-center">
+                      <Globe className="w-5 h-5 text-[var(--theme-primary)]" />
                     </div>
                     <div>
                       <div className="flex items-center gap-2">
-                        <span className="text-xs font-semibold text-[#EEEEEE]">Local Extension Bridge Server</span>
-                        <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] bg-emerald-500/10 text-emerald-400 border border-emerald-500/30">
-                          <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" /> Active
+                        <span className="text-xs font-semibold text-slate-800 dark:text-[#EEEEEE]">Local Extension Bridge Server</span>
+                        <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] bg-emerald-500/10 text-emerald-500 dark:text-emerald-400 border border-emerald-500/30 font-medium">
+                          <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 dark:bg-emerald-400 animate-pulse" /> Active
                         </span>
                       </div>
-                      <div className="text-[11px] text-[#b8a5a5] font-mono-stat mt-0.5">
+                      <div className="text-[11px] text-slate-500 dark:text-[#b8a5a5] font-mono-stat mt-0.5">
                         Listening on http://127.0.0.1:{settings.bridgePort || 9580}
                       </div>
                     </div>
@@ -527,8 +726,8 @@ export default function SettingsPage({ onBack, defaultSavePath, onSaveSuccess, a
                     checked={settings.autoCapturePrompt}
                     onChange={(e) => setSettings({ ...settings, autoCapturePrompt: e.target.checked })}
                     sx={{
-                      '& .MuiSwitch-switchBase.Mui-checked': { color: '#D84040' },
-                      '& .MuiSwitch-switchBase.Mui-checked + .MuiSwitch-track': { backgroundColor: '#8E1616' }
+                      '& .MuiSwitch-switchBase.Mui-checked': { color: 'var(--theme-primary)' },
+                      '& .MuiSwitch-switchBase.Mui-checked + .MuiSwitch-track': { backgroundColor: 'var(--theme-primary)', opacity: 0.6 }
                     }}
                   />
                 </div>
@@ -556,7 +755,7 @@ export default function SettingsPage({ onBack, defaultSavePath, onSaveSuccess, a
                               );
                             }
                           }}
-                          className="!bg-[#D84040] hover:!bg-[#8E1616] !text-white !text-xs !py-1 !px-3 shrink-0 !font-semibold"
+                          className="btn-theme-primary !text-white !text-xs !py-1 !px-3 shrink-0 !font-semibold rounded-lg"
                         >
                           Download (.zip)
                         </Button>
@@ -566,7 +765,7 @@ export default function SettingsPage({ onBack, defaultSavePath, onSaveSuccess, a
                           startIcon={<Copy className="w-3.5 h-3.5" />}
                           onClick={() =>
                             copyToClipboard(
-                              'https://github.com/ziard47/voltrex_loader/releases/download/v1.0.0/voltrex-loader-browser-extension.zip',
+                              'https://github.com/ziard47/voltrex_loader/releases/download/v1.1.0/voltrex-loader-browser-extension.zip',
                               'Download link copied to clipboard!'
                             )
                           }
@@ -626,8 +825,8 @@ export default function SettingsPage({ onBack, defaultSavePath, onSaveSuccess, a
                       checked={settings.notifyOnComplete}
                       onChange={(e) => setSettings({ ...settings, notifyOnComplete: e.target.checked })}
                       sx={{
-                        '& .MuiSwitch-switchBase.Mui-checked': { color: '#D84040' },
-                        '& .MuiSwitch-switchBase.Mui-checked + .MuiSwitch-track': { backgroundColor: '#8E1616' }
+                        '& .MuiSwitch-switchBase.Mui-checked': { color: 'var(--theme-primary)' },
+                        '& .MuiSwitch-switchBase.Mui-checked + .MuiSwitch-track': { backgroundColor: 'var(--theme-primary)', opacity: 0.6 }
                       }}
                     />
                   </div>
@@ -645,8 +844,8 @@ export default function SettingsPage({ onBack, defaultSavePath, onSaveSuccess, a
                       checked={settings.soundOnComplete}
                       onChange={(e) => setSettings({ ...settings, soundOnComplete: e.target.checked })}
                       sx={{
-                        '& .MuiSwitch-switchBase.Mui-checked': { color: '#D84040' },
-                        '& .MuiSwitch-switchBase.Mui-checked + .MuiSwitch-track': { backgroundColor: '#8E1616' }
+                        '& .MuiSwitch-switchBase.Mui-checked': { color: 'var(--theme-primary)' },
+                        '& .MuiSwitch-switchBase.Mui-checked + .MuiSwitch-track': { backgroundColor: 'var(--theme-primary)', opacity: 0.6 }
                       }}
                     />
                   </div>
@@ -655,7 +854,7 @@ export default function SettingsPage({ onBack, defaultSavePath, onSaveSuccess, a
                     <Button
                       size="small"
                       variant="outlined"
-                      startIcon={<Bell className="w-3.5 h-3.5 text-[#D84040]" />}
+                      startIcon={<Bell className="w-3.5 h-3.5 text-[var(--theme-primary)]" />}
                       onClick={handleTestNotification}
                       className="!border-[#8E1616]/40 !text-[#EEEEEE] hover:!bg-[#8E1616]/20 !text-xs !py-1 !px-3"
                     >
@@ -755,7 +954,7 @@ export default function SettingsPage({ onBack, defaultSavePath, onSaveSuccess, a
                 <div className="p-4 rounded-xl bg-[#1D1616] border border-[#8E1616]/30 space-y-4">
                   {/* Mode Select */}
                   <div>
-                    <label className="text-xs font-semibold text-[#EEEEEE] block mb-2">
+                    <label className="text-xs font-semibold text-slate-800 dark:text-[#EEEEEE] block mb-2">
                       Proxy Mode
                     </label>
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
@@ -785,25 +984,37 @@ export default function SettingsPage({ onBack, defaultSavePath, onSaveSuccess, a
                               setSettings({ ...settings, proxyMode: mode.id });
                               setProxyTestResult(null);
                             }}
-                            className={`p-3 rounded-lg text-left border transition-all ${
+                            className={`p-3 rounded-xl text-left border transition-all cursor-pointer ${
                               isSelected
-                                ? 'border-[#D84040] bg-[#8E1616]/20 shadow-sm shadow-[#D84040]/10'
-                                : 'border-[#8E1616]/20 bg-[#140e0e]/60 hover:border-[#8E1616]/50'
+                                ? '!border-[var(--theme-primary)] bg-[var(--theme-secondary-subtle)] shadow-sm ring-1 ring-[var(--theme-primary)]'
+                                : 'border-slate-200 dark:border-[#8E1616]/20 bg-white dark:bg-[#140e0e]/60 hover:border-[var(--theme-border-accent)]'
                             }`}
                           >
-                            <div className="flex items-center justify-between mb-1">
-                              <span className={`text-xs font-bold ${isSelected ? 'text-[#EEEEEE]' : 'text-[#b8a5a5]'}`}>
+                            <div className="flex items-center justify-between mb-1.5">
+                              <span className={`text-xs font-bold ${
+                                isSelected
+                                  ? 'text-[var(--theme-primary)] dark:text-white'
+                                  : 'text-slate-800 dark:text-[#EEEEEE]'
+                              }`}>
                                 {mode.title}
                               </span>
                               <div
-                                className={`w-3.5 h-3.5 rounded-full border flex items-center justify-center ${
-                                  isSelected ? 'border-[#D84040] bg-[#D84040]' : 'border-[#8E1616]/40'
+                                className={`w-3.5 h-3.5 rounded-full border flex items-center justify-center transition-colors ${
+                                  isSelected
+                                    ? '!border-[var(--theme-primary)] !bg-[var(--theme-primary)]'
+                                    : 'border-slate-400 dark:border-[#8E1616]/40'
                                 }`}
                               >
                                 {isSelected && <div className="w-1.5 h-1.5 rounded-full bg-white" />}
                               </div>
                             </div>
-                            <p className="text-[11px] text-[#b8a5a5]/80 leading-relaxed">{mode.desc}</p>
+                            <p className={`text-[11px] leading-relaxed ${
+                              isSelected
+                                ? 'text-slate-700 dark:text-[#d1c2c2] font-medium'
+                                : 'text-slate-600 dark:text-[#b8a5a5]'
+                            }`}>
+                              {mode.desc}
+                            </p>
                           </button>
                         );
                       })}
@@ -816,7 +1027,7 @@ export default function SettingsPage({ onBack, defaultSavePath, onSaveSuccess, a
                       <div className="grid grid-cols-1 md:grid-cols-4 gap-3">
                         {/* Protocol */}
                         <div>
-                          <label className="text-xs font-semibold text-[#EEEEEE] block mb-1">
+                          <label className="text-xs font-semibold text-slate-800 dark:text-[#EEEEEE] block mb-1">
                             Protocol
                           </label>
                           <Select
@@ -826,8 +1037,8 @@ export default function SettingsPage({ onBack, defaultSavePath, onSaveSuccess, a
                             onChange={(e) => setSettings({ ...settings, proxyProtocol: e.target.value })}
                             className="!bg-[#140e0e] !text-xs !text-[#EEEEEE] border border-[#8E1616]/30 rounded-lg"
                             sx={{
-                              color: '#EEEEEE',
-                              '.MuiSvgIcon-root': { color: '#D84040' },
+                              color: 'inherit',
+                              '.MuiSvgIcon-root': { color: 'var(--theme-primary)' },
                               '.MuiOutlinedInput-notchedOutline': { borderColor: 'transparent' }
                             }}
                           >
@@ -912,8 +1123,8 @@ export default function SettingsPage({ onBack, defaultSavePath, onSaveSuccess, a
                             checked={!!settings.proxyAuth}
                             onChange={(e) => setSettings({ ...settings, proxyAuth: e.target.checked })}
                             sx={{
-                              '& .MuiSwitch-switchBase.Mui-checked': { color: '#D84040' },
-                              '& .MuiSwitch-switchBase.Mui-checked + .MuiSwitch-track': { backgroundColor: '#8E1616' }
+                              '& .MuiSwitch-switchBase.Mui-checked': { color: 'var(--theme-primary)' },
+                              '& .MuiSwitch-switchBase.Mui-checked + .MuiSwitch-track': { backgroundColor: 'var(--theme-primary)', opacity: 0.6 }
                             }}
                           />
                         </div>
@@ -1017,22 +1228,33 @@ export default function SettingsPage({ onBack, defaultSavePath, onSaveSuccess, a
                   </div>
                   <div>
                     <h3 className="text-lg font-bold text-[#EEEEEE]">
-                      VOLTREX <span className="text-[#D84040]">LOADER</span>
+                      VOLTREX <span className="text-[var(--theme-primary)]">LOADER</span>
                     </h3>
                     <p className="text-xs text-[#b8a5a5] mt-1">Version {appVersion} (Production Release)</p>
-                    {onOpenWhatsNew && (
-                      <div className="pt-2">
+                    <div className="pt-2 flex items-center justify-center gap-2 flex-wrap">
+                      {onOpenWhatsNew && (
                         <Button
                           size="small"
                           variant="outlined"
                           onClick={onOpenWhatsNew}
-                          startIcon={<Sparkles className="w-3.5 h-3.5 text-[#D84040]" />}
-                          className="!border-[#8E1616]/50 hover:!border-[#D84040] !text-[#EEEEEE] !text-xs !py-1 !px-3 !rounded-lg"
+                          startIcon={<Sparkles className="w-3.5 h-3.5 text-[var(--theme-primary)]" />}
+                          className="border border-[var(--theme-border-accent)] hover:!border-[var(--theme-primary)] hover:!text-[var(--theme-primary)] hover:!bg-[var(--theme-secondary-subtle)] text-[#EEEEEE] !text-xs !py-1 !px-3 rounded-lg"
                         >
                           What's New in v{appVersion}
                         </Button>
-                      </div>
-                    )}
+                      )}
+                      {onOpenSetupWizard && (
+                        <Button
+                          size="small"
+                          variant="outlined"
+                          onClick={onOpenSetupWizard}
+                          startIcon={<Rocket className="w-3.5 h-3.5 text-[var(--theme-primary)]" />}
+                          className="border border-[var(--theme-border-accent)] hover:!border-[var(--theme-primary)] hover:!text-[var(--theme-primary)] hover:!bg-[var(--theme-secondary-subtle)] text-[#EEEEEE] !text-xs !py-1 !px-3 rounded-lg"
+                        >
+                          Run Setup Wizard
+                        </Button>
+                      )}
+                    </div>
                   </div>
 
                   <p className="text-xs text-[#b8a5a5] max-w-md mx-auto leading-relaxed">
@@ -1041,8 +1263,8 @@ export default function SettingsPage({ onBack, defaultSavePath, onSaveSuccess, a
 
                   <div className="pt-2 border-t border-[#8E1616]/20 flex items-center justify-center gap-2 text-[11px] text-[#b8a5a5]">
                     <span>Crafted by <strong className="text-[#EEEEEE]">Mohomed Ziard</strong></span>
-                    <span className="text-[#8E1616]">•</span>
-                    <span className="text-[#D84040] font-semibold">Voltrex Digital</span>
+                    <span className="text-[var(--theme-primary)]">•</span>
+                    <span className="text-[var(--theme-primary)] font-semibold">Voltrex Digital</span>
                   </div>
                 </div>
               </div>
@@ -1060,10 +1282,10 @@ export default function SettingsPage({ onBack, defaultSavePath, onSaveSuccess, a
       >
         <div
           style={{
-            backgroundColor: '#1D1616',
-            color: '#EEEEEE',
-            border: '1px solid rgba(216, 64, 64, 0.5)',
-            boxShadow: '0 10px 25px -5px rgba(0, 0, 0, 0.7), 0 8px 10px -6px rgba(0, 0, 0, 0.7)'
+            backgroundColor: 'var(--theme-bg-surface)',
+            color: 'var(--theme-text-primary)',
+            border: '1px solid var(--theme-border-accent)',
+            boxShadow: '0 10px 25px -5px rgba(0, 0, 0, 0.3)'
           }}
           className="flex items-center gap-2.5 px-4 py-2.5 rounded-xl text-xs font-semibold backdrop-blur-md"
         >

@@ -2,11 +2,33 @@
 @tailwind components;
 @tailwind utilities;
 
+:root {
+  --theme-bg-base: #1D1616;
+  --theme-bg-surface: #140e0e;
+  --theme-bg-sidebar: #1A1212;
+  --theme-bg-card: #261e1e;
+  --theme-bg-input: #140e0e;
+  --theme-bg-subtle: rgba(255, 255, 255, 0.05);
+  --theme-bg-hover: #2e2020;
+  --theme-primary: #D84040;
+  --theme-primary-hover: #b02525;
+  --theme-primary-rgb: 216, 64, 64;
+  --theme-secondary: #8E1616;
+  --theme-secondary-rgb: 142, 22, 22;
+  --theme-secondary-subtle: rgba(142, 22, 22, 0.25);
+  --theme-primary-glow: rgba(216, 64, 64, 0.3);
+  --theme-border: rgba(142, 22, 22, 0.35);
+  --theme-border-accent: rgba(216, 64, 64, 0.45);
+  --theme-text-primary: #EEEEEE;
+  --theme-text-muted: #b8a5a5;
+}
+
 @layer base {
   body {
     font-family: 'Outfit', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-    background-color: #1D1616;
-    color: #EEEEEE;
+    background-color: var(--theme-bg-base);
+    color: var(--theme-text-primary);
+    transition: background-color 0.2s ease, color 0.2s ease;
   }
 
   button,
@@ -17,38 +39,689 @@
   }
 }
 
-/* Custom scrollbar styling in dark/crimson palette */
+/* Custom scrollbar styling linked to active theme */
 ::-webkit-scrollbar {
   width: 6px;
   height: 6px;
 }
 
 ::-webkit-scrollbar-track {
-  background: #181212;
+  background: var(--theme-bg-surface);
 }
 
 ::-webkit-scrollbar-thumb {
-  background: rgba(142, 22, 22, 0.45);
+  background: var(--theme-border-accent);
   border-radius: 4px;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: rgba(216, 64, 64, 0.65);
+  background: var(--theme-primary);
 }
 
-/* Glassmorphism helpers with crimson accents */
+/* Glassmorphism helpers linked to active theme */
 .glass-panel {
-  background: rgba(29, 22, 22, 0.88);
+  background: var(--theme-bg-surface);
   backdrop-filter: blur(16px);
-  border: 1px solid rgba(142, 22, 22, 0.25);
+  border-color: var(--theme-border) !important;
 }
 
 .glass-card {
-  background: rgba(38, 28, 28, 0.7);
+  background: var(--theme-bg-card);
   backdrop-filter: blur(12px);
-  border: 1px solid rgba(216, 64, 64, 0.2);
+  border-color: var(--theme-border-accent) !important;
 }
 
 .font-mono-stat {
   font-family: 'JetBrains Mono', monospace;
 }
+
+/* ==========================================================================
+   Comprehensive Dynamic Theme Class Overrides
+   Catches standard classes, Tailwind '!'-prefixed classes, and attribute substrings
+   ========================================================================== */
+
+/* Base Backgrounds (Window root, settings panel, main table background) */
+[class*="bg-[#1D1616]"],
+.bg-\[\#1D1616\],
+.\!bg-\[\#1D1616\],
+.bg-\[\#160f0f\],
+.\!bg-\[\#160f0f\],
+[class*="bg-[#160f0f]"] {
+  background-color: var(--theme-bg-base) !important;
+}
+
+/* Surface Backgrounds (Header bars, panels, table cells, modal bodies) */
+[class*="bg-[#140e0e]"],
+.bg-\[\#140e0e\],
+.\!bg-\[\#140e0e\],
+.bg-\[\#140f0f\],
+.\!bg-\[\#140f0f\],
+.bg-\[\#181212\],
+.\!bg-\[\#181212\],
+.bg-\[\#1b1212\],
+.\!bg-\[\#1b1212\],
+[class*="bg-[#1b1212]"] {
+  background-color: var(--theme-bg-surface) !important;
+}
+
+/* Sidebar & Sticky Header Backgrounds */
+[class*="bg-[#1A1212]"],
+.bg-\[\#1A1212\],
+.\!bg-\[\#1A1212\],
+.bg-\[\#171010\],
+.\!bg-\[\#171010\],
+[class*="bg-[#171010]"] {
+  background-color: var(--theme-bg-sidebar) !important;
+}
+
+/* Card, Paper & Elevated Elements */
+[class*="bg-[#261e1e]"],
+.bg-\[\#261e1e\],
+.\!bg-\[\#261e1e\],
+.bg-\[\#241717\],
+.\!bg-\[\#241717\],
+[class*="bg-[#241717]"] {
+  background-color: var(--theme-bg-card) !important;
+}
+
+/* Hover & Subtle Highlight Backgrounds */
+[class*="bg-[#2d1e1e]"],
+.bg-\[\#2d1e1e\],
+.\!bg-\[\#2d1e1e\],
+[class*="bg-[#2e2020]"],
+.bg-\[\#2e2020\],
+.\!bg-\[\#2e2020\],
+[class*="bg-[#2e1c1c]"],
+.bg-\[\#2e1c1c\],
+.\!bg-\[\#2e1c1c\],
+[class*="bg-[#2e1d1d]"],
+.bg-\[\#2e1d1d\],
+.\!bg-\[\#2e1d1d\],
+[class*="bg-[#261a1a]"],
+.bg-\[\#261a1a\],
+.\!bg-\[\#261a1a\],
+[class*="bg-[#271a1a]"],
+.bg-\[\#271a1a\],
+.\!bg-\[\#271a1a\],
+[class*="bg-[#1f1515]"],
+.bg-\[\#1f1515\],
+.\!bg-\[\#1f1515\] {
+  background-color: var(--theme-bg-hover) !important;
+}
+
+/* Filter Badge in Sidebar */
+[class*="bg-[#291b1b]"],
+.bg-\[\#291b1b\],
+.\!bg-\[\#291b1b\] {
+  background-color: var(--theme-bg-hover) !important;
+}
+
+/* Hover Pseudo-classes */
+.hover\:bg-\[\#2d1e1e\]:hover,
+.hover\:\!bg-\[\#2d1e1e\]:hover,
+.hover\:bg-\[\#2e2020\]:hover,
+.hover\:\!bg-\[\#2e2020\]:hover,
+.hover\:bg-\[\#2e1c1c\]:hover,
+.hover\:\!bg-\[\#2e1c1c\]:hover,
+.hover\:bg-\[\#2e1d1d\]:hover,
+.hover\:\!bg-\[\#2e1d1d\]:hover,
+.hover\:bg-\[\#261a1a\]:hover,
+.hover\:\!bg-\[\#261a1a\]:hover,
+.hover\:bg-\[\#271a1a\]:hover,
+.hover\:\!bg-\[\#271a1a\]:hover {
+  background-color: var(--theme-bg-hover) !important;
+}
+
+/* Primary Accents */
+.bg-\[\#D84040\],
+.\!bg-\[\#D84040\] {
+  background-color: var(--theme-primary) !important;
+}
+
+/* Enforce crisp white text ONLY on filled primary action buttons */
+.btn-theme-primary,
+.MuiButton-contained,
+.MuiButton-containedPrimary,
+.MuiButton-containedSecondary,
+button.bg-\[\#D84040\]:not([class*="/"]):not([class*="hover"]),
+button.\!bg-\[\#D84040\]:not([class*="/"]):not([class*="hover"]),
+[role="button"].bg-\[\#D84040\]:not([class*="/"]):not([class*="hover"]) {
+  color: #ffffff !important;
+}
+
+.btn-theme-primary *,
+.MuiButton-contained *,
+.MuiButton-containedPrimary *,
+.MuiButton-containedSecondary *,
+button.bg-\[\#D84040\]:not([class*="/"]):not([class*="hover"]) *,
+button.\!bg-\[\#D84040\]:not([class*="/"]):not([class*="hover"]) * {
+  color: #ffffff !important;
+}
+
+/* Dynamic Theme Action Buttons */
+.btn-theme-primary {
+  background-color: var(--theme-primary) !important;
+  color: #ffffff !important;
+  box-shadow: 0 4px 14px var(--theme-primary-glow) !important;
+  border: 1px solid transparent !important;
+  transition: all 0.15s ease-in-out !important;
+}
+
+.btn-theme-primary:hover,
+button.btn-theme-primary:hover {
+  background-color: var(--theme-primary-hover) !important;
+  box-shadow: 0 6px 20px var(--theme-primary-glow) !important;
+  color: #ffffff !important;
+}
+
+.btn-theme-primary *,
+.btn-theme-primary:hover * {
+  color: #ffffff !important;
+}
+
+.btn-theme-outlined {
+  background-color: var(--theme-bg-surface) !important;
+  color: var(--theme-text-primary) !important;
+  border: 1px solid var(--theme-border) !important;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.15) !important;
+  transition: all 0.15s ease-in-out !important;
+}
+
+html.light .btn-theme-outlined {
+  background-color: #ffffff !important;
+  border-color: rgba(0, 0, 0, 0.15) !important;
+  color: #0f172a !important;
+}
+
+.btn-theme-outlined:hover,
+button.btn-theme-outlined:hover {
+  background-color: var(--theme-bg-hover) !important;
+  border-color: var(--theme-primary) !important;
+  color: var(--theme-primary) !important;
+}
+
+.btn-theme-outlined:hover * {
+  color: var(--theme-primary) !important;
+}
+
+.btn-theme-outlined .theme-icon {
+  color: var(--theme-primary) !important;
+}
+
+.text-\[\#D84040\],
+.\!text-\[\#D84040\],
+[class*="text-[#D84040]"],
+svg[class*="text-[#D84040]"] {
+  color: var(--theme-primary) !important;
+  stroke: currentColor !important;
+}
+
+.hover\:\!text-\[\#D84040\]:hover,
+.hover\:text-\[\#D84040\]:hover {
+  color: var(--theme-primary) !important;
+}
+
+/* Comprehensive Primary Hover Overrides */
+button.btn-theme-primary:hover,
+button.bg-\[\#D84040\]:hover,
+button.\!bg-\[\#D84040\]:hover,
+button[class*="bg-[#D84040]"]:hover,
+button.bg-\[\#8E1616\]:hover,
+button.\!bg-\[\#8E1616\]:hover,
+button[class*="bg-[#8E1616]"]:hover,
+.hover\:\!bg-\[\#8E1616\]:hover,
+.hover\:bg-\[\#8E1616\]:hover,
+.hover\:\!bg-\[\#D84040\]:hover,
+.hover\:bg-\[\#D84040\]:hover,
+.MuiButton-contained:hover,
+.MuiButton-containedPrimary:hover {
+  background-color: var(--theme-primary-hover) !important;
+}
+
+/* Secondary Accents */
+.bg-\[\#8E1616\],
+.\!bg-\[\#8E1616\] {
+  background-color: var(--theme-secondary) !important;
+}
+
+.text-\[\#8E1616\],
+.\!text-\[\#8E1616\] {
+  color: var(--theme-secondary) !important;
+}
+
+[class*="bg-[#8E1616]/20"],
+[class*="bg-[#8E1616]/25"],
+[class*="bg-[#8E1616]/30"],
+[class*="bg-[#8E1616]/40"],
+.bg-\[\#8E1616\]\/20,
+.\!bg-\[\#8E1616\]\/20,
+.bg-\[\#8E1616\]\/25,
+.\!bg-\[\#8E1616\]\/25,
+.bg-\[\#8E1616\]\/30,
+.\!bg-\[\#8E1616\]\/30,
+.bg-\[\#8E1616\]\/40,
+.\!bg-\[\#8E1616\]\/40 {
+  background-color: var(--theme-secondary-subtle) !important;
+}
+
+.hover\:\!bg-\[\#8E1616\]\/20:hover {
+  background-color: var(--theme-secondary-subtle) !important;
+}
+
+/* Border Overrides */
+[class*="border-[#8E1616]"],
+.border-\[\#8E1616\]\/20,
+.\!border-\[\#8E1616\]\/20,
+.border-\[\#8E1616\]\/25,
+.\!border-\[\#8E1616\]\/25,
+.border-\[\#8E1616\]\/30,
+.\!border-\[\#8E1616\]\/30,
+.border-\[\#8E1616\]\/35,
+.\!border-\[\#8E1616\]\/35,
+.border-\[\#8E1616\]\/40,
+.\!border-\[\#8E1616\]\/40,
+.border-\[\#8E1616\]\/50,
+.\!border-\[\#8E1616\]\/50,
+.border-\[\#8E1616\]\/60,
+.\!border-\[\#8E1616\]\/60,
+.border-\[\#8E1616\]\/70,
+.\!border-\[\#8E1616\]\/70 {
+  border-color: var(--theme-border) !important;
+}
+
+[class*="border-[#D84040]"],
+.border-\[\#D84040\]\/20,
+.\!border-\[\#D84040\]\/20,
+.border-\[\#D84040\]\/30,
+.\!border-\[\#D84040\]\/30,
+.border-\[\#D84040\]\/40,
+.\!border-\[\#D84040\]\/40,
+.border-\[\#D84040\]\/50,
+.\!border-\[\#D84040\]\/50,
+.border-\[\#D84040\]\/60,
+.\!border-\[\#D84040\]\/60 {
+  border-color: var(--theme-border-accent) !important;
+}
+
+/* Text Colors */
+.text-\[\#EEEEEE\],
+.\!text-\[\#EEEEEE\],
+span.text-\[\#EEEEEE\],
+div.text-\[\#EEEEEE\],
+p.text-\[\#EEEEEE\],
+h1.text-\[\#EEEEEE\],
+h2.text-\[\#EEEEEE\],
+h3.text-\[\#EEEEEE\] {
+  color: var(--theme-text-primary) !important;
+}
+
+.text-\[\#b8a5a5\],
+.\!text-\[\#b8a5a5\],
+span.text-\[\#b8a5a5\],
+div.text-\[\#b8a5a5\],
+p.text-\[\#b8a5a5\] {
+  color: var(--theme-text-muted) !important;
+}
+
+/* Shadow Highlights */
+.shadow-\[\#8E1616\]\/30,
+.shadow-\[\#D84040\]\/30,
+.shadow-\[\#D84040\]\/20,
+.shadow-\[\#D84040\]\/10 {
+  box-shadow: 0 4px 14px var(--theme-primary-glow) !important;
+}
+
+/* ==========================================================================
+   Light Mode Specific Enhancements
+   Ensures pristine clarity, contrast, and clean white input surfaces
+   ========================================================================== */
+
+html.light {
+  color-scheme: light;
+}
+
+html.light body {
+  background-color: var(--theme-bg-base);
+  color: var(--theme-text-primary);
+}
+
+/* Glass panel adjustments in Light Mode */
+html.light .glass-panel {
+  background: rgba(255, 255, 255, 0.95);
+  border-color: rgba(0, 0, 0, 0.08) !important;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.04);
+}
+
+html.light .glass-card {
+  background: #ffffff;
+  border-color: rgba(0, 0, 0, 0.1) !important;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+}
+
+/* Dialog and Modal Windows in Light Mode */
+html.light .MuiDialog-paper {
+  background-color: #ffffff !important;
+  border: 1px solid rgba(0, 0, 0, 0.12) !important;
+  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.12), 0 8px 10px -6px rgba(0, 0, 0, 0.08) !important;
+  color: var(--theme-text-primary) !important;
+}
+
+html.light .MuiDialogTitle-root {
+  background-color: var(--theme-bg-sidebar) !important;
+  border-bottom-color: rgba(0, 0, 0, 0.08) !important;
+}
+
+html.light .MuiDialogContent-root {
+  background-color: #ffffff !important;
+}
+
+html.light .MuiDialogActions-root {
+  background-color: var(--theme-bg-sidebar) !important;
+  border-top-color: rgba(0, 0, 0, 0.08) !important;
+}
+
+/* Form Inputs, TextFields, Textareas, and Selects in Light Mode */
+html.light input,
+html.light textarea,
+html.light select,
+html.light .MuiInputBase-root,
+html.light .MuiInputBase-input,
+html.light .MuiSelect-select {
+  background-color: #ffffff !important;
+  color: var(--theme-text-primary) !important;
+  -webkit-text-fill-color: var(--theme-text-primary) !important;
+}
+
+html.light input::placeholder,
+html.light textarea::placeholder {
+  color: var(--theme-text-muted) !important;
+  -webkit-text-fill-color: var(--theme-text-muted) !important;
+  opacity: 0.75;
+}
+
+html.light .MuiSelect-icon {
+  color: var(--theme-text-muted) !important;
+}
+
+html.light .MuiMenu-paper {
+  background-color: #ffffff !important;
+  border: 1px solid rgba(0, 0, 0, 0.12) !important;
+  color: var(--theme-text-primary) !important;
+}
+
+html.light .MuiMenuItem-root {
+  color: var(--theme-text-primary) !important;
+}
+
+html.light .MuiMenuItem-root:hover {
+  background-color: var(--theme-bg-hover) !important;
+}
+
+/* Download Table in Light Mode */
+html.light .MuiTableHead-root th,
+html.light th.MuiTableCell-head {
+  background-color: var(--theme-bg-sidebar) !important;
+  color: var(--theme-text-muted) !important;
+  border-bottom-color: rgba(0, 0, 0, 0.1) !important;
+}
+
+html.light td.MuiTableCell-body {
+  border-bottom-color: rgba(0, 0, 0, 0.06) !important;
+  color: var(--theme-text-primary) !important;
+}
+
+/* Disable table row hover in download list table */
+.MuiTable-root tbody tr:not([class*="!bg-"]):hover,
+.MuiTable-root tbody tr.MuiTableRow-root:not([class*="!bg-"]):hover,
+html.light .MuiTable-root tbody tr:not([class*="!bg-"]):hover {
+  background-color: transparent !important;
+}
+
+/* Settings Cards in Light Mode */
+html.light aside {
+  background-color: var(--theme-bg-sidebar) !important;
+  border-color: rgba(0, 0, 0, 0.08) !important;
+}
+
+html.light main {
+  background-color: var(--theme-bg-base) !important;
+}
+
+/* Sidebar Navigation & Count Chips */
+aside button span[class*="rounded-full"] {
+  font-weight: 700 !important;
+}
+
+/* When a sidebar item is selected, the badge is filled with primary theme color and white text */
+aside button[class*="bg-[#8E1616]"] span[class*="rounded-full"],
+aside button[class*="border-[#D84040]"] span[class*="rounded-full"],
+button[class*="bg-[#8E1616]/25"] span[class*="rounded-full"] {
+  background-color: var(--theme-primary) !important;
+  color: #ffffff !important;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.25) !important;
+}
+
+/* Light Mode: Unselected sidebar count badges */
+html.light aside button:not([class*="border-[#D84040]"]) span[class*="rounded-full"],
+html.light span[class*="bg-[#291b1b]"] {
+  background-color: rgba(0, 0, 0, 0.08) !important;
+  color: #334155 !important;
+}
+
+/* Light Mode: Selected Sidebar Items & Settings Tabs Visibility */
+html.light aside button[class*="border-[#D84040]"],
+html.light aside button[class*="border-[var(--theme-border-accent)]"],
+html.light aside button[class*="bg-[#8E1616]"],
+html.light aside button[class*="bg-[var(--theme-secondary-subtle)]"] {
+  background-color: var(--theme-secondary-subtle) !important;
+  border-color: var(--theme-border-accent) !important;
+  color: var(--theme-primary) !important;
+}
+
+html.light aside button[class*="border-[#D84040]"] span:not([class*="rounded-full"]),
+html.light aside button[class*="border-[var(--theme-border-accent)]"] span:not([class*="rounded-full"]),
+html.light aside button[class*="bg-[#8E1616]"] span:not([class*="rounded-full"]),
+html.light aside button[class*="bg-[var(--theme-secondary-subtle)]"] span:not([class*="rounded-full"]) {
+  color: var(--theme-primary) !important;
+  font-weight: 700 !important;
+}
+
+html.light aside button[class*="border-[#D84040]"] svg,
+html.light aside button[class*="border-[var(--theme-border-accent)]"] svg,
+html.light aside button[class*="bg-[#8E1616]"] svg,
+html.light aside button[class*="bg-[var(--theme-secondary-subtle)]"] svg {
+  color: var(--theme-primary) !important;
+}
+
+/* Light Mode: Selected count chips */
+html.light aside button span[class*="rounded-full"][style*="background-color: var(--theme-primary)"],
+html.light aside button[class*="border-[#D84040]"] span[class*="rounded-full"],
+html.light aside button[class*="bg-[#8E1616]"] span[class*="rounded-full"] {
+  background-color: var(--theme-primary) !important;
+  color: #ffffff !important;
+  font-weight: 700 !important;
+}
+
+/* Light Mode: Unselected Sidebar text contrast */
+html.light aside button:not([class*="border-[#D84040]"]):not([class*="border-[var(--theme-border-accent)]"]) {
+  color: #334155 !important;
+}
+
+html.light aside button:not([class*="border-[#D84040]"]):not([class*="border-[var(--theme-border-accent)]"]) span {
+  color: #334155 !important;
+}
+
+/* Light Mode: Sidebar navigation hover */
+html.light aside button:not([class*="border-[#D84040]"]):not([class*="border-[var(--theme-border-accent)]"]):hover {
+  background-color: #f1f5f9 !important;
+  color: #0f172a !important;
+}
+
+/* Light Mode: Theme Mode Selection Cards */
+html.light button[class*="!border-[#D84040]"],
+html.light button[class*="!border-[var(--theme-primary)]"] {
+  background-color: var(--theme-secondary-subtle) !important;
+  border-color: var(--theme-primary) !important;
+}
+
+html.light button[class*="!border-[#D84040]"] .text-xs,
+html.light button[class*="!border-[var(--theme-primary)]"] .text-xs {
+  color: var(--theme-primary) !important;
+  font-weight: 700 !important;
+}
+
+html.light button[class*="!border-[#D84040]"] .text-\[10px\],
+html.light button[class*="!border-[var(--theme-primary)]"] .text-\[10px\] {
+  color: #475569 !important;
+  font-weight: 500 !important;
+}
+
+html.light button[class*="!border-[#D84040]"] svg,
+html.light button[class*="!border-[var(--theme-primary)]"] svg {
+  color: var(--theme-primary) !important;
+}
+
+/* Light Mode: Outlined Buttons Base & Hover */
+html.light button.MuiButton-outlined,
+html.light button[class*="border-"]:not([class*="bg-[#D84040]"]):not([class*="bg-[#8E1616]"]):not([class*="!bg-[#D84040]"]):not([class*="!bg-[#8E1616]"]) {
+  background-color: #ffffff !important;
+  color: #0f172a !important;
+  border-color: rgba(0, 0, 0, 0.16) !important;
+}
+
+html.light button.MuiButton-outlined:hover,
+html.light button.btn-theme-outlined:hover {
+  background-color: #f1f5f9 !important;
+  border-color: var(--theme-primary) !important;
+  color: var(--theme-primary) !important;
+}
+
+html.light button.MuiButton-outlined:hover *,
+html.light button.btn-theme-outlined:hover * {
+  color: var(--theme-primary) !important;
+}
+
+/* Sidebar Count Chips: Enforce Crisp Text Contrast Always */
+.sidebar-count-chip.chip-selected,
+button:hover .sidebar-count-chip.chip-selected,
+button:hover span.sidebar-count-chip.chip-selected,
+html.light button:hover .sidebar-count-chip.chip-selected,
+html.light .sidebar-count-chip.chip-selected {
+  background-color: var(--theme-primary) !important;
+  color: #ffffff !important;
+  -webkit-text-fill-color: #ffffff !important;
+}
+
+html.light button:hover .sidebar-count-chip.chip-unselected,
+html.light .sidebar-count-chip.chip-unselected {
+  color: #0f172a !important;
+  -webkit-text-fill-color: #0f172a !important;
+}
+
+/* Light Mode: Icon Buttons Hover */
+html.light .MuiIconButton-root:hover {
+  background-color: #f1f5f9 !important;
+}
+
+/* Empty box in Batch Modal */
+html.light div[class*="bg-[#140e0e]/50"] {
+  background-color: var(--theme-bg-sidebar) !important;
+  border-color: rgba(0, 0, 0, 0.12) !important;
+}
+
+/* ==========================================================================
+   Dynamic Theme Controls: Switches, Select Dropdowns & Containers
+   ========================================================================== */
+
+/* Dynamic MUI Switch Toggles */
+.MuiSwitch-root .MuiSwitch-switchBase.Mui-checked {
+  color: var(--theme-primary) !important;
+}
+.MuiSwitch-root .MuiSwitch-switchBase.Mui-checked + .MuiSwitch-track {
+  background-color: var(--theme-primary) !important;
+  opacity: 0.65 !important;
+}
+
+/* Dynamic MUI Select Dropdown Icons / Arrows */
+.MuiSelect-icon,
+.MuiNativeSelect-icon,
+.MuiSelect-iconOutlined,
+.MuiSvgIcon-root.MuiSelect-icon,
+svg[data-testid*="ArrowDropDownIcon"] {
+  color: var(--theme-primary) !important;
+}
+
+/* Dynamic Icon Containers */
+[class*="bg-[#281919]"],
+.bg-\[\#281919\] {
+  background-color: var(--theme-secondary-subtle) !important;
+  border-color: var(--theme-border-accent) !important;
+}
+
+/* Dynamic MUI Checkbox Theme Overrides */
+.MuiCheckbox-root {
+  color: var(--theme-border-accent) !important;
+}
+.MuiCheckbox-root.Mui-checked,
+.MuiCheckbox-root.MuiCheckbox-indeterminate {
+  color: var(--theme-primary) !important;
+}
+.MuiCheckbox-root:hover {
+  background-color: var(--theme-secondary-subtle) !important;
+}
+
+/* Dynamic Outlined, Dismiss & Cancel Button Hover */
+button.MuiButton-outlined:hover,
+button.btn-theme-outlined:hover,
+button[class*="hover:!bg-[#2e1d1d]"]:hover,
+button[class*="hover:!bg-[#2e1c1c]"]:hover,
+button[class*="hover:!bg-[#8E1616]/"]:hover,
+button[class*="hover:!bg-[#8e1616]/"]:hover {
+  border-color: var(--theme-primary) !important;
+  color: var(--theme-primary) !important;
+  background-color: var(--theme-secondary-subtle) !important;
+}
+button.MuiButton-outlined:hover *,
+button.btn-theme-outlined:hover * {
+  color: var(--theme-primary) !important;
+}
+
+/* Primary Action Buttons Solid Theme Hover */
+.btn-theme-primary:hover,
+button.btn-theme-primary:hover,
+button.MuiButton-containedPrimary:hover,
+button.MuiButton-contained:not(.MuiButton-colorSecondary):hover {
+  background-color: var(--theme-primary-hover) !important;
+  color: #ffffff !important;
+  border-color: transparent !important;
+}
+.btn-theme-primary:hover *,
+button.btn-theme-primary:hover *,
+button.MuiButton-containedPrimary:hover *,
+button.MuiButton-contained:not(.MuiButton-colorSecondary):hover * {
+  color: #ffffff !important;
+}
+
+/* Dynamic Context Menu & Menu Item Hover */
+.MuiMenu-paper {
+  background-color: var(--theme-bg-card) !important;
+  border: 1px solid var(--theme-border-accent) !important;
+  color: var(--theme-text-primary) !important;
+}
+
+.MuiMenu-paper .MuiMenuItem-root {
+  color: var(--theme-text-primary) !important;
+}
+
+.MuiMenu-paper .MuiMenuItem-root:hover,
+.MuiMenuItem-root:hover,
+[class*="hover:!bg-[#8E1616]"]:hover,
+[class*="hover:!bg-[#8e1616]"]:hover {
+  background-color: var(--theme-secondary-subtle) !important;
+}
+
+/* Checkbox native accent */
+input[type="checkbox"] {
+  accent-color: var(--theme-primary) !important;
+}
+

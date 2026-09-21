@@ -216,13 +216,12 @@ export default function DownloadTable({
               return (
                 <TableRow
                   key={task.id}
-                  hover
                   onContextMenu={(e) => handleContextMenu(e, task)}
                   onClick={() => setSelectedId(task.id)}
                   onDoubleClick={() => (isCompleted ? onOpenFile(task.id) : onShowInFolder(task.id))}
-                  className={`hover:!bg-[#261a1a] transition-colors group cursor-pointer ${
+                  className={`transition-colors group cursor-pointer ${
                     selectedId === task.id || contextMenu?.task?.id === task.id
-                      ? '!bg-[#8E1616]/20'
+                      ? '!bg-[var(--theme-secondary-subtle)]'
                       : ''
                   }`}
                 >
@@ -337,31 +336,31 @@ export default function DownloadTable({
             : undefined
         }
         PaperProps={{
-          className: '!bg-[#1D1616] !border !border-[#8E1616]/50 !rounded-xl !shadow-2xl !py-1 !min-w-[240px] !text-[#EEEEEE]'
+          className: '!bg-[var(--theme-bg-card)] !border !border-[var(--theme-border-accent)] !rounded-xl !shadow-2xl !py-1 !min-w-[240px] !text-[var(--theme-text-primary)]'
         }}
         MenuListProps={{
-          className: '!py-0'
+          className: '!py-0 !bg-transparent'
         }}
       >
         {contextMenu?.task && (
           <>
             {/* Context Menu Header */}
-            <div className="px-3 py-2.5 border-b border-[#8E1616]/30 bg-[#160f0f] rounded-t-xl">
+            <div className="px-3 py-2.5 border-b border-[var(--theme-border-accent)] bg-[var(--theme-bg-surface)] rounded-t-xl">
               <div className="flex items-center gap-2">
-                <div className="w-6 h-6 rounded bg-[#241717] border border-[#8E1616]/40 flex items-center justify-center flex-shrink-0">
+                <div className="w-6 h-6 rounded bg-[var(--theme-secondary-subtle)] border border-[var(--theme-border-accent)] flex items-center justify-center flex-shrink-0 text-[var(--theme-primary)]">
                   {renderFileIcon(contextMenu.task.fileName, contextMenu.task.mimeType)}
                 </div>
-                <span className="text-xs font-semibold text-[#EEEEEE] truncate max-w-[200px]" title={contextMenu.task.fileName}>
+                <span className="text-xs font-semibold text-[var(--theme-text-primary)] truncate max-w-[200px]" title={contextMenu.task.fileName}>
                   {contextMenu.task.fileName}
                 </span>
               </div>
-              <div className="text-[10px] text-[#b8a5a5] mt-1.5 flex justify-between items-center font-mono-stat">
+              <div className="text-[10px] text-[var(--theme-text-muted)] mt-1.5 flex justify-between items-center font-mono-stat">
                 <span>
                   {contextMenu.task.totalBytes > 0
                     ? `${formatBytes(contextMenu.task.downloadedBytes)} / ${formatBytes(contextMenu.task.totalBytes)}`
                     : formatBytes(contextMenu.task.downloadedBytes)}
                 </span>
-                <span className="uppercase text-[9px] font-bold text-[#D84040]">
+                <span className="uppercase text-[9px] font-bold text-[var(--theme-primary)]">
                   {contextMenu.task.status}
                 </span>
               </div>
@@ -375,7 +374,7 @@ export default function DownloadTable({
                     onPause(contextMenu.task.id);
                     handleCloseContextMenu();
                   }}
-                  className="!text-xs !text-amber-400 hover:!bg-[#8E1616]/20 !py-2 !px-3"
+                  className="!text-xs !text-amber-400 hover:!bg-[var(--theme-secondary-subtle)] !py-2 !px-3"
                 >
                   <Pause className="w-4 h-4 mr-2.5 text-amber-400" />
                   <span>Pause Download</span>
@@ -388,7 +387,7 @@ export default function DownloadTable({
                     onResume(contextMenu.task.id);
                     handleCloseContextMenu();
                   }}
-                  className="!text-xs !text-emerald-400 hover:!bg-[#8E1616]/20 !py-2 !px-3"
+                  className="!text-xs !text-emerald-400 hover:!bg-[var(--theme-secondary-subtle)] !py-2 !px-3"
                 >
                   <Play className="w-4 h-4 mr-2.5 text-emerald-400" />
                   <span>{contextMenu.task.status === 'ERROR' ? 'Retry Download' : 'Resume Download'}</span>
@@ -401,7 +400,7 @@ export default function DownloadTable({
                     onCancel(contextMenu.task.id);
                     handleCloseContextMenu();
                   }}
-                  className="!text-xs !text-[#b8a5a5] hover:!text-[#D84040] hover:!bg-[#8E1616]/20 !py-2 !px-3"
+                  className="!text-xs !text-[#b8a5a5] hover:!text-[var(--theme-primary)] hover:!bg-[var(--theme-secondary-subtle)] !py-2 !px-3"
                 >
                   <XSquare className="w-4 h-4 mr-2.5 text-rose-400" />
                   <span>Cancel Download</span>
@@ -409,7 +408,7 @@ export default function DownloadTable({
               )}
             </div>
 
-            <div className="border-t border-[#8E1616]/30" />
+            <div className="border-t border-[var(--theme-border-accent)]" />
 
             {/* File & Folder Actions */}
             <div className="py-1">
@@ -419,7 +418,7 @@ export default function DownloadTable({
                   onOpenFile(contextMenu.task.id);
                   handleCloseContextMenu();
                 }}
-                className="!text-xs !text-[#EEEEEE] disabled:!text-[#6b5555] hover:!bg-[#8E1616]/20 !py-2 !px-3"
+                className="!text-xs !text-[#EEEEEE] disabled:!text-[#6b5555] hover:!text-[var(--theme-primary)] hover:!bg-[var(--theme-secondary-subtle)] !py-2 !px-3"
               >
                 <ExternalLink className="w-4 h-4 mr-2.5 text-sky-400" />
                 <span>Open File</span>
@@ -430,14 +429,14 @@ export default function DownloadTable({
                   onShowInFolder(contextMenu.task.id);
                   handleCloseContextMenu();
                 }}
-                className="!text-xs !text-[#EEEEEE] hover:!bg-[#8E1616]/20 !py-2 !px-3"
+                className="!text-xs !text-[#EEEEEE] hover:!text-[var(--theme-primary)] hover:!bg-[var(--theme-secondary-subtle)] !py-2 !px-3"
               >
                 <Folder className="w-4 h-4 mr-2.5 text-amber-400" />
                 <span>Open Containing Folder</span>
               </MenuItem>
             </div>
 
-            <div className="border-t border-[#8E1616]/30" />
+            <div className="border-t border-[var(--theme-border-accent)]" />
 
             {/* Clipboard options */}
             <div className="py-1">
@@ -446,9 +445,9 @@ export default function DownloadTable({
                   copyToClipboard(contextMenu.task.url, 'Download link copied to clipboard');
                   handleCloseContextMenu();
                 }}
-                className="!text-xs !text-[#EEEEEE] hover:!bg-[#8E1616]/20 !py-2 !px-3"
+                className="!text-xs !text-[#EEEEEE] hover:!text-[var(--theme-primary)] hover:!bg-[var(--theme-secondary-subtle)] !py-2 !px-3"
               >
-                <Copy className="w-4 h-4 mr-2.5 text-[#b8a5a5]" />
+                <Copy className="w-4 h-4 mr-2.5 text-[var(--theme-primary)]" />
                 <span>Copy Download Link</span>
               </MenuItem>
 
@@ -458,15 +457,15 @@ export default function DownloadTable({
                     copyToClipboard(contextMenu.task.savePath, 'File path copied to clipboard');
                     handleCloseContextMenu();
                   }}
-                  className="!text-xs !text-[#EEEEEE] hover:!bg-[#8E1616]/20 !py-2 !px-3"
+                  className="!text-xs !text-[#EEEEEE] hover:!text-[var(--theme-primary)] hover:!bg-[var(--theme-secondary-subtle)] !py-2 !px-3"
                 >
-                  <FileText className="w-4 h-4 mr-2.5 text-[#b8a5a5]" />
+                  <FileText className="w-4 h-4 mr-2.5 text-[var(--theme-primary)]" />
                   <span>Copy Save Path</span>
                 </MenuItem>
               )}
             </div>
 
-            <div className="border-t border-[#8E1616]/30" />
+            <div className="border-t border-[var(--theme-border-accent)]" />
 
             {/* Priority Selector */}
             <div className="px-3 pt-2 pb-1 text-[10px] font-semibold text-[#b8a5a5] uppercase tracking-wider">
@@ -474,10 +473,10 @@ export default function DownloadTable({
             </div>
             <div className="flex px-3 pb-2 gap-1.5">
               {[
-                { key: 'HIGH', label: 'High', icon: ArrowUp, color: 'text-[#D84040] border-[#D84040]/40 hover:bg-[#8E1616]/25' },
-                { key: 'NORMAL', label: 'Normal', icon: Minus, color: 'text-[#EEEEEE] border-[#8E1616]/40 hover:bg-[#8E1616]/20' },
-                { key: 'LOW', label: 'Low', icon: ArrowDown, color: 'text-emerald-400 border-emerald-500/30 hover:bg-emerald-500/10' }
-              ].map(({ key, label, icon: Icon, color }) => {
+                { key: 'HIGH', label: 'High', icon: ArrowUp },
+                { key: 'NORMAL', label: 'Normal', icon: Minus },
+                { key: 'LOW', label: 'Low', icon: ArrowDown }
+              ].map(({ key, label, icon: Icon }) => {
                 const isCur = (contextMenu.task.priority || 'NORMAL') === key;
                 return (
                   <button
@@ -487,7 +486,9 @@ export default function DownloadTable({
                       handleCloseContextMenu();
                     }}
                     className={`flex-1 py-1 px-1.5 rounded text-[10px] font-medium border transition-colors flex items-center justify-center gap-1 ${
-                      isCur ? '!border-[#D84040] !bg-[#8E1616]/50 !text-[#EEEEEE] font-bold shadow-sm' : color
+                      isCur
+                        ? '!border-[var(--theme-primary)] !bg-[var(--theme-primary)] !text-white font-bold shadow-sm'
+                        : 'border-[var(--theme-border-accent)] text-slate-400 dark:text-[#EEEEEE] hover:!border-[var(--theme-primary)] hover:!bg-[var(--theme-secondary-subtle)] hover:!text-[var(--theme-primary)]'
                     }`}
                   >
                     <Icon className="w-2.5 h-2.5" />
@@ -497,7 +498,7 @@ export default function DownloadTable({
               })}
             </div>
 
-            <div className="border-t border-[#8E1616]/30" />
+            <div className="border-t border-[var(--theme-border-accent)]" />
 
             {/* Removal & Deletion */}
             <div className="py-1">
@@ -506,7 +507,7 @@ export default function DownloadTable({
                   onDelete(contextMenu.task.id, false);
                   handleCloseContextMenu();
                 }}
-                className="!text-xs !text-[#b8a5a5] hover:!text-[#EEEEEE] hover:!bg-[#8E1616]/20 !py-2 !px-3"
+                className="!text-xs !text-[#b8a5a5] hover:!text-[#EEEEEE] hover:!bg-[var(--theme-secondary-subtle)] !py-2 !px-3"
               >
                 <Trash2 className="w-4 h-4 mr-2.5 text-[#b8a5a5]" />
                 <span>Remove from List</span>
@@ -518,10 +519,10 @@ export default function DownloadTable({
                   handleCloseContextMenu();
                   setDeleteModal({ open: true, task: taskToDelete, deleteDisk: true });
                 }}
-                className="!text-xs !text-[#D84040] hover:!bg-rose-500/15 !py-2 !px-3"
+                className="!text-xs !text-rose-400 hover:!bg-rose-500/15 !py-2 !px-3"
               >
-                <Trash2 className="w-4 h-4 mr-2.5 text-[#D84040]" />
-                <span className="text-[#D84040] font-medium">Delete File from Disk...</span>
+                <Trash2 className="w-4 h-4 mr-2.5 text-rose-400" />
+                <span className="text-rose-400 font-medium">Delete File from Disk...</span>
               </MenuItem>
             </div>
           </>
@@ -548,15 +549,15 @@ export default function DownloadTable({
                 onChange={(e) => setDeleteModal({ ...deleteModal, deleteDisk: e.target.checked })}
                 size="small"
                 sx={{
-                  color: '#8E1616',
+                  color: 'var(--theme-border-accent)',
                   '&.Mui-checked': {
-                    color: '#D84040'
+                    color: 'var(--theme-primary)'
                   }
                 }}
               />
             }
             label={
-              <span className="text-xs text-[#EEEEEE]/90">
+              <span className="text-xs text-slate-700 dark:text-[#EEEEEE]/90">
                 Also permanently delete the downloaded file from disk
               </span>
             }
@@ -565,15 +566,16 @@ export default function DownloadTable({
         <DialogActions className="!px-6 !py-3 !border-t !border-[#8E1616]/30">
           <Button
             size="small"
+            variant="outlined"
             onClick={() => setDeleteModal({ open: false, task: null, deleteDisk: false })}
-            className="!text-[#b8a5a5] hover:!text-white"
+            className="border border-[var(--theme-border-accent)] text-slate-600 dark:text-[#b8a5a5] hover:!border-[var(--theme-primary)] hover:!text-[var(--theme-primary)] hover:!bg-[var(--theme-secondary-subtle)] !text-xs !py-1 !px-3 rounded-lg transition-all"
           >
             Cancel
           </Button>
           <Button
             size="small"
             variant="contained"
-            className="!bg-[#8E1616] hover:!bg-[#D84040] !text-[#EEEEEE] !font-medium"
+            className="!bg-[#8E1616] hover:!bg-[#D84040] !text-white !font-medium"
             onClick={() => {
               if (deleteModal.task) {
                 onDelete(deleteModal.task.id, deleteModal.deleteDisk);
@@ -595,10 +597,10 @@ export default function DownloadTable({
       >
         <div
           style={{
-            backgroundColor: '#1D1616',
-            color: '#EEEEEE',
-            border: '1px solid rgba(216, 64, 64, 0.5)',
-            boxShadow: '0 10px 25px -5px rgba(0, 0, 0, 0.7), 0 8px 10px -6px rgba(0, 0, 0, 0.7)'
+            backgroundColor: 'var(--theme-bg-surface)',
+            color: 'var(--theme-text-primary)',
+            border: '1px solid var(--theme-border-accent)',
+            boxShadow: '0 10px 25px -5px rgba(0, 0, 0, 0.3)'
           }}
           className="flex items-center gap-2.5 px-4 py-2.5 rounded-xl text-xs font-semibold backdrop-blur-md"
         >

@@ -14,10 +14,13 @@ import {
   PanelLeftOpen,
   Settings,
   Layers,
-  X
+  X,
+  Sun,
+  Moon
 } from 'lucide-react';
 import Logo from './Logo';
 import { formatSpeed } from '../utils/formatters';
+import { useTheme } from '../context/ThemeContext';
 
 export default function TopBar({
   onAddClick,
@@ -35,6 +38,8 @@ export default function TopBar({
   currentView,
   onViewChange
 }) {
+  const { effectiveMode, toggleMode, themeMode } = useTheme();
+
   return (
     <header className="glass-panel border-b border-[#8E1616]/30 px-2.5 sm:px-4 py-1.5 sm:py-2 flex items-center justify-between gap-2 sm:gap-3 select-none shrink-0 min-h-[50px] sm:min-h-[54px] bg-[#1D1616]/95 backdrop-blur-md">
       {/* Left: Sidebar Toggle, Logo & Brand */}
@@ -43,7 +48,7 @@ export default function TopBar({
           <IconButton
             size="small"
             onClick={onToggleSidebar}
-            className="!text-[#b8a5a5] hover:!text-[#EEEEEE] hover:!bg-[#2e2020] !p-1.5 rounded-lg transition-colors"
+            className="!text-slate-600 dark:!text-[#b8a5a5] hover:!text-slate-900 dark:hover:!text-[#EEEEEE] hover:!bg-slate-100 dark:hover:!bg-[#2e2020] !p-1.5 rounded-lg transition-colors"
           >
             {isSidebarCollapsed ? <PanelLeftOpen className="w-4 h-4" /> : <PanelLeftClose className="w-4 h-4" />}
           </IconButton>
@@ -77,12 +82,12 @@ export default function TopBar({
         <Button
           variant="contained"
           size="small"
-          startIcon={<Plus className="w-4 h-4" />}
+          startIcon={<Plus className="w-4 h-4" style={{ color: '#ffffff' }} />}
           onClick={onAddClick}
-          className="shadow-md shadow-[#8E1616]/30 !bg-[#D84040] hover:!bg-[#8E1616] !text-[#EEEEEE] !text-xs !py-1 !px-2.5 sm:!py-1.5 sm:!px-3.5 font-semibold whitespace-nowrap transition-all rounded-lg"
+          className="btn-theme-primary !text-white !text-xs !py-1 !px-2.5 sm:!py-1.5 sm:!px-3.5 font-semibold whitespace-nowrap rounded-lg"
         >
-          <span className="hidden sm:inline">Add URL</span>
-          <span className="sm:hidden">Add</span>
+          <span className="hidden sm:inline font-semibold">Add URL</span>
+          <span className="sm:hidden font-semibold">Add</span>
         </Button>
 
         {/* Secondary Action: Batch Download */}
@@ -90,24 +95,24 @@ export default function TopBar({
           <Button
             variant="outlined"
             size="small"
-            startIcon={<Layers className="w-3.5 h-3.5 text-[#D84040]" />}
+            startIcon={<Layers className="w-3.5 h-3.5" style={{ color: 'var(--theme-primary)' }} />}
             onClick={onAddBatchClick}
-            className="!bg-[#140e0e]/80 hover:!bg-[#2e1c1c] !border !border-[#8E1616]/50 !text-[#EEEEEE] !text-xs !py-1 !px-2 sm:!py-1.5 sm:!px-3 font-medium whitespace-nowrap transition-all rounded-lg"
+            className="btn-theme-outlined !text-xs !py-1 !px-2 sm:!py-1.5 sm:!px-3 font-medium whitespace-nowrap rounded-lg"
           >
             <span className="hidden lg:inline">Batch Download</span>
             <span className="lg:hidden">Batch</span>
           </Button>
         </Tooltip>
 
-        <div className="h-4 w-[1px] bg-[#8E1616]/30 mx-0.5 hidden xl:block" />
+        <div className="h-4 w-[1px] bg-slate-200 dark:bg-[#8E1616]/30 mx-0.5 hidden xl:block" />
 
         {/* Streamlined Queue Control Cluster */}
-        <div className="flex items-center bg-[#140e0e] border border-[#8E1616]/35 rounded-xl p-0.5 gap-0.5 shadow-inner">
+        <div className="flex items-center bg-white dark:bg-[#140e0e] border border-slate-200 dark:border-[#8E1616]/35 rounded-xl p-0.5 gap-0.5 shadow-sm">
           <Tooltip title="Resume all transfers" arrow>
             <button
               type="button"
               onClick={onResumeAll}
-              className="flex items-center gap-1 px-1.5 sm:px-2 py-1 rounded-lg text-xs font-medium text-emerald-400 hover:text-emerald-300 hover:bg-emerald-500/15 active:scale-95 transition-all cursor-pointer"
+              className="flex items-center gap-1 px-1.5 sm:px-2 py-1 rounded-lg text-xs font-medium text-emerald-500 dark:text-emerald-400 hover:text-emerald-600 dark:hover:text-emerald-300 hover:bg-emerald-500/15 active:scale-95 transition-all cursor-pointer"
             >
               <Play className="w-3.5 h-3.5 fill-current" />
               <span className="hidden 2xl:inline text-[11px]">Resume All</span>
@@ -118,7 +123,7 @@ export default function TopBar({
             <button
               type="button"
               onClick={onPauseAll}
-              className="flex items-center gap-1 px-1.5 sm:px-2 py-1 rounded-lg text-xs font-medium text-amber-400 hover:text-amber-300 hover:bg-amber-500/15 active:scale-95 transition-all cursor-pointer"
+              className="flex items-center gap-1 px-1.5 sm:px-2 py-1 rounded-lg text-xs font-medium text-amber-500 dark:text-amber-400 hover:text-amber-600 dark:hover:text-amber-300 hover:bg-amber-500/15 active:scale-95 transition-all cursor-pointer"
             >
               <Pause className="w-3.5 h-3.5 fill-current" />
               <span className="hidden 2xl:inline text-[11px]">Pause All</span>
@@ -129,20 +134,20 @@ export default function TopBar({
             <button
               type="button"
               onClick={onStopAll}
-              className="flex items-center gap-1 px-1.5 sm:px-2 py-1 rounded-lg text-xs font-medium text-rose-400 hover:text-rose-300 hover:bg-rose-500/15 active:scale-95 transition-all cursor-pointer"
+              className="flex items-center gap-1 px-1.5 sm:px-2 py-1 rounded-lg text-xs font-medium text-rose-500 dark:text-rose-400 hover:text-rose-600 dark:hover:text-rose-300 hover:bg-rose-500/15 active:scale-95 transition-all cursor-pointer"
             >
               <Square className="w-3.5 h-3.5 fill-current" />
               <span className="hidden 2xl:inline text-[11px]">Stop All</span>
             </button>
           </Tooltip>
 
-          <div className="h-3.5 w-[1px] bg-[#8E1616]/30 mx-0.5" />
+          <div className="h-3.5 w-[1px] bg-slate-200 dark:bg-[#8E1616]/30 mx-0.5" />
 
           <Tooltip title="Clear finished & cancelled downloads" arrow>
             <button
               type="button"
               onClick={onClearCompleted}
-              className="flex items-center gap-1 px-1.5 sm:px-2 py-1 rounded-lg text-xs font-medium text-[#b8a5a5] hover:text-[#EEEEEE] hover:bg-[#2e2020] active:scale-95 transition-all cursor-pointer"
+              className="flex items-center gap-1 px-1.5 sm:px-2 py-1 rounded-lg text-xs font-medium text-slate-500 dark:text-[#b8a5a5] hover:text-slate-800 dark:hover:text-[#EEEEEE] hover:bg-slate-100 dark:hover:bg-[#2e2020] active:scale-95 transition-all cursor-pointer"
             >
               <Trash2 className="w-3.5 h-3.5" />
               <span className="hidden 2xl:inline text-[11px]">Clear</span>
@@ -155,16 +160,19 @@ export default function TopBar({
       <div className="flex items-center gap-1.5 sm:gap-2 shrink-0">
         {/* Realtime Speed Badge */}
         <div
+          style={totalSpeed > 0 ? {
+            backgroundColor: 'var(--theme-secondary-subtle)',
+            borderColor: 'var(--theme-border-accent)'
+          } : {}}
           className={`flex items-center gap-1.5 px-2 sm:px-2.5 py-1 rounded-lg border transition-colors ${
             totalSpeed > 0
-              ? 'bg-[#8E1616]/20 border-[#D84040]/50 shadow-sm shadow-[#D84040]/10'
-              : 'bg-[#140e0e] border-[#8E1616]/30'
+              ? 'shadow-sm'
+              : 'bg-white dark:bg-[#140e0e] border-slate-200 dark:border-[var(--theme-border)] shadow-sm'
           }`}
         >
           <Activity
-            className={`w-3.5 h-3.5 ${
-              totalSpeed > 0 ? 'text-[#D84040] animate-pulse' : 'text-[#8E1616]'
-            }`}
+            style={{ color: 'var(--theme-primary)' }}
+            className={`w-3.5 h-3.5 ${totalSpeed > 0 ? 'animate-pulse' : 'opacity-70'}`}
           />
           <div className="flex flex-col">
             <span className="text-[8px] uppercase font-bold tracking-wider text-[#b8a5a5] leading-none hidden xl:block">
@@ -178,34 +186,57 @@ export default function TopBar({
 
         {/* Search / Filter with Smooth Expand & Clear Button */}
         <div className="relative flex items-center">
-          <Search className="w-3.5 h-3.5 text-[#b8a5a5] absolute left-2 sm:left-2.5 pointer-events-none" />
+          <Search className="w-3.5 h-3.5 text-slate-400 dark:text-[#b8a5a5] absolute left-2 sm:left-2.5 pointer-events-none" />
           <input
             type="text"
             placeholder="Filter..."
             value={searchQuery}
             onChange={(e) => onSearchChange(e.target.value)}
-            className="w-20 sm:w-28 md:w-36 focus:w-44 transition-all duration-200 pl-7 sm:pl-8 pr-6 sm:pr-7 py-1 text-xs bg-[#140e0e] text-[#EEEEEE] placeholder-[#8a7676] rounded-lg border border-[#8E1616]/30 focus:border-[#D84040]/60 focus:outline-none"
+            className="w-20 sm:w-28 md:w-36 focus:w-44 transition-all duration-200 pl-7 sm:pl-8 pr-6 sm:pr-7 py-1 text-xs bg-white dark:bg-[#140e0e] text-slate-800 dark:text-[#EEEEEE] placeholder-slate-400 dark:placeholder-[#8a7676] rounded-lg border border-slate-200 dark:border-[var(--theme-border)] focus:border-[var(--theme-primary)] focus:outline-none shadow-sm"
           />
           {searchQuery && (
             <button
               type="button"
               onClick={() => onSearchChange('')}
-              className="absolute right-1.5 text-[#b8a5a5] hover:text-[#EEEEEE] p-0.5 cursor-pointer"
+              className="absolute right-1.5 text-slate-400 dark:text-[#b8a5a5] hover:text-slate-700 dark:hover:text-[#EEEEEE] p-0.5 cursor-pointer"
             >
               <X className="w-3 h-3" />
             </button>
           )}
         </div>
 
+        {/* Quick Theme Mode Toggle */}
+        <Tooltip
+          title={`Theme Mode: ${themeMode === 'system' ? `System (${effectiveMode})` : effectiveMode === 'dark' ? 'Dark' : 'Light'} (Click to toggle)`}
+          arrow
+        >
+          <IconButton
+            size="small"
+            onClick={toggleMode}
+            className="!p-1.5 rounded-lg border !bg-white dark:!bg-[#140e0e] !border-slate-200 dark:!border-[var(--theme-border)] !text-slate-600 dark:!text-[#b8a5a5] hover:!text-slate-900 dark:hover:!text-[#EEEEEE] hover:!bg-slate-100 dark:hover:!bg-[#2e2020] transition-all shadow-sm"
+          >
+            {effectiveMode === 'dark' ? (
+              <Moon className="w-4 h-4 text-amber-300" />
+            ) : (
+              <Sun className="w-4 h-4 text-amber-500" />
+            )}
+          </IconButton>
+        </Tooltip>
+
         {/* Settings View Toggle */}
         <Tooltip title={currentView === 'settings' ? 'Back to Downloads' : 'Preferences & Settings'} arrow>
           <IconButton
             size="small"
             onClick={() => onViewChange?.(currentView === 'settings' ? 'downloads' : 'settings')}
-            className={`!p-1.5 rounded-lg border transition-all ${
+            style={currentView === 'settings' ? {
+              backgroundColor: 'var(--theme-secondary-subtle)',
+              borderColor: 'var(--theme-border-accent)',
+              color: 'var(--theme-primary)'
+            } : {}}
+            className={`!p-1.5 rounded-lg border transition-all shadow-sm ${
               currentView === 'settings'
-                ? '!bg-[#8E1616]/40 !border-[#D84040]/60 !text-[#D84040] shadow-sm shadow-[#D84040]/20'
-                : '!bg-[#140e0e] !border-[#8E1616]/30 !text-[#b8a5a5] hover:!text-[#EEEEEE] hover:!bg-[#2e2020] hover:!border-[#8E1616]/60'
+                ? ''
+                : '!bg-white dark:!bg-[#140e0e] !border-slate-200 dark:!border-[var(--theme-border)] !text-slate-600 dark:!text-[#b8a5a5] hover:!text-slate-900 dark:hover:!text-[#EEEEEE] hover:!bg-slate-100 dark:hover:!bg-[#2e2020]'
             }`}
           >
             <Settings className="w-4 h-4" />

@@ -458,6 +458,7 @@ let settingsPath = null;
 
 function getDefaultSettings() {
   return {
+    setupWizardCompleted: false,
     defaultDownloadPath: app.getPath('downloads'),
     startWithSystem: false,
     concurrency: 3,
@@ -480,7 +481,22 @@ function getDefaultSettings() {
     proxyAuth: false,
     proxyUsername: '',
     proxyPassword: '',
-    proxyBypass: '<local>'
+    proxyBypass: '<local>',
+    // Appearance & Custom Theme Settings
+    themeMode: 'system', // 'system' | 'dark' | 'light'
+    themePreset: 'crimson', // 'crimson' | 'cyber' | 'violet' | 'emerald' | 'amber' | 'sapphire' | 'rose' | 'slate' | 'custom'
+    customTheme: {
+      primary: '#D84040',
+      secondary: '#8E1616',
+      bgBase: '#1D1616',
+      bgSurface: '#140e0e'
+    },
+    darkReader: {
+      enabled: false,
+      brightness: 100,
+      contrast: 100,
+      sepia: 0
+    }
   };
 }
 

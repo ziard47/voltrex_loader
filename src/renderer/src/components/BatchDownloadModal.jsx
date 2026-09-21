@@ -444,11 +444,11 @@ export default function BatchDownloadModal({
             </div>
             <div className="flex items-center gap-1.5">
               <Button
-                variant="text"
+                variant="outlined"
                 size="small"
                 onClick={handlePasteFromClipboard}
-                startIcon={<ClipboardList className="w-3.5 h-3.5" />}
-                className="!text-[11px] !text-[#EEEEEE] hover:!bg-[#2e1d1d] !py-0.5 !px-2 normal-case"
+                startIcon={<ClipboardList className="w-3.5 h-3.5 text-[var(--theme-primary)]" />}
+                className="border border-[var(--theme-border-accent)] text-slate-700 dark:text-[#EEEEEE] hover:!border-[var(--theme-primary)] hover:!text-[var(--theme-primary)] hover:!bg-[var(--theme-secondary-subtle)] !text-[11px] !py-0.5 !px-2.5 normal-case rounded-lg font-medium transition-all"
               >
                 Paste Clipboard
               </Button>
@@ -461,7 +461,7 @@ export default function BatchDownloadModal({
                     setItems([]);
                     setPackageName('');
                   }}
-                  className="!text-[11px] !text-[#b8a5a5] hover:!text-[#EEEEEE] hover:!bg-[#2e1d1d] !py-0.5 !px-2 normal-case"
+                  className="!text-[11px] !text-[#b8a5a5] hover:!text-[var(--theme-primary)] hover:!bg-[var(--theme-secondary-subtle)] !py-0.5 !px-2 normal-case"
                 >
                   Clear
                 </Button>
@@ -513,14 +513,14 @@ export default function BatchDownloadModal({
                     checked={createSubfolder}
                     onChange={(e) => setCreateSubfolder(e.target.checked)}
                     sx={{
-                      color: '#8E1616',
-                      '&.Mui-checked': { color: '#D84040' },
+                      color: 'var(--theme-border-accent)',
+                      '&.Mui-checked': { color: 'var(--theme-primary)' },
                       padding: '2px 6px 2px 2px'
                     }}
                   />
                 }
                 label={
-                  <span className="text-[11px] text-[#EEEEEE]">
+                  <span className="text-[11px] text-slate-700 dark:text-[#EEEEEE]">
                     Create subfolder for package (Downloads all parts inside)
                   </span>
                 }
@@ -542,15 +542,15 @@ export default function BatchDownloadModal({
                 onChange={(e) => setSavePath(e.target.value)}
                 className="!bg-[#1D1616] !rounded-lg"
                 InputProps={{
-                  startAdornment: <HardDrive className="w-4 h-4 text-[#8E1616] mr-2 shrink-0" />,
-                  className: '!text-xs font-mono !text-[#EEEEEE] !h-10 border border-[#8E1616]/30'
+                  startAdornment: <HardDrive className="w-4 h-4 text-[var(--theme-primary)] mr-2 shrink-0" />,
+                  className: '!text-xs font-mono !text-[#EEEEEE] !h-10 border border-[var(--theme-border-accent)]'
                 }}
               />
               <Button
                 variant="outlined"
                 onClick={handleBrowseFolder}
                 startIcon={<FolderOpen className="w-3.5 h-3.5" />}
-                className="!h-10 !px-3 !shrink-0 !border-[#8E1616]/50 !text-[#EEEEEE] hover:!bg-[#2e1d1d] !text-xs font-medium whitespace-nowrap !rounded-lg"
+                className="!h-10 !px-3 !shrink-0 !border-[var(--theme-border-accent)] !text-[#EEEEEE] hover:!border-[var(--theme-primary)] hover:!text-[var(--theme-primary)] hover:!bg-[var(--theme-secondary-subtle)] !text-xs font-medium whitespace-nowrap !rounded-lg"
               >
                 Browse...
               </Button>
@@ -559,7 +559,7 @@ export default function BatchDownloadModal({
             {/* Destination Preview banner */}
             <div className="mt-2 text-[11px] text-[#b8a5a5] flex items-center gap-1.5 truncate">
               <span className="shrink-0 font-semibold text-[#EEEEEE]">Target:</span>
-              <span className="font-mono text-[#D84040] truncate bg-[#1D1616] px-1.5 py-0.5 rounded border border-[#8E1616]/30">
+              <span className="font-mono text-[var(--theme-primary)] truncate bg-[#1D1616] px-1.5 py-0.5 rounded border border-[var(--theme-border-accent)]">
                 {destinationPreview || 'Default Downloads'}
               </span>
             </div>
@@ -741,7 +741,7 @@ export default function BatchDownloadModal({
           variant="outlined"
           size="small"
           onClick={onClose}
-          className="!border-[#8E1616]/40 !text-[#b8a5a5] hover:!text-[#EEEEEE] hover:!bg-[#2e1d1d] !text-xs !py-1.5 !px-3"
+          className="border border-[var(--theme-border-accent)] text-slate-600 dark:text-[#b8a5a5] hover:!border-[var(--theme-primary)] hover:!text-[var(--theme-primary)] hover:!bg-[var(--theme-secondary-subtle)] !text-xs !py-1.5 !px-3 rounded-lg transition-all"
         >
           Cancel
         </Button>
@@ -752,7 +752,7 @@ export default function BatchDownloadModal({
             onClick={() => handleSubmit(false)}
             disabled={items.length === 0}
             startIcon={<Clock className="w-3.5 h-3.5" />}
-            className="!border-[#8E1616]/50 !text-[#b8a5a5] hover:!text-[#EEEEEE] hover:!bg-[#2e1d1d] !text-xs !py-1.5 !px-3 whitespace-nowrap"
+            className="border border-[var(--theme-border-accent)] text-slate-600 dark:text-[#b8a5a5] hover:!border-[var(--theme-primary)] hover:!text-[var(--theme-primary)] hover:!bg-[var(--theme-secondary-subtle)] !text-xs !py-1.5 !px-3 whitespace-nowrap rounded-lg transition-all"
           >
             Add All Paused
           </Button>
@@ -762,7 +762,7 @@ export default function BatchDownloadModal({
             onClick={() => handleSubmit(true)}
             disabled={items.length === 0}
             startIcon={<Download className="w-3.5 h-3.5" />}
-            className="shadow-md shadow-[#8E1616]/40 !bg-[#D84040] hover:!bg-[#8E1616] !text-[#EEEEEE] !text-xs !py-1.5 !px-4 font-semibold whitespace-nowrap"
+            className="btn-theme-primary !text-white !text-xs !py-1.5 !px-4 font-semibold whitespace-nowrap rounded-lg"
           >
             Download All {items.length > 0 ? `(${items.length})` : ''}
           </Button>

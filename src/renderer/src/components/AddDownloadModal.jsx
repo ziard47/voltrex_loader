@@ -409,15 +409,15 @@ export default function AddDownloadModal({
               onChange={(e) => setSavePath(e.target.value)}
               className="!bg-[#140e0e] !rounded-lg"
               InputProps={{
-                startAdornment: <HardDrive className="w-4 h-4 text-[#8E1616] mr-2 shrink-0" />,
-                className: '!text-xs font-mono !text-[#EEEEEE] !h-10 border border-[#8E1616]/30'
+                startAdornment: <HardDrive className="w-4 h-4 text-[var(--theme-primary)] mr-2 shrink-0" />,
+                className: '!text-xs font-mono !text-[#EEEEEE] !h-10 border border-[var(--theme-border-accent)]'
               }}
             />
             <Button
               variant="outlined"
               onClick={handleBrowseFolder}
               startIcon={<FolderOpen className="w-3.5 h-3.5" />}
-              className="!h-10 !px-4 !shrink-0 !border-[#8E1616]/50 !text-[#EEEEEE] hover:!bg-[#2e1d1d] !text-xs font-medium whitespace-nowrap !rounded-lg"
+              className="!h-10 !px-4 !shrink-0 !border-[var(--theme-border-accent)] !text-[#EEEEEE] hover:!border-[var(--theme-primary)] hover:!text-[var(--theme-primary)] hover:!bg-[var(--theme-secondary-subtle)] !text-xs font-medium whitespace-nowrap !rounded-lg"
             >
               Browse...
             </Button>
@@ -458,7 +458,7 @@ export default function AddDownloadModal({
           variant="outlined"
           size="small"
           onClick={onClose}
-          className="!border-[#8E1616]/40 !text-[#b8a5a5] hover:!text-[#EEEEEE] hover:!bg-[#2e1d1d] !text-xs !py-1.5 !px-3"
+          className="border border-[var(--theme-border-accent)] text-slate-600 dark:text-[#b8a5a5] hover:!border-[var(--theme-primary)] hover:!text-[var(--theme-primary)] hover:!bg-[var(--theme-secondary-subtle)] !text-xs !py-1.5 !px-3 rounded-lg transition-all"
         >
           Cancel
         </Button>
@@ -469,7 +469,7 @@ export default function AddDownloadModal({
             onClick={() => handleSubmit(false)}
             disabled={!url.trim()}
             startIcon={<Clock className="w-3.5 h-3.5" />}
-            className="!border-[#8E1616]/50 !text-[#b8a5a5] hover:!text-[#EEEEEE] hover:!bg-[#2e1d1d] !text-xs !py-1.5 !px-3 whitespace-nowrap"
+            className="border border-[var(--theme-border-accent)] text-slate-600 dark:text-[#b8a5a5] hover:!border-[var(--theme-primary)] hover:!text-[var(--theme-primary)] hover:!bg-[var(--theme-secondary-subtle)] !text-xs !py-1.5 !px-3 whitespace-nowrap rounded-lg transition-all"
           >
             Add Paused
           </Button>
@@ -479,7 +479,7 @@ export default function AddDownloadModal({
             onClick={() => handleSubmit(true)}
             disabled={!url.trim()}
             startIcon={<Download className="w-3.5 h-3.5" />}
-            className="shadow-md shadow-[#8E1616]/40 !bg-[#D84040] hover:!bg-[#8E1616] !text-[#EEEEEE] !text-xs !py-1.5 !px-4 font-semibold whitespace-nowrap"
+            className="btn-theme-primary !text-white !text-xs !py-1.5 !px-4 font-semibold whitespace-nowrap rounded-lg"
           >
             Download Now
           </Button>

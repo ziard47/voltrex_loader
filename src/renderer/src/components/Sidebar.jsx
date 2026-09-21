@@ -33,10 +33,10 @@ export default function Sidebar({
 }) {
   const statusFilters = [
     { id: 'all', label: 'All Downloads', icon: Layers, count: counts.all, color: 'text-[#EEEEEE]' },
-    { id: 'active', label: 'Downloading', icon: PlayCircle, count: counts.active, color: 'text-[#D84040]' },
+    { id: 'active', label: 'Downloading', icon: PlayCircle, count: counts.active, color: 'text-[var(--theme-primary)]' },
     { id: 'paused', label: 'Paused', icon: PauseCircle, count: counts.paused, color: 'text-amber-400' },
     { id: 'completed', label: 'Completed', icon: CheckCircle2, count: counts.completed, color: 'text-emerald-400' },
-    { id: 'error', label: 'Failed / Cancelled', icon: AlertCircle, count: counts.error, color: 'text-[#D84040]' }
+    { id: 'error', label: 'Failed / Cancelled', icon: AlertCircle, count: counts.error, color: 'text-rose-500' }
   ];
 
   const typeFilters = [
@@ -94,18 +94,21 @@ export default function Sidebar({
                     isCollapsed ? 'justify-center py-1.5 px-1' : 'justify-between px-2.5 py-1 sm:py-1.5'
                   } rounded-lg text-xs font-medium transition-all border outline-none focus:outline-none focus:ring-0 ${
                     isSelected
-                      ? '!border-[#D84040]/50 bg-[#8E1616]/25 text-[#EEEEEE] shadow-sm'
-                      : 'border-transparent text-[#b8a5a5] hover:bg-[#2d1e1e] hover:text-[#EEEEEE]'
+                      ? '!border-[var(--theme-border-accent)] bg-[var(--theme-secondary-subtle)] text-[var(--theme-primary)] dark:text-[#EEEEEE] font-bold shadow-sm'
+                      : 'border-transparent text-slate-700 dark:text-[#b8a5a5] hover:bg-slate-200/60 dark:hover:bg-[#2d1e1e] hover:text-slate-900 dark:hover:text-[#EEEEEE]'
                   }`}
                 >
                   <div className="flex items-center gap-2 min-w-0">
-                    <Icon className={`w-4 h-4 shrink-0 ${item.color}`} />
+                    <Icon className={`w-4 h-4 shrink-0 ${isSelected ? 'text-[var(--theme-primary)]' : item.color}`} />
                     {!isCollapsed && <span className="truncate">{item.label}</span>}
                   </div>
                   {!isCollapsed && (
                     <span
-                      className={`text-[10px] px-1.5 py-0.5 rounded-full shrink-0 font-normal ${
-                        isSelected ? 'bg-[#8E1616]/60 text-[#EEEEEE]' : 'bg-[#291b1b] text-[#b8a5a5]'
+                      style={isSelected ? { color: '#ffffff', backgroundColor: 'var(--theme-primary)' } : {}}
+                      className={`sidebar-count-chip ${isSelected ? 'chip-selected' : 'chip-unselected'} text-[10px] px-1.5 py-0.5 rounded-full shrink-0 font-bold transition-colors ${
+                        isSelected
+                          ? '!text-white shadow-sm'
+                          : 'bg-black/10 dark:bg-[#291b1b] text-slate-700 dark:text-[#b8a5a5]'
                       }`}
                     >
                       {item.count}
@@ -150,16 +153,23 @@ export default function Sidebar({
                     isCollapsed ? 'justify-center py-1.5 px-1' : 'justify-between px-2.5 py-1 sm:py-1.5'
                   } rounded-lg text-xs font-medium transition-all border outline-none focus:outline-none focus:ring-0 ${
                     isSelected
-                      ? '!border-[#D84040]/50 bg-[#8E1616]/25 text-[#EEEEEE] shadow-sm'
-                      : 'border-transparent text-[#b8a5a5] hover:bg-[#2d1e1e] hover:text-[#EEEEEE]'
+                      ? '!border-[var(--theme-border-accent)] bg-[var(--theme-secondary-subtle)] text-[var(--theme-primary)] dark:text-[#EEEEEE] font-bold shadow-sm'
+                      : 'border-transparent text-slate-700 dark:text-[#b8a5a5] hover:bg-slate-200/60 dark:hover:bg-[#2d1e1e] hover:text-slate-900 dark:hover:text-[#EEEEEE]'
                   }`}
                 >
                   <div className="flex items-center gap-2 min-w-0">
-                    <Icon className="w-4 h-4 shrink-0 text-[#b8a5a5]" />
+                    <Icon className={`w-4 h-4 shrink-0 ${isSelected ? 'text-[var(--theme-primary)]' : 'text-slate-500 dark:text-[#b8a5a5]'}`} />
                     {!isCollapsed && <span className="truncate">{item.label}</span>}
                   </div>
                   {!isCollapsed && (
-                    <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-[#291b1b] text-[#b8a5a5] shrink-0 font-normal">
+                    <span
+                      style={isSelected ? { color: '#ffffff', backgroundColor: 'var(--theme-primary)' } : {}}
+                      className={`sidebar-count-chip ${isSelected ? 'chip-selected' : 'chip-unselected'} text-[10px] px-1.5 py-0.5 rounded-full shrink-0 font-bold transition-colors ${
+                        isSelected
+                          ? '!text-white shadow-sm'
+                          : 'bg-black/10 dark:bg-[#291b1b] text-slate-700 dark:text-[#b8a5a5]'
+                      }`}
+                    >
                       {item.count}
                     </span>
                   )}
@@ -190,10 +200,10 @@ export default function Sidebar({
           <Tooltip title="Preferences & Settings" placement="right" arrow>
             <button
               onClick={() => onViewChange?.('settings')}
-              className={`w-full flex justify-center py-2 rounded-lg transition-colors ${
+              className={`w-full flex justify-center py-2 rounded-lg transition-colors border ${
                 currentView === 'settings'
-                  ? 'bg-[#8E1616]/30 text-[#D84040] border border-[#D84040]/40'
-                  : 'text-[#b8a5a5] hover:text-[#EEEEEE] hover:bg-[#271a1a]'
+                  ? 'bg-[var(--theme-secondary-subtle)] text-[var(--theme-primary)] border-[var(--theme-border-accent)]'
+                  : 'border-transparent text-slate-600 dark:text-[#b8a5a5] hover:text-[var(--theme-primary)] hover:bg-slate-200/60 dark:hover:bg-[#271a1a]'
               }`}
             >
               <Settings className="w-4 h-4" />
@@ -202,18 +212,18 @@ export default function Sidebar({
         ) : (
           <button
             onClick={() => onViewChange?.('settings')}
-            className={`w-full flex items-center justify-between px-2.5 py-1.5 rounded-lg text-xs font-medium transition-colors ${
+            className={`w-full flex items-center justify-between px-2.5 py-1.5 rounded-lg text-xs font-medium transition-colors border ${
               currentView === 'settings'
-                ? 'bg-[#8E1616]/30 text-[#EEEEEE] border border-[#D84040]/40 font-semibold'
-                : 'text-[#b8a5a5] hover:text-[#EEEEEE] hover:bg-[#271a1a] border border-transparent'
+                ? 'border-[var(--theme-border-accent)] bg-[var(--theme-secondary-subtle)] text-[var(--theme-primary)] dark:text-[#EEEEEE] font-bold shadow-sm'
+                : 'border-transparent text-slate-700 dark:text-[#b8a5a5] hover:text-slate-900 dark:hover:text-[#EEEEEE] hover:bg-slate-200/60 dark:hover:bg-[#271a1a]'
             }`}
           >
             <div className="flex items-center gap-2">
-              <Settings className={`w-4 h-4 ${currentView === 'settings' ? 'text-[#D84040]' : 'text-[#b8a5a5]'}`} />
+              <Settings className="w-4 h-4" style={{ color: currentView === 'settings' ? 'var(--theme-primary)' : 'var(--theme-text-muted)' }} />
               <span>Settings</span>
             </div>
             {currentView === 'settings' && (
-              <span className="w-1.5 h-1.5 rounded-full bg-[#D84040]" />
+              <span className="w-1.5 h-1.5 rounded-full" style={{ backgroundColor: 'var(--theme-primary)' }} />
             )}
           </button>
         )}
