@@ -31,14 +31,23 @@ import {
   Sun,
   Laptop,
   FolderTree,
-  Server
+  Server,
+  AppWindow
 } from 'lucide-react';
 import appLogo from '../assets/logo.jpg';
 import { useTheme } from '../context/ThemeContext';
 import { THEME_PRESETS } from '../utils/themePresets';
 
 export default function SetupWizardModal({ open, onClose, onFinish }) {
-  const { themeMode, setThemeMode, themePreset, setThemePreset } = useTheme();
+  const {
+    themeMode,
+    setThemeMode,
+    themePreset,
+    setThemePreset,
+    windowsLegacy,
+    setWindowsLegacy,
+    effectiveMode
+  } = useTheme();
 
   // Step indicator: 1 to 6
   const [currentStep, setCurrentStep] = useState(1);
@@ -125,6 +134,7 @@ export default function SetupWizardModal({ open, onClose, onFinish }) {
       setupWizardCompleted: true,
       themeMode,
       themePreset,
+      windowsLegacy,
       defaultDownloadPath: downloadPath,
       organizeByCategory,
       startWithSystem,
@@ -272,7 +282,7 @@ export default function SetupWizardModal({ open, onClose, onFinish }) {
           <div className="space-y-6 py-2 max-w-2xl mx-auto">
             <div className="text-center space-y-2">
               <div className="relative inline-block mx-auto mb-2">
-                <div className="w-20 h-20 rounded-2xl overflow-hidden border-2 border-[var(--theme-primary)] shadow-xl shadow-[var(--theme-primary-glow)] mx-auto">
+                <div className="w-20 h-20 rounded-2xl overflow-hidden border-2 border-[var(--theme-primary)] mx-auto">
                   <img src={appLogo} alt="Voltrex Logo" className="w-full h-full object-cover" />
                 </div>
                 <span className="absolute -bottom-1 -right-1 flex h-4 w-4">
@@ -410,19 +420,78 @@ export default function SetupWizardModal({ open, onClose, onFinish }) {
               </div>
             </div>
 
+            {/* Windows 10 Theme Option Card */}
+            <div
+              onClick={() => setWindowsLegacy(!windowsLegacy)}
+              className={`p-4 rounded-xl border transition-all cursor-pointer flex items-center justify-between gap-4 ${
+                windowsLegacy
+                  ? 'border-[#0078D7] bg-[#0078D7]/10 ring-1 ring-[#0078D7] shadow-sm'
+                  : 'border-[var(--theme-border-accent)] bg-[var(--theme-bg-surface)] hover:border-[#0078D7]/60'
+              }`}
+            >
+              <div className="flex items-start gap-3 min-w-0">
+                <div
+                  className={`w-10 h-10 rounded-lg flex items-center justify-center shrink-0 border transition-all ${
+                    windowsLegacy
+                      ? 'bg-[#0078D7] text-white border-[#0078D7]'
+                      : 'bg-[var(--theme-bg-base)] text-[var(--theme-text-muted)] border-[var(--theme-border-accent)]'
+                  }`}
+                >
+                  <AppWindow className="w-5 h-5" />
+                </div>
+                <div>
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <span className="text-xs font-bold text-[var(--theme-text-primary)]">
+                      Windows 10 Theme
+                    </span>
+                    {windowsLegacy ? (
+                      <span className="text-[10px] px-2 py-0.5 rounded font-bold uppercase tracking-wider bg-[#0078D7] text-white shadow-xs">
+                        Default & Active ({effectiveMode === 'dark' ? 'Dark' : 'Light'})
+                      </span>
+                    ) : (
+                      <span className="text-[10px] px-2 py-0.5 rounded font-semibold bg-[var(--theme-bg-base)] text-[var(--theme-text-muted)] border border-[var(--theme-border-accent)]">
+                        Modern Desktop Look
+                      </span>
+                    )}
+                  </div>
+                  <p className="text-[11px] text-[var(--theme-text-muted)] mt-0.5 leading-relaxed">
+                    Native Windows 10 File Explorer interface styling with signature #0078D7 blue accents, crisp desktop controls, and full support for both Light and Dark themes.
+                  </p>
+                </div>
+              </div>
+
+              <div className="shrink-0" onClick={(e) => e.stopPropagation()}>
+                <Switch
+                  checked={windowsLegacy}
+                  onChange={(e) => setWindowsLegacy(e.target.checked)}
+                  color="primary"
+                />
+              </div>
+            </div>
+
             {/* Curated Color Palettes */}
-            <div>
-              <label className="block text-[11px] font-bold uppercase tracking-wider text-[var(--theme-text-muted)] mb-2">
-                Color Palette Accent
-              </label>
+            <div className={`space-y-2 transition-opacity ${windowsLegacy ? 'opacity-85' : ''}`}>
+              <div className="flex items-center justify-between">
+                <label className="block text-[11px] font-bold uppercase tracking-wider text-[var(--theme-text-muted)]">
+                  Color Palette Accent
+                </label>
+                {windowsLegacy && (
+                  <span className="text-[10px] text-[var(--theme-text-muted)] italic">
+                    (Selecting a palette switches from Windows 10 theme)
+                  </span>
+                )}
+              </div>
               <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
                 {THEME_PRESETS.filter((p) => p.id !== 'custom').map((p) => {
-                  const isCur = themePreset === p.id;
+                  const isCur = !windowsLegacy && themePreset === p.id;
                   return (
                     <button
                       key={p.id}
-                      onClick={() => setThemePreset(p.id)}
-                      className={`p-3 rounded-xl border text-left transition-all relative flex flex-col justify-between h-20 ${
+                      onClick={() => {
+                        if (windowsLegacy) setWindowsLegacy(false);
+                        setThemePreset(p.id);
+                      }}
+                      className={`p-3 rounded-xl border text-left transition-all relative flex flex-col justify-between h-20 cursor-pointer ${
                         isCur
                           ? 'border-[var(--theme-primary)] bg-[var(--theme-secondary-subtle)] ring-1 ring-[var(--theme-primary)] shadow-sm'
                           : 'border-[var(--theme-border-accent)] bg-[var(--theme-bg-surface)] hover:border-[var(--theme-primary)]'
@@ -497,7 +566,7 @@ export default function SetupWizardModal({ open, onClose, onFinish }) {
                 onClick={() => {
                   if (window.electronAPI?.openExternal) {
                     window.electronAPI.openExternal(
-                      'https://github.com/ziard47/voltrex_loader/releases/download/v1.1.0/voltrex-loader-browser-extension.zip'
+                      'https://github.com/ziard47/voltrex_loader/releases/download/v1.2.0/voltrex-loader-browser-extension.zip'
                     );
                   }
                 }}
@@ -797,7 +866,7 @@ export default function SetupWizardModal({ open, onClose, onFinish }) {
         {/* ========================================================================= */}
         {currentStep === 6 && (
           <div className="space-y-6 max-w-2xl mx-auto py-2 text-center">
-            <div className="w-14 h-14 rounded-2xl bg-[var(--theme-secondary-subtle)] border-2 border-[var(--theme-primary)] flex items-center justify-center text-[var(--theme-primary)] shadow-lg shadow-[var(--theme-primary-glow)] mx-auto">
+            <div className="w-14 h-14 rounded-2xl bg-[var(--theme-secondary-subtle)] border-2 border-[var(--theme-primary)] flex items-center justify-center text-[var(--theme-primary)] mx-auto">
               <Rocket className="w-7 h-7" />
             </div>
 

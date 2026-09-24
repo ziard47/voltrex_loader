@@ -357,7 +357,45 @@ export function resolveTokens(presetId, mode, customConfig = null) {
   return mode === 'light' ? preset.light : preset.dark;
 }
 
-export function buildMuiTheme(tokens, mode) {
+export const WINDOWS_LEGACY_LIGHT_TOKENS = {
+  bgBase: '#f3f3f3',
+  bgSurface: '#ffffff',
+  bgSidebar: '#f3f3f3',
+  bgCard: '#ffffff',
+  bgHover: '#e5f1fb',
+  bgInput: '#ffffff',
+  primary: '#0078D7',
+  primaryHover: '#0063B1',
+  secondary: '#004E8C',
+  border: '#d1d1d1',
+  borderAccent: '#0078D7',
+  textPrimary: '#000000',
+  textMuted: '#555555'
+};
+
+export const WINDOWS_LEGACY_DARK_TOKENS = {
+  bgBase: '#191919',
+  bgSurface: '#1f1f1f',
+  bgSidebar: '#1f1f1f',
+  bgCard: '#202020',
+  bgHover: '#2d2d2d',
+  bgInput: '#1f1f1f',
+  primary: '#0078D7',
+  primaryHover: '#1988e0',
+  secondary: '#005a9e',
+  border: '#383838',
+  borderAccent: '#0078D7',
+  textPrimary: '#ffffff',
+  textMuted: '#aaaaaa'
+};
+
+export const WINDOWS_LEGACY_TOKENS = WINDOWS_LEGACY_LIGHT_TOKENS;
+
+export function resolveWindowsLegacyTokens(mode = 'light') {
+  return mode === 'dark' ? WINDOWS_LEGACY_DARK_TOKENS : WINDOWS_LEGACY_LIGHT_TOKENS;
+}
+
+export function buildMuiTheme(tokens, mode, isWindowsLegacy = false) {
   const isDark = mode === 'dark';
   return createTheme({
     palette: {
@@ -393,10 +431,12 @@ export function buildMuiTheme(tokens, mode) {
       }
     },
     typography: {
-      fontFamily: "'Outfit', -apple-system, BlinkMacSystemFont, sans-serif"
+      fontFamily: isWindowsLegacy
+        ? "'Segoe UI', Tahoma, 'MS Sans Serif', Arial, sans-serif"
+        : "'Outfit', -apple-system, BlinkMacSystemFont, sans-serif"
     },
     shape: {
-      borderRadius: 10
+      borderRadius: isWindowsLegacy ? 2 : 10
     },
     components: {
       MuiButton: {
@@ -404,15 +444,23 @@ export function buildMuiTheme(tokens, mode) {
           root: {
             textTransform: 'none',
             fontWeight: 600,
-            borderRadius: 8
+            borderRadius: isWindowsLegacy ? 2 : 8
           },
           contained: {
+            boxShadow: 'none !important',
+            '&:hover': {
+              boxShadow: 'none !important'
+            },
             color: '#ffffff !important',
             '& *': {
               color: '#ffffff !important'
             }
           },
           containedPrimary: {
+            boxShadow: 'none !important',
+            '&:hover': {
+              boxShadow: 'none !important'
+            },
             color: '#ffffff !important',
             '& *': {
               color: '#ffffff !important'
@@ -433,7 +481,7 @@ export function buildMuiTheme(tokens, mode) {
             backgroundColor: tokens.bgCard,
             backgroundImage: 'none',
             border: `1px solid ${tokens.borderAccent}`,
-            borderRadius: 14,
+            borderRadius: isWindowsLegacy ? 2 : 14,
             color: tokens.textPrimary,
             boxShadow: isDark
               ? '0 25px 50px -12px rgba(0, 0, 0, 0.5)'

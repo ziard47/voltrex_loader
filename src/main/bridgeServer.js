@@ -107,7 +107,8 @@ class BridgeServer {
                   url: downloadUrl,
                   fileName: resolvedFileName,
                   referrer: data.referrer,
-                  defaultSavePath: effectiveDefaultPath
+                  defaultSavePath: effectiveDefaultPath,
+                  organizeByCategory: Boolean(this.downloadEngine?.organizeByCategory || (settings && settings.organizeByCategory))
                 });
               }
               res.writeHead(200, { 'Content-Type': 'application/json' });

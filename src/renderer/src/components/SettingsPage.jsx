@@ -35,12 +35,14 @@ import {
   Sun,
   Moon,
   Monitor,
-  Rocket
+  Rocket,
+  Zap,
+  AppWindow
 } from 'lucide-react';
 import Logo from './Logo';
 import { useTheme } from '../context/ThemeContext';
 
-export default function SettingsPage({ onBack, defaultSavePath, onSaveSuccess, appVersion = '1.1.2', onOpenWhatsNew, onOpenSetupWizard }) {
+export default function SettingsPage({ onBack, defaultSavePath, onSaveSuccess, appVersion = '1.2.0', onOpenWhatsNew, onOpenSetupWizard }) {
   const [activeTab, setActiveTab] = useState('general');
   const [toast, setToast] = useState({ open: false, message: '' });
   const [isSaving, setIsSaving] = useState(false);
@@ -52,6 +54,8 @@ export default function SettingsPage({ onBack, defaultSavePath, onSaveSuccess, a
     effectiveMode,
     themePreset,
     setThemePreset,
+    windowsLegacy,
+    setWindowsLegacy,
     resetTheme,
     THEME_PRESETS
   } = useTheme();
@@ -71,6 +75,9 @@ export default function SettingsPage({ onBack, defaultSavePath, onSaveSuccess, a
     maxRetries: 3,
     closeAction: 'ask',
     userAgent: 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36 VoltrexLoader/1.0',
+    enableMultiConnection: true,
+    defaultConnections: 8,
+    minChunkSizeMB: 2,
     startWithSystem: false,
     proxyMode: 'direct',
     proxyProtocol: 'http',
@@ -617,11 +624,65 @@ export default function SettingsPage({ onBack, defaultSavePath, onSaveSuccess, a
                   </div>
                 </div>
 
-                {/* Section 2: Curated Theme Palettes */}
+                {/* Section 2: Windows Legacy Interface (Separate from Curated Palettes) */}
                 <div className="p-4 rounded-xl bg-[#1D1616] border border-[#8E1616]/30 space-y-3.5">
+                  <div className="flex items-center justify-between gap-4">
+                    <div className="flex items-start gap-3">
+                      <div className={`w-10 h-10 rounded-lg flex items-center justify-center shrink-0 border transition-all ${
+                        windowsLegacy
+                          ? 'bg-[#f3f3f3] dark:bg-[#191919] text-[#0078D7] border-[#0078D7] shadow-sm'
+                          : 'bg-white dark:bg-[#140e0e] text-[var(--theme-primary)] border-slate-200 dark:border-[#8E1616]/40'
+                      }`}>
+                        <AppWindow className="w-5 h-5" />
+                      </div>
+                      <div>
+                        <div className="text-xs font-semibold text-slate-800 dark:text-[#EEEEEE] flex items-center gap-2">
+                          <span>Windows Legacy</span>
+                          {windowsLegacy ? (
+                            <span className="text-[10px] px-2 py-0.5 rounded bg-[#0078D7] text-white font-bold uppercase tracking-wider">
+                              Active ({effectiveMode === 'dark' ? 'Dark' : 'Light'})
+                            </span>
+                          ) : (
+                            <span className="text-[10px] px-2 py-0.5 rounded bg-slate-200 dark:bg-[#140e0e] text-slate-600 dark:text-[#b8a5a5] font-semibold">
+                              Windows 10 Theme
+                            </span>
+                          )}
+                        </div>
+                        <div className="text-[11px] text-slate-500 dark:text-[#b8a5a5] mt-0.5 leading-relaxed">
+                          Transform the interface into a native Windows 10 application theme featuring clean File Explorer styling, signature #0078D7 accent colors, desktop controls, and full support for both Light and Dark themes.
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="shrink-0">
+                      <button
+                        type="button"
+                        onClick={() => setWindowsLegacy(!windowsLegacy)}
+                        className={`px-3.5 py-2 text-xs font-bold rounded-lg border transition-all flex items-center gap-2 cursor-pointer ${
+                          windowsLegacy
+                            ? 'bg-[#0078D7] hover:bg-[#0063B1] text-white border-[#0078D7] shadow-sm'
+                            : 'bg-slate-100 dark:bg-[#140e0e] text-slate-800 dark:text-[#EEEEEE] border-slate-200 dark:border-[#8E1616]/40 hover:bg-slate-200 dark:hover:bg-[#271a1a]'
+                        }`}
+                      >
+                        <AppWindow className="w-4 h-4" />
+                        <span>{windowsLegacy ? 'Disable Windows Legacy' : 'Enable Windows Legacy'}</span>
+                      </button>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Section 3: Curated Theme Palettes */}
+                <div className={`p-4 rounded-xl bg-[#1D1616] border border-[#8E1616]/30 space-y-3.5 transition-opacity ${windowsLegacy ? 'opacity-80' : ''}`}>
                   <div className="flex items-center justify-between">
                     <div>
-                      <div className="text-xs font-semibold text-slate-800 dark:text-[#EEEEEE]">Curated Color Palettes</div>
+                      <div className="text-xs font-semibold text-slate-800 dark:text-[#EEEEEE] flex items-center gap-2">
+                        <span>Curated Color Palettes</span>
+                        {windowsLegacy && (
+                          <span className="text-[10px] text-amber-400 font-normal">
+                            (Selecting a palette switches back from Windows Legacy)
+                          </span>
+                        )}
+                      </div>
                       <div className="text-[11px] text-slate-500 dark:text-[#b8a5a5]">
                         Select from 8 color palettes tailored for maximum visual aesthetic.
                       </div>
@@ -630,12 +691,15 @@ export default function SettingsPage({ onBack, defaultSavePath, onSaveSuccess, a
 
                   <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 pt-1">
                     {THEME_PRESETS.map((preset) => {
-                      const isSelected = themePreset === preset.id;
+                      const isSelected = !windowsLegacy && themePreset === preset.id;
                       return (
                         <button
                           key={preset.id}
                           type="button"
-                          onClick={() => setThemePreset(preset.id)}
+                          onClick={() => {
+                            if (windowsLegacy) setWindowsLegacy(false);
+                            setThemePreset(preset.id);
+                          }}
                           className={`p-3 rounded-xl border text-left flex flex-col justify-between transition-all cursor-pointer relative overflow-hidden group ${
                             isSelected
                               ? '!border-[var(--theme-primary)] bg-[var(--theme-secondary-subtle)] shadow-md ring-1 ring-[var(--theme-primary)]'
@@ -741,7 +805,7 @@ export default function SettingsPage({ onBack, defaultSavePath, onSaveSuccess, a
                       <div className="flex items-center gap-2 mt-1.5">
                         <input
                           readOnly
-                          value="https://github.com/ziard47/voltrex_loader/releases/download/v1.1.0/voltrex-loader-browser-extension.zip"
+                          value="https://github.com/ziard47/voltrex_loader/releases/download/v1.2.0/voltrex-loader-browser-extension.zip"
                           className="flex-1 px-3 py-1.5 rounded bg-[#140e0e] border border-[#8E1616]/30 text-xs text-[#b8a5a5] font-mono-stat truncate"
                         />
                         <Button
@@ -751,7 +815,7 @@ export default function SettingsPage({ onBack, defaultSavePath, onSaveSuccess, a
                           onClick={() => {
                             if (window.electronAPI?.openExternal) {
                               window.electronAPI.openExternal(
-                                'https://github.com/ziard47/voltrex_loader/releases/download/v1.1.0/voltrex-loader-browser-extension.zip'
+                                'https://github.com/ziard47/voltrex_loader/releases/download/v1.2.0/voltrex-loader-browser-extension.zip'
                               );
                             }
                           }}
@@ -765,7 +829,7 @@ export default function SettingsPage({ onBack, defaultSavePath, onSaveSuccess, a
                           startIcon={<Copy className="w-3.5 h-3.5" />}
                           onClick={() =>
                             copyToClipboard(
-                              'https://github.com/ziard47/voltrex_loader/releases/download/v1.1.0/voltrex-loader-browser-extension.zip',
+                              'https://github.com/ziard47/voltrex_loader/releases/download/v1.2.0/voltrex-loader-browser-extension.zip',
                               'Download link copied to clipboard!'
                             )
                           }
@@ -873,6 +937,85 @@ export default function SettingsPage({ onBack, defaultSavePath, onSaveSuccess, a
                   <p className="text-xs text-[#b8a5a5] mt-0.5">
                     Fine-tune connection timeouts, HTTP retry limits, and client identification.
                   </p>
+                </div>
+
+                {/* Segmented Multi-Connection Acceleration Card */}
+                <div className="p-4 rounded-xl bg-[var(--theme-bg-card)] border border-[var(--theme-border-accent)] space-y-4">
+                  <div className="flex items-start justify-between gap-4">
+                    <div className="flex items-start gap-3">
+                      <div className="w-8 h-8 rounded-lg bg-[var(--theme-secondary-subtle)] border border-[var(--theme-border-accent)] flex items-center justify-center text-[var(--theme-primary)] shrink-0 mt-0.5">
+                        <Zap className="w-4 h-4" />
+                      </div>
+                      <div>
+                        <div className="flex items-center gap-2">
+                          <h3 className="text-xs font-bold text-[var(--theme-text-primary)]">
+                            Segmented Range Acceleration
+                          </h3>
+                          <span className="text-[10px] font-bold text-emerald-400 bg-emerald-950/40 px-1.5 py-0.2 rounded border border-emerald-500/30">
+                            IDM/FDM Turbo
+                          </span>
+                        </div>
+                        <p className="text-[11px] text-[var(--theme-text-muted)] mt-0.5 leading-relaxed">
+                          Splits resumable downloads into multiple parallel HTTP range streams written concurrently, multiplying speeds and bypassing single-connection host limits.
+                        </p>
+                      </div>
+                    </div>
+                    <Switch
+                      checked={settings.enableMultiConnection !== false}
+                      onChange={(e) => setSettings({ ...settings, enableMultiConnection: e.target.checked })}
+                      color="primary"
+                    />
+                  </div>
+
+                  {settings.enableMultiConnection !== false && (
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-3 border-t border-[var(--theme-border-accent)]">
+                      {/* Default Connection Streams */}
+                      <div>
+                        <label className="text-xs font-semibold text-[var(--theme-text-primary)] block mb-1">
+                          Default Streams per Download
+                        </label>
+                        <Select
+                          size="small"
+                          fullWidth
+                          value={settings.defaultConnections || 8}
+                          onChange={(e) => setSettings({ ...settings, defaultConnections: Number(e.target.value) })}
+                          className="!bg-[var(--theme-bg-surface)] !text-xs !text-[var(--theme-text-primary)] border border-[var(--theme-border-accent)] rounded-lg"
+                        >
+                          <MenuItem value={1} className="!text-xs">1 Stream (Single connection)</MenuItem>
+                          <MenuItem value={2} className="!text-xs">2 Streams (Light acceleration)</MenuItem>
+                          <MenuItem value={4} className="!text-xs">4 Streams (Balanced)</MenuItem>
+                          <MenuItem value={8} className="!text-xs font-bold text-[var(--theme-primary)]">8 Streams (Recommended default)</MenuItem>
+                          <MenuItem value={16} className="!text-xs text-amber-400">16 Streams (High performance)</MenuItem>
+                          <MenuItem value={32} className="!text-xs text-rose-400">32 Streams (Extreme Turbo)</MenuItem>
+                        </Select>
+                        <span className="text-[10px] text-[var(--theme-text-muted)] mt-1 block">
+                          Applies to new downloads unless customized in the Add Download setup box.
+                        </span>
+                      </div>
+
+                      {/* Minimum Chunk Trigger */}
+                      <div>
+                        <label className="text-xs font-semibold text-[var(--theme-text-primary)] block mb-1">
+                          Minimum File Size for Segmentation
+                        </label>
+                        <Select
+                          size="small"
+                          fullWidth
+                          value={settings.minChunkSizeMB || 2}
+                          onChange={(e) => setSettings({ ...settings, minChunkSizeMB: Number(e.target.value) })}
+                          className="!bg-[var(--theme-bg-surface)] !text-xs !text-[var(--theme-text-primary)] border border-[var(--theme-border-accent)] rounded-lg"
+                        >
+                          <MenuItem value={1} className="!text-xs">1 MB (Aggressive segmentation)</MenuItem>
+                          <MenuItem value={2} className="!text-xs">2 MB (Standard)</MenuItem>
+                          <MenuItem value={5} className="!text-xs">5 MB (Only larger files)</MenuItem>
+                          <MenuItem value={10} className="!text-xs">10 MB (Large archives & ISOs only)</MenuItem>
+                        </Select>
+                        <span className="text-[10px] text-[var(--theme-text-muted)] mt-1 block">
+                          Files smaller than this threshold stream over a single connection to eliminate overhead.
+                        </span>
+                      </div>
+                    </div>
+                  )}
                 </div>
 
                 <div className="p-4 rounded-xl bg-[#1D1616] border border-[#8E1616]/30 space-y-4">
@@ -1188,16 +1331,16 @@ export default function SettingsPage({ onBack, defaultSavePath, onSaveSuccess, a
 
                       {proxyTestResult && (
                         <div
-                          className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-md text-xs font-medium ${
+                          className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-medium transition-all ${
                             proxyTestResult.success
-                              ? 'bg-emerald-950/60 text-emerald-400 border border-emerald-600/30'
-                              : 'bg-rose-950/60 text-rose-300 border border-rose-600/30'
+                              ? 'status-badge-success bg-emerald-50 text-emerald-800 border border-emerald-300 dark:bg-emerald-950/60 dark:text-emerald-400 dark:border-emerald-600/30'
+                              : 'status-badge-error bg-rose-50 text-rose-800 border border-rose-300 dark:bg-rose-950/60 dark:text-rose-300 dark:border-rose-600/30'
                           }`}
                         >
                           {proxyTestResult.success ? (
-                            <CheckCircle2 className="w-3.5 h-3.5 shrink-0" />
+                            <CheckCircle2 className="w-3.5 h-3.5 shrink-0 text-emerald-600 dark:text-emerald-400" />
                           ) : (
-                            <AlertCircle className="w-3.5 h-3.5 shrink-0" />
+                            <AlertCircle className="w-3.5 h-3.5 shrink-0 text-rose-600 dark:text-rose-300" />
                           )}
                           <span>{proxyTestResult.message || proxyTestResult.error}</span>
                         </div>
@@ -1289,8 +1432,8 @@ export default function SettingsPage({ onBack, defaultSavePath, onSaveSuccess, a
           }}
           className="flex items-center gap-2.5 px-4 py-2.5 rounded-xl text-xs font-semibold backdrop-blur-md"
         >
-          <Check className="w-4 h-4 text-emerald-400 shrink-0" />
-          <span className="text-[#EEEEEE]">{toast.message}</span>
+          <Check className="w-4 h-4 text-emerald-500 dark:text-emerald-400 shrink-0" />
+          <span style={{ color: 'var(--theme-text-primary)' }}>{toast.message}</span>
         </div>
       </Snackbar>
     </div>
