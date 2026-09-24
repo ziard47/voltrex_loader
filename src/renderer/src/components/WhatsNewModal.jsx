@@ -13,26 +13,35 @@ import {
   Palette,
   CheckCircle2,
   ArrowRight,
-  X
+  X,
+  Zap,
+  FolderTree
 } from 'lucide-react';
 import Logo from './Logo';
 
-export default function WhatsNewModal({ open, onClose, version = '1.1.2' }) {
+export default function WhatsNewModal({ open, onClose, version = '1.2.0' }) {
   const highlights = [
     {
-      icon: Rocket,
-      title: 'Interactive First-Time Setup Wizard',
+      icon: Zap,
+      title: 'Segmented Multi-Connection Engine & Live Visual Chunk Grid',
       description:
-        'A sleek 6-step guided onboarding wizard to configure themes, install the Chromium extension, set download directories, and configure network proxies on fresh installations.',
-      badge: 'Onboarding'
+        'Download resumable files up to 10x faster with 2 to 32 parallel HTTP range streams written in-place concurrently, featuring an IDM/FDM-inspired live segment visualizer and thread telemetry matrix.',
+      badge: 'Acceleration'
+    },
+    {
+      icon: FolderTree,
+      title: 'Automatic Category Folder Organization',
+      description:
+        'Automatically sorts incoming downloads into designated subdirectories (Videos, Audio, Documents, Compressed, Programs, Others) with live category path preview and custom folder locking.',
+      badge: 'Organization'
     },
     {
       icon: Palette,
-      title: 'Dynamic Theme Engine & 8 Curated Palettes',
+      title: 'Windows 10 Theme Default (Light & Dark)',
       description:
-        'Full support for System Default, Dark, and Light modes featuring 8 balanced visual presets (Voltrex Crimson, Cyber Neon, Electric Violet, Emerald Matrix, Sunset Amber, Sapphire Blue, Rose Quartz, Midnight Slate).',
+        'Native Windows 10 desktop application interface featuring signature #0078D7 blue accents, crisp desktop controls, and full Light & Dark mode support throughout all modals and tables.',
       badge: 'Themes'
-    },
+    }
   ];
 
   return (
@@ -89,7 +98,7 @@ export default function WhatsNewModal({ open, onClose, version = '1.1.2' }) {
         <div className="flex items-center gap-2 px-3 py-2 rounded-xl bg-[var(--theme-secondary-subtle)] border border-[var(--theme-border-accent)] text-xs text-[var(--theme-text-primary)]">
           <Sparkles className="w-4 h-4 text-[var(--theme-primary)] shrink-0" />
           <span>
-            Voltrex Loader has been upgraded to <strong>v{version}</strong> with the new Setup Wizard, full visual theme engine, and contrast polish!
+            Voltrex Loader has been upgraded to <strong>v{version}</strong> with Windows 10 Light & Dark themes, improved table responsiveness, and Segmented Acceleration!
           </span>
         </div>
 

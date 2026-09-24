@@ -25,7 +25,8 @@ export default function App() {
   const [capturedData, setCapturedData] = useState(null);
   const [pendingCapture, setPendingCapture] = useState(null);
   const [currentSingleData, setCurrentSingleData] = useState(null);
-  const [appVersion, setAppVersion] = useState('1.1.2');
+  const [appVersion, setAppVersion] = useState('1.2.0');
+  const [settings, setSettings] = useState(null);
   const [isWhatsNewOpen, setIsWhatsNewOpen] = useState(false);
   const [isSetupWizardOpen, setIsSetupWizardOpen] = useState(false);
 
@@ -72,16 +73,20 @@ export default function App() {
         const list = await window.electronAPI.getAllDownloads();
         setDownloads(list || []);
       }
+      let loadedSettings = null;
       if (window.electronAPI?.getSettings) {
-        const settings = await window.electronAPI.getSettings();
-        if (settings?.defaultDownloadPath) {
-          setDefaultSavePath(settings.defaultDownloadPath);
-        } else if (window.electronAPI?.getDefaultDownloadPath) {
-          const defaultPath = await window.electronAPI.getDefaultDownloadPath();
-          setDefaultSavePath(defaultPath || '');
-        }
-        if (settings?.concurrency) {
-          setConcurrency(settings.concurrency);
+        loadedSettings = await window.electronAPI.getSettings();
+        if (loadedSettings) {
+          setSettings(loadedSettings);
+          if (loadedSettings.defaultDownloadPath) {
+            setDefaultSavePath(loadedSettings.defaultDownloadPath);
+          } else if (window.electronAPI?.getDefaultDownloadPath) {
+            const defaultPath = await window.electronAPI.getDefaultDownloadPath();
+            setDefaultSavePath(defaultPath || '');
+          }
+          if (loadedSettings.concurrency) {
+            setConcurrency(loadedSettings.concurrency);
+          }
         }
       } else if (window.electronAPI?.getDefaultDownloadPath) {
         const defaultPath = await window.electronAPI.getDefaultDownloadPath();
@@ -89,15 +94,15 @@ export default function App() {
       }
 
       // Check first-time setup wizard
-      const isWizardDone = settings?.setupWizardCompleted || localStorage.getItem('voltrex_setup_completed') === 'true';
+      const isWizardDone = loadedSettings?.setupWizardCompleted || localStorage.getItem('voltrex_setup_completed') === 'true';
       if (!isWizardDone) {
         setIsSetupWizardOpen(true);
       } else {
         // Check app version and display "What's New" modal if updated
         try {
-          let ver = '1.1.2';
+          let ver = '1.2.0';
           if (window.electronAPI?.getAppVersion) {
-            ver = await window.electronAPI.getAppVersion() || '1.1.2';
+            ver = await window.electronAPI.getAppVersion() || '1.2.0';
           }
           setAppVersion(ver);
           const lastSeen = localStorage.getItem('voltrex_last_seen_version');
@@ -149,7 +154,9 @@ export default function App() {
               totalBytes: update.totalBytes || item.totalBytes,
               progress: update.progress,
               speed: update.speed,
-              eta: update.eta
+              eta: update.eta,
+              connections: update.connections || item.connections,
+              chunks: update.chunks || item.chunks
             };
           }
           return item;
@@ -205,12 +212,15 @@ export default function App() {
       setCurrentView('settings');
     });
 
-    const unsubSettings = window.electronAPI?.onSettingsUpdated?.((settings) => {
-      if (settings?.defaultDownloadPath) {
-        setDefaultSavePath(settings.defaultDownloadPath);
-      }
-      if (settings?.concurrency) {
-        setConcurrency(settings.concurrency);
+    const unsubSettings = window.electronAPI?.onSettingsUpdated?.((newSettings) => {
+      if (newSettings) {
+        setSettings(newSettings);
+        if (newSettings.defaultDownloadPath) {
+          setDefaultSavePath(newSettings.defaultDownloadPath);
+        }
+        if (newSettings.concurrency) {
+          setConcurrency(newSettings.concurrency);
+        }
       }
     });
 
@@ -481,6 +491,7 @@ export default function App() {
         onAddDownload={handleAddDownload}
         defaultSavePath={defaultSavePath}
         initialData={capturedData}
+        organizeByCategory={Boolean(settings?.organizeByCategory)}
         onCurrentDataChange={(data) => {
           currentSingleDataRef.current = data;
           setCurrentSingleData(data);
@@ -504,6 +515,7 @@ export default function App() {
         defaultSavePath={defaultSavePath}
         initialUrls={batchInitialUrls}
         incomingAppendItem={incomingAppendItem}
+        organizeByCategory={Boolean(settings?.organizeByCategory)}
       />
 
       {/* Capture Prompt when a download is captured while modal is already open */}

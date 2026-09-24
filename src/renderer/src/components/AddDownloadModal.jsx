@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useMemo, useCallback } from 'react';
 import Dialog from '@mui/material/Dialog';
 import DialogTitle from '@mui/material/DialogTitle';
 import DialogContent from '@mui/material/DialogContent';
@@ -25,9 +25,12 @@ import {
   X,
   FileCode,
   Globe,
-  Layers
+  Layers,
+  Zap,
+  FolderTree
 } from 'lucide-react';
 import { extractUrlsFromText } from './BatchDownloadModal';
+import { getFileCategory, CATEGORY_FOLDERS, CATEGORY_LABELS } from '../utils/formatters';
 
 function inferFileNameFromUrl(urlStr) {
   if (!urlStr || typeof urlStr !== 'string') return '';
@@ -38,7 +41,9 @@ function inferFileNameFromUrl(urlStr) {
       const val = parsed.searchParams.get(key);
       if (val) {
         const decoded = decodeURIComponent(val.trim()).replace(/[\\/:*?"<>|\r\n]/g, '_');
-        if (decoded) return decoded;
+        if (decoded && decoded.includes('.')) {
+          return decoded;
+        }
       }
     }
     const pathname = parsed.pathname;
@@ -46,7 +51,7 @@ function inferFileNameFromUrl(urlStr) {
     if (parts.length > 0) {
       const last = parts[parts.length - 1];
       const decoded = decodeURIComponent(last).replace(/[\\/:*?"<>|\r\n]/g, '_');
-      if (decoded && decoded !== '/' && decoded !== '.') {
+      if (decoded && decoded.includes('.')) {
         return decoded;
       }
     }
@@ -61,12 +66,15 @@ export default function AddDownloadModal({
   defaultSavePath,
   initialData,
   onSwitchToBatch,
-  onCurrentDataChange
+  onCurrentDataChange,
+  organizeByCategory = false
 }) {
   const [url, setUrl] = useState('');
   const [fileName, setFileName] = useState('');
   const [savePath, setSavePath] = useState(defaultSavePath || '');
   const [priority, setPriority] = useState('NORMAL');
+  const [connections, setConnections] = useState(8);
+  const [isCustomFolder, setIsCustomFolder] = useState(false);
 
   const [isProbing, setIsProbing] = useState(false);
   const [probeResult, setProbeResult] = useState(null);
@@ -74,6 +82,25 @@ export default function AddDownloadModal({
 
   const urlInputRef = useRef(null);
   const pasteTimeoutRef = useRef(null);
+
+  const activeName = (fileName.trim() || probeResult?.fileName || inferFileNameFromUrl(url) || 'file').trim();
+  const detectedCategory = useMemo(() => {
+    return getFileCategory(activeName, probeResult?.mimeType || '');
+  }, [activeName, probeResult?.mimeType]);
+
+  const categoryFolderName = CATEGORY_FOLDERS[detectedCategory] || 'Others';
+  const categoryLabelName = CATEGORY_LABELS[detectedCategory] || 'Others';
+
+  const getCategorizedPath = useCallback((basePath, catFolder) => {
+    if (!basePath) return '';
+    const cleanBase = basePath.replace(/[/\\]+$/, '');
+    const currentLast = cleanBase.split(/[/\\]/).pop();
+    if (currentLast && currentLast.toLowerCase() === catFolder.toLowerCase()) {
+      return cleanBase;
+    }
+    const sep = basePath.includes('\\') ? '\\' : '/';
+    return `${cleanBase}${sep}${catFolder}`;
+  }, []);
 
   useEffect(() => {
     onCurrentDataChange?.({ url, fileName });
@@ -130,19 +157,37 @@ export default function AddDownloadModal({
 
       setUrl(incomingUrl);
       setFileName(incomingName);
+      setPriority('NORMAL');
+      setProbeResult(null);
+      setErrorMsg('');
+
+      const customPicked = Boolean(initialData?.customFolderSelected);
+      setIsCustomFolder(customPicked);
+
       const resolvedPath = initialData?.savePath || initialData?.defaultSavePath || defaultSavePath;
       if (resolvedPath) {
-        setSavePath(resolvedPath);
+        if (organizeByCategory && !customPicked) {
+          const cat = getFileCategory(incomingName || 'file');
+          const folder = CATEGORY_FOLDERS[cat] || 'Others';
+          setSavePath(getCategorizedPath(resolvedPath, folder));
+        } else {
+          setSavePath(resolvedPath);
+        }
       } else if (window.electronAPI?.getDefaultDownloadPath) {
         window.electronAPI.getDefaultDownloadPath().then((p) => {
-          if (p) setSavePath(p);
+          if (p) {
+            if (organizeByCategory && !customPicked) {
+              const cat = getFileCategory(incomingName || 'file');
+              const folder = CATEGORY_FOLDERS[cat] || 'Others';
+              setSavePath(getCategorizedPath(p, folder));
+            } else {
+              setSavePath(p);
+            }
+          }
         });
       } else {
         setSavePath('');
       }
-      setPriority('NORMAL');
-      setProbeResult(null);
-      setErrorMsg('');
 
       if (incomingUrl) {
         handleCheckUrl(incomingUrl);
@@ -151,7 +196,17 @@ export default function AddDownloadModal({
         urlInputRef.current?.focus();
       }, 100);
     }
-  }, [open, defaultSavePath, initialData]);
+  }, [open, defaultSavePath, initialData, organizeByCategory, getCategorizedPath]);
+
+  // Dynamically update categorized path if category changes and user hasn't chosen custom folder
+  useEffect(() => {
+    if (open && organizeByCategory && !isCustomFolder) {
+      const basePath = initialData?.defaultSavePath || defaultSavePath;
+      if (basePath) {
+        setSavePath(getCategorizedPath(basePath, categoryFolderName));
+      }
+    }
+  }, [open, organizeByCategory, isCustomFolder, categoryFolderName, initialData?.defaultSavePath, defaultSavePath, getCategorizedPath]);
 
   // Handle URL probe
   const handleCheckUrl = async (overrideUrl) => {
@@ -189,6 +244,7 @@ export default function AddDownloadModal({
       const selected = await window.electronAPI.browseDirectory(savePath);
       if (selected) {
         setSavePath(selected);
+        setIsCustomFolder(true);
       }
     }
   };
@@ -206,7 +262,9 @@ export default function AddDownloadModal({
       fileName: fileName.trim() || probeResult?.fileName,
       savePath: savePath.trim(),
       priority,
-      autoStart
+      connections: Number(connections) || 8,
+      autoStart,
+      customFolderSelected: isCustomFolder
     });
 
     onClose();
@@ -398,15 +456,34 @@ export default function AddDownloadModal({
 
         {/* Save Location & Browse Button */}
         <div>
-          <label className="block text-[11px] font-semibold uppercase tracking-wider text-[#b8a5a5] mb-1">
-            Save Location
-          </label>
+          <div className="flex items-center justify-between mb-1">
+            <label className="block text-[11px] font-semibold uppercase tracking-wider text-[#b8a5a5]">
+              Save Location
+            </label>
+            {organizeByCategory && (
+              <span className="flex items-center gap-1 text-[11px] text-[var(--theme-text-muted)]">
+                <FolderTree className="w-3.5 h-3.5 text-[var(--theme-primary)]" />
+                <span>Category:</span>
+                <span className="font-bold text-[var(--theme-primary)] uppercase">
+                  {categoryLabelName}
+                </span>
+                {isCustomFolder && (
+                  <span className="text-[10px] text-amber-400">
+                    (Custom)
+                  </span>
+                )}
+              </span>
+            )}
+          </div>
           <div className="flex items-center gap-2">
             <TextField
               fullWidth
               size="small"
               value={savePath}
-              onChange={(e) => setSavePath(e.target.value)}
+              onChange={(e) => {
+                setSavePath(e.target.value);
+                setIsCustomFolder(true);
+              }}
               className="!bg-[#140e0e] !rounded-lg"
               InputProps={{
                 startAdornment: <HardDrive className="w-4 h-4 text-[var(--theme-primary)] mr-2 shrink-0" />,
@@ -422,33 +499,88 @@ export default function AddDownloadModal({
               Browse...
             </Button>
           </div>
+          {organizeByCategory && !isCustomFolder && (
+            <div className="text-[10px] text-[var(--theme-text-muted)] mt-1 flex items-center gap-1">
+              <span>Auto-sorting into:</span>
+              <code className="text-[var(--theme-primary)] bg-[var(--theme-bg-surface)] px-1 rounded border border-[var(--theme-border-accent)] font-semibold">
+                {categoryFolderName}/
+              </code>
+            </div>
+          )}
         </div>
 
-        {/* Priority Selector */}
-        <div>
-          <label className="block text-[11px] font-semibold uppercase tracking-wider text-[#b8a5a5] mb-1">
-            Download Priority
-          </label>
-          <FormControl fullWidth size="small">
-            <Select
-              value={priority}
-              onChange={(e) => setPriority(e.target.value)}
-              className="!bg-[#140e0e] !text-xs !text-[#EEEEEE] !rounded-lg !h-10 border border-[#8E1616]/30"
-              sx={{
-                '& .MuiSelect-select': { py: '8px', fontSize: '0.75rem' }
-              }}
-            >
-              <MenuItem value="HIGH" className="!text-xs !text-[#D84040]">
-                High Priority (Starts first in queue)
-              </MenuItem>
-              <MenuItem value="NORMAL" className="!text-xs !text-[#EEEEEE]">
-                Normal Priority
-              </MenuItem>
-              <MenuItem value="LOW" className="!text-xs !text-emerald-400">
-                Low Priority (Queued behind others)
-              </MenuItem>
-            </Select>
-          </FormControl>
+        {/* Priority & Connection Streams Grid */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          {/* Priority Selector */}
+          <div>
+            <label className="block text-[11px] font-semibold uppercase tracking-wider text-[#b8a5a5] mb-1">
+              Download Priority
+            </label>
+            <FormControl fullWidth size="small">
+              <Select
+                value={priority}
+                onChange={(e) => setPriority(e.target.value)}
+                className="!bg-[#140e0e] !text-xs !text-[#EEEEEE] !rounded-lg !h-10 border border-[#8E1616]/30"
+                sx={{
+                  '& .MuiSelect-select': { py: '8px', fontSize: '0.75rem' }
+                }}
+              >
+                <MenuItem value="HIGH" className="!text-xs !text-[#D84040]">
+                  High Priority
+                </MenuItem>
+                <MenuItem value="NORMAL" className="!text-xs !text-[#EEEEEE]">
+                  Normal Priority
+                </MenuItem>
+                <MenuItem value="LOW" className="!text-xs !text-emerald-400">
+                  Low Priority
+                </MenuItem>
+              </Select>
+            </FormControl>
+          </div>
+
+          {/* Connection Streams Selector */}
+          <div>
+            <div className="flex items-center justify-between mb-1">
+              <label className="text-[11px] font-semibold uppercase tracking-wider text-[#b8a5a5] flex items-center gap-1">
+                <Zap className="w-3 h-3 text-[var(--theme-primary)]" />
+                <span>Connection Streams</span>
+              </label>
+              {probeResult?.resumable && (
+                <span className="text-[9px] font-bold text-emerald-400 bg-emerald-950/40 px-1 py-0.2 rounded border border-emerald-500/30">
+                  Range Turbo
+                </span>
+              )}
+            </div>
+            <FormControl fullWidth size="small">
+              <Select
+                value={connections}
+                onChange={(e) => setConnections(e.target.value)}
+                className="!bg-[#140e0e] !text-xs !text-[#EEEEEE] !rounded-lg !h-10 border border-[#8E1616]/30"
+                sx={{
+                  '& .MuiSelect-select': { py: '8px', fontSize: '0.75rem' }
+                }}
+              >
+                <MenuItem value={1} className="!text-xs">
+                  1 Stream (Single)
+                </MenuItem>
+                <MenuItem value={2} className="!text-xs">
+                  2 Parallel Streams
+                </MenuItem>
+                <MenuItem value={4} className="!text-xs">
+                  4 Parallel Streams
+                </MenuItem>
+                <MenuItem value={8} className="!text-xs !font-bold !text-[var(--theme-primary)]">
+                  8 Streams (Recommended)
+                </MenuItem>
+                <MenuItem value={16} className="!text-xs text-amber-400">
+                  16 Streams (Turbo Acceleration)
+                </MenuItem>
+                <MenuItem value={32} className="!text-xs text-rose-400">
+                  32 Streams (Extreme Max)
+                </MenuItem>
+              </Select>
+            </FormControl>
+          </div>
         </div>
       </DialogContent>
 

@@ -35,23 +35,41 @@ export function formatEta(seconds) {
   return `${s}s`;
 }
 
+export const CATEGORY_FOLDERS = {
+  compressed: 'Compressed',
+  video: 'Videos',
+  audio: 'Audio',
+  documents: 'Documents',
+  programs: 'Programs',
+  others: 'Others'
+};
+
+export const CATEGORY_LABELS = {
+  compressed: 'Compressed',
+  video: 'Video',
+  audio: 'Audio',
+  documents: 'Documents',
+  programs: 'Programs',
+  others: 'Others'
+};
+
 export function getFileCategory(fileName = '', mimeType = '') {
   const name = fileName.toLowerCase();
   const ext = name.split('.').pop() || '';
 
-  if (['zip', 'rar', '7z', 'tar', 'gz', 'bz2', 'xz', 'iso'].includes(ext)) {
+  if (['zip', 'rar', '7z', 'tar', 'gz', 'bz2', 'xz', 'iso', '7zip', 'tgz', 'z', 'cab'].includes(ext)) {
     return 'compressed';
   }
-  if (['mp4', 'mkv', 'avi', 'mov', 'webm', 'flv', 'wmv'].includes(ext) || mimeType.startsWith('video/')) {
+  if (['mp4', 'mkv', 'avi', 'mov', 'webm', 'flv', 'wmv', 'm4v', '3gp', 'ts'].includes(ext) || mimeType.startsWith('video/')) {
     return 'video';
   }
-  if (['mp3', 'flac', 'wav', 'aac', 'ogg', 'm4a'].includes(ext) || mimeType.startsWith('audio/')) {
+  if (['mp3', 'flac', 'wav', 'aac', 'ogg', 'm4a', 'wma', 'opus', 'alac', 'aiff'].includes(ext) || mimeType.startsWith('audio/')) {
     return 'audio';
   }
-  if (['pdf', 'doc', 'docx', 'xls', 'xlsx', 'ppt', 'pptx', 'txt', 'epub', 'md'].includes(ext) || mimeType.startsWith('text/')) {
+  if (['pdf', 'doc', 'docx', 'xls', 'xlsx', 'ppt', 'pptx', 'txt', 'epub', 'md', 'csv', 'rtf', 'odt', 'ods', 'odp'].includes(ext) || mimeType.startsWith('text/') || mimeType.includes('pdf')) {
     return 'documents';
   }
-  if (['exe', 'msi', 'deb', 'rpm', 'appimage', 'sh', 'apk', 'dmg', 'pkg'].includes(ext)) {
+  if (['exe', 'msi', 'deb', 'rpm', 'appimage', 'sh', 'apk', 'dmg', 'pkg', 'bin', 'run'].includes(ext)) {
     return 'programs';
   }
   return 'others';

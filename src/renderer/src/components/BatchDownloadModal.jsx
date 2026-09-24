@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef, useMemo } from 'react';
+import React, { useState, useEffect, useRef, useMemo, useCallback } from 'react';
 import Dialog from '@mui/material/Dialog';
 import DialogTitle from '@mui/material/DialogTitle';
 import DialogContent from '@mui/material/DialogContent';
@@ -30,9 +30,11 @@ import {
   ClipboardList,
   Download,
   Info,
-  Check
+  Check,
+  Zap,
+  FolderTree
 } from 'lucide-react';
-import { formatBytes } from '../utils/formatters';
+import { formatBytes, getFileCategory, CATEGORY_FOLDERS, CATEGORY_LABELS } from '../utils/formatters';
 
 // Extract valid HTTP/HTTPS URLs from multi-line or delimited text
 export function extractUrlsFromText(text) {
@@ -123,7 +125,8 @@ export default function BatchDownloadModal({
   onAddBatchDownloads,
   defaultSavePath,
   initialUrls = '',
-  incomingAppendItem = null
+  incomingAppendItem = null,
+  organizeByCategory = false
 }) {
   const [rawText, setRawText] = useState('');
   const [items, setItems] = useState([]); // Array of { id, url, fileName, fileSize, formattedSize, online, statusCode, error, resumable, mimeType, isChecking }
@@ -131,26 +134,77 @@ export default function BatchDownloadModal({
   const [createSubfolder, setCreateSubfolder] = useState(true);
   const [savePath, setSavePath] = useState(defaultSavePath || '');
   const [priority, setPriority] = useState('NORMAL');
+  const [connections, setConnections] = useState(8);
+  const [isCustomFolder, setIsCustomFolder] = useState(false);
   const [isProbingAll, setIsProbingAll] = useState(false);
   const [errorMessage, setErrorMessage] = useState('');
 
   const textareaRef = useRef(null);
+
+  // Determine dominant category of batch items
+  const dominantCategory = useMemo(() => {
+    if (!items.length) return 'others';
+    const counts = {};
+    items.forEach((it) => {
+      const cat = getFileCategory(it.fileName || it.url, it.mimeType || '');
+      counts[cat] = (counts[cat] || 0) + 1;
+    });
+    let topCat = 'others';
+    let max = 0;
+    for (const [c, n] of Object.entries(counts)) {
+      if (n > max) {
+        max = n;
+        topCat = c;
+      }
+    }
+    return topCat;
+  }, [items]);
+
+  const categoryFolderName = CATEGORY_FOLDERS[dominantCategory] || 'Others';
+  const categoryLabelName = CATEGORY_LABELS[dominantCategory] || 'Others';
+
+  const getCategorizedPath = useCallback((basePath, catFolder) => {
+    if (!basePath) return '';
+    const cleanBase = basePath.replace(/[/\\]+$/, '');
+    const currentLast = cleanBase.split(/[/\\]/).pop();
+    if (currentLast && currentLast.toLowerCase() === catFolder.toLowerCase()) {
+      return cleanBase;
+    }
+    const sep = basePath.includes('\\') ? '\\' : '/';
+    return `${cleanBase}${sep}${catFolder}`;
+  }, []);
 
   // Initialize or reset when modal opens
   useEffect(() => {
     if (open) {
       const textToUse = initialUrls || '';
       setRawText(textToUse);
+      setIsCustomFolder(false);
       if (defaultSavePath) {
-        setSavePath(defaultSavePath);
+        if (organizeByCategory) {
+          setSavePath(getCategorizedPath(defaultSavePath, categoryFolderName));
+        } else {
+          setSavePath(defaultSavePath);
+        }
       } else if (window.electronAPI?.getDefaultDownloadPath) {
         window.electronAPI.getDefaultDownloadPath().then((p) => {
-          if (p) setSavePath(p);
+          if (p) {
+            if (organizeByCategory) {
+              setSavePath(getCategorizedPath(p, categoryFolderName));
+            } else {
+              setSavePath(p);
+            }
+          }
         });
       } else {
         setSavePath('');
       }
       setPriority('NORMAL');
+      if (window.electronAPI?.getSettings) {
+        window.electronAPI.getSettings().then((s) => {
+          if (s?.defaultConnections) setConnections(s.defaultConnections);
+        }).catch(() => {});
+      }
       setCreateSubfolder(true);
       setErrorMessage('');
       setIsProbingAll(false);
@@ -167,7 +221,17 @@ export default function BatchDownloadModal({
         textareaRef.current?.focus();
       }, 100);
     }
-  }, [open, defaultSavePath, initialUrls]);
+  }, [open, defaultSavePath, initialUrls, organizeByCategory, categoryFolderName, getCategorizedPath]);
+
+  // Update categorized path when items update and category is inferred
+  useEffect(() => {
+    if (open && organizeByCategory && !isCustomFolder && items.length > 0) {
+      const base = defaultSavePath;
+      if (base) {
+        setSavePath(getCategorizedPath(base, categoryFolderName));
+      }
+    }
+  }, [open, organizeByCategory, isCustomFolder, items.length, categoryFolderName, defaultSavePath, getCategorizedPath]);
 
   // Handle incoming item appended while batch modal is already open
   useEffect(() => {
@@ -265,6 +329,7 @@ export default function BatchDownloadModal({
       const selected = await window.electronAPI.browseDirectory(savePath);
       if (selected) {
         setSavePath(selected);
+        setIsCustomFolder(true);
       }
     }
   };
@@ -379,7 +444,9 @@ export default function BatchDownloadModal({
       packageName: packageName.trim(),
       createSubfolder,
       priority,
-      autoStart
+      connections: Number(connections) || 8,
+      autoStart,
+      customFolderSelected: isCustomFolder
     };
 
     onAddBatchDownloads(payload);
@@ -531,15 +598,34 @@ export default function BatchDownloadModal({
 
           {/* Base Save Location */}
           <div>
-            <label className="block text-[11px] font-semibold uppercase tracking-wider text-[#b8a5a5] mb-1">
-              Save Location
-            </label>
+            <div className="flex items-center justify-between mb-1">
+              <label className="block text-[11px] font-semibold uppercase tracking-wider text-[#b8a5a5]">
+                Save Location
+              </label>
+              {organizeByCategory && (
+                <span className="flex items-center gap-1 text-[11px] text-[var(--theme-text-muted)]">
+                  <FolderTree className="w-3.5 h-3.5 text-[var(--theme-primary)]" />
+                  <span>Category:</span>
+                  <span className="font-bold text-[var(--theme-primary)] uppercase">
+                    {categoryLabelName}
+                  </span>
+                  {isCustomFolder && (
+                    <span className="text-[10px] text-amber-400">
+                      (Custom)
+                    </span>
+                  )}
+                </span>
+              )}
+            </div>
             <div className="flex items-center gap-2">
               <TextField
                 fullWidth
                 size="small"
                 value={savePath}
-                onChange={(e) => setSavePath(e.target.value)}
+                onChange={(e) => {
+                  setSavePath(e.target.value);
+                  setIsCustomFolder(true);
+                }}
                 className="!bg-[#1D1616] !rounded-lg"
                 InputProps={{
                   startAdornment: <HardDrive className="w-4 h-4 text-[var(--theme-primary)] mr-2 shrink-0" />,
@@ -619,6 +705,30 @@ export default function BatchDownloadModal({
                 <MenuItem value="LOW" className="!text-xs !text-emerald-400">
                   Low
                 </MenuItem>
+              </Select>
+            </FormControl>
+          </div>
+
+          <div className="flex items-center gap-2">
+            <label className="text-[11px] font-semibold uppercase tracking-wider text-[#b8a5a5] flex items-center gap-1">
+              <Zap className="w-3 h-3 text-[var(--theme-primary)]" />
+              <span>Streams:</span>
+            </label>
+            <FormControl size="small">
+              <Select
+                value={connections}
+                onChange={(e) => setConnections(e.target.value)}
+                className="!bg-[#140e0e] !text-xs !text-[#EEEEEE] !rounded-lg !h-9 border border-[#8E1616]/30"
+                sx={{
+                  '& .MuiSelect-select': { py: '6px', fontSize: '0.75rem' }
+                }}
+              >
+                <MenuItem value={1} className="!text-xs">1 Stream</MenuItem>
+                <MenuItem value={2} className="!text-xs">2 Streams</MenuItem>
+                <MenuItem value={4} className="!text-xs">4 Streams</MenuItem>
+                <MenuItem value={8} className="!text-xs !font-bold !text-[var(--theme-primary)]">8 Streams (Turbo)</MenuItem>
+                <MenuItem value={16} className="!text-xs text-amber-400">16 Streams</MenuItem>
+                <MenuItem value={32} className="!text-xs text-rose-400">32 Streams</MenuItem>
               </Select>
             </FormControl>
           </div>

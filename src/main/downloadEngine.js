@@ -1,4 +1,5 @@
 const fs = require('node:fs');
+const fsPromises = require('node:fs/promises');
 const path = require('node:path');
 const http = require('node:http');
 const https = require('node:https');
@@ -13,12 +14,50 @@ class DownloadEngine extends EventEmitter {
     this.defaultDownloadPath = defaultDownloadPath;
     this.storagePath = path.join(userDataPath, 'downloads-state.json');
     this.maxConcurrent = 3;
+    this.defaultConnections = 8;
+    this.enableMultiConnection = true;
+    this.organizeByCategory = false;
     this.tasks = new Map(); // id -> Task object
-    this.activeStreams = new Map(); // id -> { abortController, writeStream, speedHistory, lastProgressEmit }
+    this.activeStreams = new Map(); // id -> active streaming record
     this.progressInterval = null;
 
     this.loadState();
     this.startProgressTicker();
+  }
+
+  getFileCategory(fileName = '', mimeType = '') {
+    const name = (fileName || '').toLowerCase();
+    const parts = name.split('.');
+    const ext = parts.length > 1 ? parts.pop() : '';
+
+    if (['zip', 'rar', '7z', 'tar', 'gz', 'bz2', 'xz', 'iso', '7zip', 'tgz', 'z', 'cab'].includes(ext)) {
+      return 'compressed';
+    }
+    if (['mp4', 'mkv', 'avi', 'mov', 'webm', 'flv', 'wmv', 'm4v', '3gp', 'ts'].includes(ext) || (mimeType && mimeType.startsWith('video/'))) {
+      return 'video';
+    }
+    if (['mp3', 'flac', 'wav', 'aac', 'ogg', 'm4a', 'wma', 'opus', 'alac', 'aiff'].includes(ext) || (mimeType && mimeType.startsWith('audio/'))) {
+      return 'audio';
+    }
+    if (['pdf', 'doc', 'docx', 'xls', 'xlsx', 'ppt', 'pptx', 'txt', 'epub', 'md', 'csv', 'rtf', 'odt', 'ods', 'odp'].includes(ext) || (mimeType && (mimeType.startsWith('text/') || mimeType.includes('pdf')))) {
+      return 'documents';
+    }
+    if (['exe', 'msi', 'deb', 'rpm', 'appimage', 'sh', 'apk', 'dmg', 'pkg', 'bin', 'run'].includes(ext)) {
+      return 'programs';
+    }
+    return 'others';
+  }
+
+  getCategoryFolder(category) {
+    const map = {
+      compressed: 'Compressed',
+      video: 'Videos',
+      audio: 'Audio',
+      documents: 'Documents',
+      programs: 'Programs',
+      others: 'Others'
+    };
+    return map[category] || 'Others';
   }
 
   // Probe URL to check online status, file size, filename, and range resume support
@@ -266,12 +305,70 @@ class DownloadEngine extends EventEmitter {
     return results;
   }
 
-  // Task Management
-  async addDownload({ url, savePath, fileName, priority = 'NORMAL', autoStart = true, packageName = null }) {
+  initializeTaskChunks(task) {
+    if (
+      !task.totalBytes ||
+      task.totalBytes < 1024 * 1024 ||
+      !task.resumable ||
+      !this.enableMultiConnection ||
+      task.connections <= 1
+    ) {
+      task.chunks = [];
+      return;
+    }
+
+    const numChunks = Math.max(1, Math.min(32, task.connections || this.defaultConnections || 8));
+    const chunkSize = Math.floor(task.totalBytes / numChunks);
+    task.chunks = [];
+    for (let i = 0; i < numChunks; i++) {
+      const start = i * chunkSize;
+      const end = i === numChunks - 1 ? task.totalBytes - 1 : (i + 1) * chunkSize - 1;
+      task.chunks.push({
+        index: i,
+        startByte: start,
+        endByte: end,
+        currentByte: start,
+        totalBytes: end - start + 1,
+        downloadedBytes: 0,
+        progress: 0,
+        status: 'QUEUED',
+        speed: 0
+      });
+    }
+  }
+
+  async addDownload({
+    url,
+    savePath,
+    fileName,
+    priority = 'NORMAL',
+    autoStart = true,
+    packageName = null,
+    connections = null,
+    customFolderSelected = false
+  }) {
     // Probe to ensure details
     const probe = await this.probeUrl(url);
-    const resolvedSavePath = savePath || this.defaultDownloadPath;
     const finalFileName = this.sanitizeFileName(fileName || probe.fileName || `file_${Date.now()}`);
+    const mimeType = probe.mimeType || 'application/octet-stream';
+
+    let resolvedSavePath = savePath || this.defaultDownloadPath;
+
+    // Apply category organization if enabled and user did not explicitly pick a custom folder
+    if (this.organizeByCategory && !customFolderSelected) {
+      const category = this.getFileCategory(finalFileName, mimeType);
+      const categoryFolder = this.getCategoryFolder(category);
+
+      const normalizedSave = path.normalize(resolvedSavePath);
+      const normalizedDefault = path.normalize(this.defaultDownloadPath);
+      const currentFolderBase = path.basename(normalizedSave);
+
+      if (normalizedSave === normalizedDefault || !savePath) {
+        resolvedSavePath = path.join(this.defaultDownloadPath, categoryFolder);
+      } else if (currentFolderBase.toLowerCase() !== categoryFolder.toLowerCase()) {
+        resolvedSavePath = path.join(normalizedSave, categoryFolder);
+      }
+    }
 
     // Ensure save directory exists
     try {
@@ -286,6 +383,8 @@ class DownloadEngine extends EventEmitter {
     const resolvedFileName = this.getUniqueFileName(resolvedSavePath, finalFileName);
     const finalFilePath = path.join(resolvedSavePath, resolvedFileName);
     const partFilePath = `${finalFilePath}.part`;
+
+    const chosenConnections = connections ? Math.max(1, Math.min(32, parseInt(connections, 10) || 8)) : (this.defaultConnections || 8);
 
     const taskId = `task_${Date.now()}_${Math.random().toString(36).substring(2, 8)}`;
     const task = {
@@ -304,12 +403,16 @@ class DownloadEngine extends EventEmitter {
       status: autoStart ? 'QUEUED' : 'PAUSED',
       priority: priority.toUpperCase(), // HIGH, NORMAL, LOW
       resumable: probe.resumable ?? true,
+      connections: chosenConnections,
+      chunks: [],
       mimeType: probe.mimeType || 'application/octet-stream',
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString(),
       completedAt: null,
       error: null
     };
+
+    this.initializeTaskChunks(task);
 
     this.tasks.set(taskId, task);
     this.saveState();
@@ -329,7 +432,9 @@ class DownloadEngine extends EventEmitter {
     packageName = '',
     createSubfolder = true,
     priority = 'NORMAL',
-    autoStart = true
+    autoStart = true,
+    connections = null,
+    customFolderSelected = false
   }) {
     if (!Array.isArray(items) || items.length === 0) {
       return [];
@@ -339,8 +444,28 @@ class DownloadEngine extends EventEmitter {
     const sanitizedPackage = packageName ? this.sanitizeFileName(packageName).trim() : '';
 
     let targetDir = basePath;
+
+    // Apply category organization if enabled and not overridden with a custom folder
+    if (this.organizeByCategory && !customFolderSelected && (!baseSavePath || path.normalize(baseSavePath) === path.normalize(this.defaultDownloadPath))) {
+      const catCounts = {};
+      items.forEach((item) => {
+        const cat = this.getFileCategory(item.fileName || item.url, item.mimeType);
+        catCounts[cat] = (catCounts[cat] || 0) + 1;
+      });
+      let dominantCategory = 'others';
+      let maxCount = 0;
+      for (const [cat, count] of Object.entries(catCounts)) {
+        if (count > maxCount) {
+          maxCount = count;
+          dominantCategory = cat;
+        }
+      }
+      const categoryFolder = this.getCategoryFolder(dominantCategory);
+      targetDir = path.join(this.defaultDownloadPath, categoryFolder);
+    }
+
     if (createSubfolder && sanitizedPackage) {
-      targetDir = path.join(basePath, sanitizedPackage);
+      targetDir = path.join(targetDir, sanitizedPackage);
     }
 
     // Ensure destination directory exists
@@ -354,6 +479,7 @@ class DownloadEngine extends EventEmitter {
 
     const createdTasks = [];
     const now = new Date().toISOString();
+    const chosenConnections = connections ? Math.max(1, Math.min(32, parseInt(connections, 10) || 8)) : (this.defaultConnections || 8);
 
     for (let i = 0; i < items.length; i++) {
       const item = items[i];
@@ -386,12 +512,16 @@ class DownloadEngine extends EventEmitter {
         status: autoStart ? 'QUEUED' : 'PAUSED',
         priority: priority.toUpperCase(),
         resumable: item.resumable ?? true,
+        connections: chosenConnections,
+        chunks: [],
         mimeType: item.mimeType || 'application/octet-stream',
         createdAt: now,
         updatedAt: now,
         completedAt: null,
         error: null
       };
+
+      this.initializeTaskChunks(task);
 
       this.tasks.set(taskId, task);
       createdTasks.push(task);
@@ -468,12 +598,249 @@ class DownloadEngine extends EventEmitter {
     const task = this.tasks.get(taskId);
     if (!task) return;
 
+    const shouldUseSegments =
+      this.enableMultiConnection &&
+      (task.connections || this.defaultConnections || 8) > 1 &&
+      task.resumable &&
+      task.totalBytes >= 1024 * 1024; // at least 1MB for chunking
+
+    if (shouldUseSegments) {
+      await this.executeSegmentedDownload(task);
+    } else {
+      await this.executeSingleStreamDownload(task);
+    }
+  }
+
+  // Segmented Multi-Connection Engine (Parallel Range Streams)
+  async executeSegmentedDownload(task) {
     task.status = 'DOWNLOADING';
     task.error = null;
     task.updatedAt = new Date().toISOString();
     this.emit('task-updated', task);
 
-    // Setup streaming & abort controller
+    // Initialize chunks if not already initialized
+    if (!task.chunks || task.chunks.length === 0) {
+      this.initializeTaskChunks(task);
+    }
+
+    if (!task.chunks || task.chunks.length === 0) {
+      // Fallback if chunks couldn't be generated
+      await this.executeSingleStreamDownload(task);
+      return;
+    }
+
+    // Open file descriptor for random-access concurrent writing
+    let fileHandle = null;
+    try {
+      if (!fs.existsSync(task.partPath)) {
+        fileHandle = await fsPromises.open(task.partPath, 'w+');
+        try {
+          await fileHandle.truncate(task.totalBytes);
+        } catch {
+          // Truncate might not be supported on all exotic mount systems; continue
+        }
+      } else {
+        fileHandle = await fsPromises.open(task.partPath, 'r+');
+      }
+    } catch (err) {
+      this.handleTaskError(task, new Error(`Failed to initialize part file: ${err.message}`));
+      return;
+    }
+
+    const chunkControllers = new Map();
+    const chunkSpeedHistories = new Map();
+    const overallSpeedHistory = [];
+
+    const activeRecord = {
+      isSegmented: true,
+      fileHandle,
+      chunkControllers,
+      chunkSpeedHistories,
+      speedHistory: overallSpeedHistory,
+      lastSpeedCalc: Date.now(),
+      lastBytes: task.downloadedBytes
+    };
+    this.activeStreams.set(task.id, activeRecord);
+
+    let isTerminated = false;
+    const cleanupAndClose = async () => {
+      if (isTerminated) return;
+      isTerminated = true;
+      for (const ctrl of chunkControllers.values()) {
+        try { ctrl.abort(); } catch {}
+      }
+      chunkControllers.clear();
+      try {
+        if (fileHandle) {
+          await fileHandle.close();
+          fileHandle = null;
+        }
+      } catch {}
+      this.activeStreams.delete(task.id);
+    };
+
+    // Serialized write queue per task to guarantee orderly non-blocking random writes
+    let writeQueue = Promise.resolve();
+    const safeWrite = (buffer, position) => {
+      writeQueue = writeQueue.then(async () => {
+        if (!fileHandle) return;
+        await fileHandle.write(buffer, 0, buffer.length, position);
+      }).catch(err => {
+        console.error(`Segment write error at position ${position}:`, err);
+      });
+      return writeQueue;
+    };
+
+    const downloadChunk = async (chunk) => {
+      let retryCount = 0;
+
+      while (!isTerminated && task.status === 'DOWNLOADING') {
+        // If chunk is already completed
+        if (chunk.currentByte > chunk.endByte) {
+          chunk.status = 'COMPLETED';
+          chunk.downloadedBytes = chunk.totalBytes;
+          chunk.progress = 100;
+          chunk.speed = 0;
+          return;
+        }
+
+        chunk.status = 'DOWNLOADING';
+        const controller = new AbortController();
+        chunkControllers.set(chunk.index, controller);
+        if (!chunkSpeedHistories.has(chunk.index)) {
+          chunkSpeedHistories.set(chunk.index, []);
+        }
+
+        const headers = {
+          'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36 VoltrexLoader/1.0',
+          'Range': `bytes=${chunk.currentByte}-${chunk.endByte}`
+        };
+
+        try {
+          const response = await fetch(task.url, {
+            method: 'GET',
+            headers,
+            redirect: 'follow',
+            signal: controller.signal
+          });
+
+          // If server returns HTTP 200 instead of 206, server doesn't support Range requests for this resource
+          if (response.status === 200 && chunk.index === 0 && chunk.startByte === 0 && chunk.currentByte === 0) {
+            console.warn(`Host does not support byte range requests (returned 200 OK). Falling back to single-stream.`);
+            await cleanupAndClose();
+            task.resumable = false;
+            task.chunks = [];
+            await this.executeSingleStreamDownload(task);
+            return;
+          }
+
+          // If unrecoverable authentication or expired link error
+          if ([401, 403, 404, 410].includes(response.status)) {
+            chunk.status = 'ERROR';
+            throw new Error(`Server returned HTTP ${response.status} (${response.statusText || 'Access Denied / Expired'})`);
+          }
+
+          // If transient error (rate-limiting 429 or server errors 500-504)
+          if (!response.ok && response.status !== 206) {
+            throw new Error(`HTTP ${response.status} ${response.statusText || 'Transient Error'}`);
+          }
+
+          const reader = response.body.getReader();
+          retryCount = 0; // Successfully connected and streaming!
+
+          while (!isTerminated && task.status === 'DOWNLOADING') {
+            const { done, value } = await reader.read();
+            if (done) break;
+
+            if (value && value.length > 0) {
+              const buf = Buffer.from(value);
+              const writePos = chunk.currentByte;
+              await safeWrite(buf, writePos);
+
+              chunk.currentByte += buf.length;
+              chunk.downloadedBytes = Math.min(chunk.totalBytes, chunk.currentByte - chunk.startByte);
+              chunk.progress = Math.min(100, Math.round((chunk.downloadedBytes / chunk.totalBytes) * 100));
+
+              const now = Date.now();
+              const chunkHistory = chunkSpeedHistories.get(chunk.index) || [];
+              chunkHistory.push({ time: now, bytes: buf.length });
+              while (chunkHistory.length > 0 && now - chunkHistory[0].time > 2500) {
+                chunkHistory.shift();
+              }
+
+              overallSpeedHistory.push({ time: now, bytes: buf.length });
+              while (overallSpeedHistory.length > 0 && now - overallSpeedHistory[0].time > 2500) {
+                overallSpeedHistory.shift();
+              }
+            }
+          }
+
+          if (chunk.currentByte >= chunk.endByte) {
+            chunk.status = 'COMPLETED';
+            chunk.downloadedBytes = chunk.totalBytes;
+            chunk.progress = 100;
+            chunk.speed = 0;
+            return;
+          }
+        } catch (chunkErr) {
+          if (isTerminated || task.status === 'PAUSED' || task.status === 'CANCELLED') {
+            return;
+          }
+
+          // Fatal errors (401, 403, 404, 410) propagate to stop the download
+          if ([401, 403, 404, 410].some(code => chunkErr.message.includes(`HTTP ${code}`))) {
+            chunk.status = 'ERROR';
+            throw chunkErr;
+          }
+
+          retryCount++;
+          chunk.speed = 0;
+          console.warn(`Chunk ${chunk.index + 1} stream hiccup (retry ${retryCount}): ${chunkErr.message}`);
+
+          // Mark retrying and wait with backoff without aborting other streams!
+          chunk.status = 'RETRYING';
+          const backoffDelay = Math.min(8000, 1000 * Math.min(retryCount, 8));
+          await new Promise(r => setTimeout(r, backoffDelay));
+        } finally {
+          chunkControllers.delete(chunk.index);
+        }
+      }
+    };
+
+    try {
+      const activeChunks = task.chunks.filter(c => c.status !== 'COMPLETED');
+      const startChunkWithStagger = async (chunk, idx) => {
+        if (idx > 0) {
+          await new Promise(r => setTimeout(r, Math.min(idx * 75, 600)));
+        }
+        return downloadChunk(chunk);
+      };
+      await Promise.all(activeChunks.map((c, i) => startChunkWithStagger(c, i)));
+
+      await writeQueue;
+
+      const allCompleted = task.chunks.every(c => c.status === 'COMPLETED');
+      if (allCompleted && task.status === 'DOWNLOADING') {
+        await cleanupAndClose();
+        this.finalizeCompletedTask(task);
+      }
+    } catch (err) {
+      await writeQueue;
+      await cleanupAndClose();
+      if (task.status === 'PAUSED' || task.status === 'CANCELLED') {
+        return;
+      }
+      this.handleTaskError(task, err);
+    }
+  }
+
+  // Single-Stream Fallback Download Pipeline
+  async executeSingleStreamDownload(task) {
+    task.status = 'DOWNLOADING';
+    task.error = null;
+    task.updatedAt = new Date().toISOString();
+    this.emit('task-updated', task);
+
     const abortController = new AbortController();
     let existingBytes = 0;
 
@@ -487,7 +854,6 @@ class DownloadEngine extends EventEmitter {
       }
     }
 
-    // If completed or file already at totalBytes
     if (task.totalBytes > 0 && existingBytes >= task.totalBytes) {
       this.finalizeCompletedTask(task);
       return;
@@ -518,20 +884,17 @@ class DownloadEngine extends EventEmitter {
         throw new Error(`Server returned HTTP ${response.status} ${response.statusText}`);
       }
 
-      // Handle 200 vs 206
       const isPartial = response.status === 206;
       let writeStream;
 
       if (isResuming && isPartial) {
         writeStream = fs.createWriteStream(task.partPath, { flags: 'a' });
       } else {
-        // Full restart
         task.downloadedBytes = 0;
         existingBytes = 0;
         writeStream = fs.createWriteStream(task.partPath, { flags: 'w' });
       }
 
-      // Update total bytes if provided
       const cl = response.headers.get('content-length');
       const cr = response.headers.get('content-range');
       if (cr) {
@@ -542,13 +905,14 @@ class DownloadEngine extends EventEmitter {
       }
 
       const activeRecord = {
+        isSegmented: false,
         abortController,
         writeStream,
         speedHistory: [],
         lastSpeedCalc: Date.now(),
         lastBytes: task.downloadedBytes
       };
-      this.activeStreams.set(taskId, activeRecord);
+      this.activeStreams.set(task.id, activeRecord);
 
       const reader = response.body.getReader();
 
@@ -562,35 +926,30 @@ class DownloadEngine extends EventEmitter {
               writeStream.write(Buffer.from(value));
               task.downloadedBytes += value.length;
 
-              // Record speed telemetry
               const now = Date.now();
               activeRecord.speedHistory.push({ time: now, bytes: value.length });
-              // Keep only last 2.5s of speed history
               while (activeRecord.speedHistory.length > 0 && now - activeRecord.speedHistory[0].time > 2500) {
                 activeRecord.speedHistory.shift();
               }
 
-              // Update progress percent
               if (task.totalBytes > 0) {
                 task.progress = Math.min(100, Math.round((task.downloadedBytes / task.totalBytes) * 100));
               }
             }
           }
 
-          // Finish stream
           writeStream.end();
           await new Promise((resolve, reject) => {
             writeStream.on('finish', resolve);
             writeStream.on('error', reject);
           });
 
-          this.activeStreams.delete(taskId);
+          this.activeStreams.delete(task.id);
           this.finalizeCompletedTask(task);
         } catch (pumpErr) {
           writeStream.end();
-          this.activeStreams.delete(taskId);
+          this.activeStreams.delete(task.id);
           if (task.status === 'PAUSED' || task.status === 'CANCELLED') {
-            // Intentionally paused/cancelled, do nothing
             return;
           }
           this.handleTaskError(task, pumpErr);
@@ -599,7 +958,7 @@ class DownloadEngine extends EventEmitter {
 
       pump();
     } catch (fetchErr) {
-      this.activeStreams.delete(taskId);
+      this.activeStreams.delete(task.id);
       if (task.status === 'PAUSED' || task.status === 'CANCELLED') return;
       this.handleTaskError(task, fetchErr);
     }
@@ -620,6 +979,14 @@ class DownloadEngine extends EventEmitter {
     task.speed = 0;
     task.eta = 0;
     task.downloadedBytes = task.totalBytes || task.downloadedBytes;
+    if (task.chunks) {
+      for (const c of task.chunks) {
+        c.status = 'COMPLETED';
+        c.downloadedBytes = c.totalBytes;
+        c.progress = 100;
+        c.speed = 0;
+      }
+    }
     task.completedAt = new Date().toISOString();
     task.updatedAt = new Date().toISOString();
 
@@ -659,8 +1026,18 @@ class DownloadEngine extends EventEmitter {
     if (task.status === 'DOWNLOADING') {
       const active = this.activeStreams.get(taskId);
       if (active) {
-        active.abortController.abort();
-        if (active.writeStream) active.writeStream.end();
+        if (active.isSegmented) {
+          for (const ctrl of active.chunkControllers.values()) {
+            try { ctrl.abort(); } catch {}
+          }
+          active.chunkControllers.clear();
+          if (active.fileHandle) {
+            active.fileHandle.close().catch(() => {});
+          }
+        } else {
+          active.abortController.abort();
+          if (active.writeStream) active.writeStream.end();
+        }
         this.activeStreams.delete(taskId);
       }
     }
@@ -668,6 +1045,14 @@ class DownloadEngine extends EventEmitter {
     task.status = 'PAUSED';
     task.speed = 0;
     task.eta = 0;
+    if (task.chunks) {
+      for (const c of task.chunks) {
+        if (c.status === 'DOWNLOADING' || c.status === 'RETRYING') {
+          c.status = 'PAUSED';
+        }
+        c.speed = 0;
+      }
+    }
     task.updatedAt = new Date().toISOString();
 
     this.saveState();
@@ -682,6 +1067,14 @@ class DownloadEngine extends EventEmitter {
 
     task.status = 'QUEUED';
     task.error = null;
+    if (task.chunks) {
+      for (const c of task.chunks) {
+        if (c.status !== 'COMPLETED') {
+          c.status = 'QUEUED';
+        }
+        c.speed = 0;
+      }
+    }
     task.updatedAt = new Date().toISOString();
 
     this.saveState();
@@ -697,8 +1090,18 @@ class DownloadEngine extends EventEmitter {
     if (task.status === 'DOWNLOADING') {
       const active = this.activeStreams.get(taskId);
       if (active) {
-        active.abortController.abort();
-        if (active.writeStream) active.writeStream.end();
+        if (active.isSegmented) {
+          for (const ctrl of active.chunkControllers.values()) {
+            try { ctrl.abort(); } catch {}
+          }
+          active.chunkControllers.clear();
+          if (active.fileHandle) {
+            active.fileHandle.close().catch(() => {});
+          }
+        } else {
+          active.abortController.abort();
+          if (active.writeStream) active.writeStream.end();
+        }
         this.activeStreams.delete(taskId);
       }
     }
@@ -706,6 +1109,12 @@ class DownloadEngine extends EventEmitter {
     task.status = 'CANCELLED';
     task.speed = 0;
     task.eta = 0;
+    if (task.chunks) {
+      for (const c of task.chunks) {
+        c.status = 'CANCELLED';
+        c.speed = 0;
+      }
+    }
     task.updatedAt = new Date().toISOString();
 
     // Remove .part file
@@ -827,7 +1236,12 @@ class DownloadEngine extends EventEmitter {
   }
 
   getAllTasks() {
-    return Array.from(this.tasks.values());
+    const list = Array.from(this.tasks.values());
+    return list.sort((a, b) => {
+      const timeA = a.createdAt ? new Date(a.createdAt).getTime() : (typeof a.id === 'number' ? a.id : 0);
+      const timeB = b.createdAt ? new Date(b.createdAt).getTime() : (typeof b.id === 'number' ? b.id : 0);
+      return (timeB || 0) - (timeA || 0);
+    });
   }
 
   // Telemetry Progress Ticker
@@ -843,12 +1257,27 @@ class DownloadEngine extends EventEmitter {
         hasActive = true;
         const now = Date.now();
 
-        // Calculate speed over last 2 seconds window
+        // Calculate overall speed over last 2 seconds window
         const totalRecentBytes = record.speedHistory.reduce((sum, item) => sum + item.bytes, 0);
         const windowDurationSeconds = Math.max(1, (now - (record.speedHistory[0]?.time || now)) / 1000);
         const currentSpeed = Math.round(totalRecentBytes / windowDurationSeconds);
 
         task.speed = currentSpeed;
+
+        if (record.isSegmented && task.chunks) {
+          // Calculate individual chunk speeds
+          for (const chunk of task.chunks) {
+            const chunkHistory = record.chunkSpeedHistories?.get(chunk.index) || [];
+            const chunkRecentBytes = chunkHistory.reduce((sum, item) => sum + item.bytes, 0);
+            const chunkDuration = Math.max(1, (now - (chunkHistory[0]?.time || now)) / 1000);
+            chunk.speed = chunk.status === 'DOWNLOADING' ? Math.round(chunkRecentBytes / chunkDuration) : 0;
+          }
+          // Recalculate total downloaded bytes across all chunks
+          task.downloadedBytes = task.chunks.reduce((acc, c) => acc + (c.currentByte - c.startByte), 0);
+          if (task.totalBytes > 0) {
+            task.progress = Math.min(100, Math.round((task.downloadedBytes / task.totalBytes) * 100));
+          }
+        }
 
         // Calculate dynamic ETA
         if (task.totalBytes > 0 && currentSpeed > 0) {
@@ -864,7 +1293,21 @@ class DownloadEngine extends EventEmitter {
           totalBytes: task.totalBytes,
           progress: task.progress,
           speed: task.speed,
-          eta: task.eta
+          eta: task.eta,
+          connections: task.connections || 1,
+          chunks: task.chunks
+            ? task.chunks.map((c) => ({
+                index: c.index,
+                startByte: c.startByte,
+                endByte: c.endByte,
+                currentByte: c.currentByte,
+                downloadedBytes: Math.min(c.totalBytes, c.currentByte - c.startByte),
+                totalBytes: c.totalBytes,
+                progress: c.progress || 0,
+                status: c.status,
+                speed: c.speed || 0
+              }))
+            : null
         });
       }
 
@@ -879,11 +1322,18 @@ class DownloadEngine extends EventEmitter {
     try {
       const data = {
         maxConcurrent: this.maxConcurrent,
-        tasks: Array.from(this.tasks.values()).map(t => ({
+        tasks: Array.from(this.tasks.values()).map((t) => ({
           ...t,
           speed: 0,
           eta: 0,
-          status: t.status === 'DOWNLOADING' ? 'PAUSED' : t.status // On restart, pause active
+          status: t.status === 'DOWNLOADING' ? 'PAUSED' : t.status, // On restart, pause active
+          chunks: t.chunks
+            ? t.chunks.map((c) => ({
+                ...c,
+                speed: 0,
+                status: c.status === 'DOWNLOADING' || c.status === 'RETRYING' ? 'PAUSED' : c.status
+              }))
+            : []
         }))
       };
       fs.writeFileSync(this.storagePath, JSON.stringify(data, null, 2), 'utf-8');
@@ -916,8 +1366,17 @@ class DownloadEngine extends EventEmitter {
     }
     for (const [taskId, record] of this.activeStreams.entries()) {
       try {
-        record.abortController.abort();
-        if (record.writeStream) record.writeStream.end();
+        if (record.isSegmented) {
+          for (const ctrl of record.chunkControllers.values()) {
+            ctrl.abort();
+          }
+          if (record.fileHandle) {
+            record.fileHandle.close().catch(() => {});
+          }
+        } else {
+          record.abortController.abort();
+          if (record.writeStream) record.writeStream.end();
+        }
       } catch {}
     }
     this.activeStreams.clear();

@@ -10,15 +10,19 @@
   <script>
     try {
       var c = JSON.parse(localStorage.getItem('voltrex_theme_cache'));
-      if (c) {
-        var isDark = c.themeMode === 'light' ? false : (c.themeMode === 'dark' ? true : window.matchMedia('(prefers-color-scheme: dark)').matches);
-        if (isDark) {
-          document.documentElement.classList.add('dark');
-          document.documentElement.classList.remove('light');
-        } else {
-          document.documentElement.classList.add('light');
-          document.documentElement.classList.remove('dark');
-        }
+      var isWindowsLegacy = c && c.windowsLegacy !== undefined ? c.windowsLegacy : true;
+      if (isWindowsLegacy) {
+        document.documentElement.classList.add('windows-legacy');
+      }
+      var isDark = c ? (c.themeMode === 'light' ? false : (c.themeMode === 'dark' ? true : window.matchMedia('(prefers-color-scheme: dark)').matches)) : true;
+      if (isDark) {
+        document.documentElement.classList.add('dark');
+        document.documentElement.classList.remove('light');
+        document.documentElement.setAttribute('data-mode', 'dark');
+      } else {
+        document.documentElement.classList.add('light');
+        document.documentElement.classList.remove('dark');
+        document.documentElement.setAttribute('data-mode', 'light');
       }
     } catch (e) {}
   </script>

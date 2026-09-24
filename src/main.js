@@ -126,8 +126,8 @@ function createWindow() {
     }
   });
 
-  mainWindow.webContents.on('devtools-opened', () => {
-    mainWindow.webContents.closeDevTools();
+  mainWindow.webContents.on('console-message', (_event, level, message, line, sourceId) => {
+    console.log(`[Renderer ${level}] ${message} (${sourceId}:${line})`);
   });
 
   // Determine whether to load from Vite dev server or built bundle
@@ -473,6 +473,10 @@ function getDefaultSettings() {
     maxRetries: 3,
     closeAction: 'ask',
     userAgent: 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36 VoltrexLoader/1.0',
+    // Multi-Connection Acceleration Settings
+    enableMultiConnection: true,
+    defaultConnections: 8,
+    minChunkSizeMB: 2,
     // Proxy Settings
     proxyMode: 'direct', // 'direct' | 'system' | 'manual'
     proxyProtocol: 'http', // 'http' | 'https' | 'socks5'
@@ -485,6 +489,7 @@ function getDefaultSettings() {
     // Appearance & Custom Theme Settings
     themeMode: 'system', // 'system' | 'dark' | 'light'
     themePreset: 'crimson', // 'crimson' | 'cyber' | 'violet' | 'emerald' | 'amber' | 'sapphire' | 'rose' | 'slate' | 'custom'
+    windowsLegacy: true,
     customTheme: {
       primary: '#D84040',
       secondary: '#8E1616',
@@ -634,6 +639,15 @@ function saveSettings(newSettings) {
       if (merged.defaultDownloadPath) {
         downloadEngine.defaultDownloadPath = merged.defaultDownloadPath;
       }
+      if (typeof merged.defaultConnections === 'number') {
+        downloadEngine.defaultConnections = merged.defaultConnections;
+      }
+      if (typeof merged.enableMultiConnection === 'boolean') {
+        downloadEngine.enableMultiConnection = merged.enableMultiConnection;
+      }
+      if (typeof merged.organizeByCategory === 'boolean') {
+        downloadEngine.organizeByCategory = merged.organizeByCategory;
+      }
     }
     applyProxySettings(merged);
     if (typeof merged.startWithSystem === 'boolean') {
@@ -779,6 +793,15 @@ app.whenReady().then(() => {
   downloadEngine = new DownloadEngine(userDataPath, defaultDownloadPath);
   if (initialSettings.concurrency) {
     downloadEngine.setConcurrency(initialSettings.concurrency);
+  }
+  if (typeof initialSettings.defaultConnections === 'number') {
+    downloadEngine.defaultConnections = initialSettings.defaultConnections;
+  }
+  if (typeof initialSettings.enableMultiConnection === 'boolean') {
+    downloadEngine.enableMultiConnection = initialSettings.enableMultiConnection;
+  }
+  if (typeof initialSettings.organizeByCategory === 'boolean') {
+    downloadEngine.organizeByCategory = initialSettings.organizeByCategory;
   }
 
   bridgeServer = new BridgeServer(

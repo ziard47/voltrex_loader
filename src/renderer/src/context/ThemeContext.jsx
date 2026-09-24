@@ -1,7 +1,7 @@
 import React, { createContext, useContext, useState, useEffect, useMemo, useCallback } from 'react';
 import { ThemeProvider } from '@mui/material/styles';
 import CssBaseline from '@mui/material/CssBaseline';
-import { THEME_PRESETS, resolveTokens, buildMuiTheme, hexToRgb } from '../utils/themePresets';
+import { THEME_PRESETS, WINDOWS_LEGACY_TOKENS, resolveWindowsLegacyTokens, resolveTokens, buildMuiTheme, hexToRgb } from '../utils/themePresets';
 
 const ThemeContext = createContext(null);
 
@@ -37,6 +37,7 @@ export function AppThemeProvider({ children }) {
 
   const [themeMode, setThemeModeState] = useState(cache?.themeMode || 'system');
   const [themePreset, setThemePresetState] = useState(cache?.themePreset || 'crimson');
+  const [windowsLegacy, setWindowsLegacyState] = useState(cache?.windowsLegacy !== undefined ? cache.windowsLegacy : true);
   const [customTheme, setCustomThemeState] = useState(cache?.customTheme || DEFAULT_CUSTOM_THEME);
   const [darkReader, setDarkReaderState] = useState(cache?.darkReader || DEFAULT_DARK_READER);
 
@@ -79,6 +80,7 @@ export function AppThemeProvider({ children }) {
           if (settings) {
             if (settings.themeMode) setThemeModeState(settings.themeMode);
             if (settings.themePreset) setThemePresetState(settings.themePreset);
+            if (typeof settings.windowsLegacy === 'boolean') setWindowsLegacyState(settings.windowsLegacy);
             if (settings.customTheme) setCustomThemeState(settings.customTheme);
             if (settings.darkReader) setDarkReaderState(settings.darkReader);
           }
@@ -92,13 +94,16 @@ export function AppThemeProvider({ children }) {
 
   // Resolve design tokens
   const tokens = useMemo(() => {
+    if (windowsLegacy) {
+      return resolveWindowsLegacyTokens(effectiveMode);
+    }
     return resolveTokens(themePreset, effectiveMode, customTheme);
-  }, [themePreset, effectiveMode, customTheme]);
+  }, [windowsLegacy, themePreset, effectiveMode, customTheme]);
 
   // Build reactive MUI Theme
   const muiTheme = useMemo(() => {
-    return buildMuiTheme(tokens, effectiveMode);
-  }, [tokens, effectiveMode]);
+    return buildMuiTheme(tokens, effectiveMode, windowsLegacy);
+  }, [tokens, effectiveMode, windowsLegacy]);
 
   // Apply CSS custom properties to document root & manage html class
   useEffect(() => {
@@ -117,7 +122,7 @@ export function AppThemeProvider({ children }) {
     root.style.setProperty('--theme-secondary', tokens.secondary);
     root.style.setProperty('--theme-secondary-rgb', secRgb);
     root.style.setProperty('--theme-secondary-subtle', `rgba(${secRgb}, ${effectiveMode === 'dark' ? 0.25 : 0.15})`);
-    root.style.setProperty('--theme-primary-glow', `rgba(${primRgb}, ${effectiveMode === 'dark' ? 0.35 : 0.2})`);
+    root.style.setProperty('--theme-primary-glow', 'transparent');
     root.style.setProperty('--theme-bg-input', tokens.bgInput || (effectiveMode === 'dark' ? tokens.bgSurface : '#ffffff'));
     root.style.setProperty('--theme-bg-subtle', effectiveMode === 'dark' ? 'rgba(255, 255, 255, 0.05)' : 'rgba(0, 0, 0, 0.04)');
     root.style.setProperty('--theme-border', tokens.border);
@@ -125,7 +130,13 @@ export function AppThemeProvider({ children }) {
     root.style.setProperty('--theme-text-primary', tokens.textPrimary);
     root.style.setProperty('--theme-text-muted', tokens.textMuted);
 
-    // Update <html> classes for Tailwind dark: selector & data-mode attribute
+    // Update <html> classes for Windows Legacy & Tailwind dark: selector & data-mode attribute
+    if (windowsLegacy) {
+      root.classList.add('windows-legacy');
+    } else {
+      root.classList.remove('windows-legacy');
+    }
+
     root.setAttribute('data-mode', effectiveMode);
     if (effectiveMode === 'dark') {
       root.classList.add('dark');
@@ -148,6 +159,7 @@ export function AppThemeProvider({ children }) {
         JSON.stringify({
           themeMode,
           themePreset,
+          windowsLegacy,
           customTheme,
           darkReader
         })
@@ -155,7 +167,7 @@ export function AppThemeProvider({ children }) {
     } catch (e) {
       // Ignore cache storage error
     }
-  }, [tokens, effectiveMode, darkReader, themeMode, themePreset, customTheme]);
+  }, [tokens, effectiveMode, darkReader, themeMode, themePreset, windowsLegacy, customTheme]);
 
   // Public setters that optionally sync with backend
   const setThemeMode = useCallback((mode, syncBackend = true) => {
@@ -169,6 +181,13 @@ export function AppThemeProvider({ children }) {
     setThemePresetState(preset);
     if (syncBackend && window.electronAPI?.saveSettings) {
       window.electronAPI.saveSettings({ themePreset: preset });
+    }
+  }, []);
+
+  const setWindowsLegacy = useCallback((enabled, syncBackend = true) => {
+    setWindowsLegacyState(enabled);
+    if (syncBackend && window.electronAPI?.saveSettings) {
+      window.electronAPI.saveSettings({ windowsLegacy: enabled });
     }
   }, []);
 
@@ -198,11 +217,12 @@ export function AppThemeProvider({ children }) {
   }, [effectiveMode, setThemeMode]);
 
   const resetTheme = useCallback(() => {
+    setWindowsLegacy(true);
     setThemeMode('system');
     setThemePreset('crimson');
     setCustomTheme(DEFAULT_CUSTOM_THEME);
     setDarkReader(DEFAULT_DARK_READER);
-  }, [setThemeMode, setThemePreset, setCustomTheme, setDarkReader]);
+  }, [setWindowsLegacy, setThemeMode, setThemePreset, setCustomTheme, setDarkReader]);
 
   const contextValue = {
     themeMode,
@@ -210,6 +230,8 @@ export function AppThemeProvider({ children }) {
     effectiveMode,
     themePreset,
     setThemePreset,
+    windowsLegacy,
+    setWindowsLegacy,
     customTheme,
     setCustomTheme,
     darkReader,

@@ -16,7 +16,7 @@
   --theme-secondary: #8E1616;
   --theme-secondary-rgb: 142, 22, 22;
   --theme-secondary-subtle: rgba(142, 22, 22, 0.25);
-  --theme-primary-glow: rgba(216, 64, 64, 0.3);
+  --theme-primary-glow: transparent;
   --theme-border: rgba(142, 22, 22, 0.35);
   --theme-border-accent: rgba(216, 64, 64, 0.45);
   --theme-text-primary: #EEEEEE;
@@ -202,7 +202,7 @@ button.\!bg-\[\#D84040\]:not([class*="/"]):not([class*="hover"]) * {
 .btn-theme-primary {
   background-color: var(--theme-primary) !important;
   color: #ffffff !important;
-  box-shadow: 0 4px 14px var(--theme-primary-glow) !important;
+  box-shadow: none !important;
   border: 1px solid transparent !important;
   transition: all 0.15s ease-in-out !important;
 }
@@ -210,7 +210,7 @@ button.\!bg-\[\#D84040\]:not([class*="/"]):not([class*="hover"]) * {
 .btn-theme-primary:hover,
 button.btn-theme-primary:hover {
   background-color: var(--theme-primary-hover) !important;
-  box-shadow: 0 6px 20px var(--theme-primary-glow) !important;
+  box-shadow: none !important;
   color: #ffffff !important;
 }
 
@@ -363,13 +363,6 @@ p.text-\[\#b8a5a5\] {
   color: var(--theme-text-muted) !important;
 }
 
-/* Shadow Highlights */
-.shadow-\[\#8E1616\]\/30,
-.shadow-\[\#D84040\]\/30,
-.shadow-\[\#D84040\]\/20,
-.shadow-\[\#D84040\]\/10 {
-  box-shadow: 0 4px 14px var(--theme-primary-glow) !important;
-}
 
 /* ==========================================================================
    Light Mode Specific Enhancements
@@ -723,5 +716,886 @@ button.MuiButton-contained:not(.MuiButton-colorSecondary):hover * {
 /* Checkbox native accent */
 input[type="checkbox"] {
   accent-color: var(--theme-primary) !important;
+}
+
+/* ==========================================================================
+   WINDOWS LEGACY (Windows 10 Modern Desktop Application Theme)
+   ========================================================================== */
+html.windows-legacy:not(.dark) {
+  --theme-bg-base: #f3f3f3;
+  --theme-bg-surface: #ffffff;
+  --theme-bg-sidebar: #f0f0f0;
+  --theme-bg-card: #ffffff;
+  --theme-bg-hover: #e5f1fb;
+  --theme-bg-input: #ffffff;
+  --theme-primary: #0078D7;
+  --theme-primary-hover: #0063B1;
+  --theme-secondary: #004E8C;
+  --theme-secondary-subtle: #cde8ff;
+  --theme-border: #d1d1d1;
+  --theme-border-accent: #0078D7;
+  --theme-text-primary: #000000;
+  --theme-text-muted: #555555;
+  color-scheme: light;
+}
+
+html.windows-legacy.dark {
+  --theme-bg-base: #191919;
+  --theme-bg-surface: #1f1f1f;
+  --theme-bg-sidebar: #1f1f1f;
+  --theme-bg-card: #202020;
+  --theme-bg-hover: #2d2d2d;
+  --theme-bg-input: #1f1f1f;
+  --theme-primary: #0078D7;
+  --theme-primary-hover: #1988e0;
+  --theme-secondary: #005a9e;
+  --theme-secondary-subtle: #1a3b5c;
+  --theme-border: #383838;
+  --theme-border-accent: #0078D7;
+  --theme-text-primary: #ffffff;
+  --theme-text-muted: #aaaaaa;
+  color-scheme: dark;
+}
+
+/* Base Windows 10 Typography & Crisp 2px Corners (Shared) */
+html.windows-legacy body,
+html.windows-legacy button,
+html.windows-legacy input,
+html.windows-legacy select,
+html.windows-legacy textarea {
+  font-family: 'Segoe UI', -apple-system, BlinkMacSystemFont, Arial, sans-serif !important;
+}
+
+html.windows-legacy .rounded-2xl,
+html.windows-legacy .rounded-xl,
+html.windows-legacy .rounded-lg,
+html.windows-legacy .rounded-md,
+html.windows-legacy .rounded {
+  border-radius: 2px !important;
+}
+
+/* ==========================================================================
+   WINDOWS 10 LIGHT THEME
+   ========================================================================== */
+html.windows-legacy:not(.dark) body {
+  background-color: #f3f3f3 !important;
+  color: #000000 !important;
+}
+
+/* Light Action Buttons */
+html.windows-legacy:not(.dark) button:not(.btn-theme-primary),
+html.windows-legacy:not(.dark) .btn-theme-outlined,
+html.windows-legacy:not(.dark) .MuiButton-outlined,
+html.windows-legacy:not(.dark) .MuiButton-text {
+  background-color: #e1e1e1 !important;
+  color: #000000 !important;
+  border: 1px solid #adadad !important;
+  box-shadow: none !important;
+  border-radius: 2px !important;
+  font-weight: 500 !important;
+  font-size: 11px !important;
+  transition: all 0.1s ease !important;
+}
+
+html.windows-legacy:not(.dark) button:not(.btn-theme-primary):hover,
+html.windows-legacy:not(.dark) .btn-theme-outlined:hover,
+html.windows-legacy:not(.dark) .MuiButton-outlined:hover,
+html.windows-legacy:not(.dark) .MuiButton-text:hover {
+  background-color: #e5f1fb !important;
+  border-color: #0078D7 !important;
+  color: #000000 !important;
+}
+
+html.windows-legacy:not(.dark) button:not(.btn-theme-primary):active,
+html.windows-legacy:not(.dark) .btn-theme-outlined:active {
+  background-color: #cce4f7 !important;
+  border-color: #005499 !important;
+  color: #000000 !important;
+}
+
+/* Light Text Inputs */
+html.windows-legacy:not(.dark) input[type="text"]:not(.MuiInputBase-input),
+html.windows-legacy:not(.dark) input[type="search"]:not(.MuiInputBase-input),
+html.windows-legacy:not(.dark) input[type="number"]:not(.MuiInputBase-input),
+html.windows-legacy:not(.dark) textarea:not(.MuiInputBase-input),
+html.windows-legacy:not(.dark) .MuiInputBase-root,
+html.windows-legacy:not(.dark) .MuiOutlinedInput-root {
+  background-color: #ffffff !important;
+  color: #000000 !important;
+  border: 1px solid #7a7a7a !important;
+  box-shadow: none !important;
+  border-radius: 2px !important;
+}
+
+html.windows-legacy:not(.dark) input,
+html.windows-legacy:not(.dark) input::placeholder {
+  color: #000000 !important;
+}
+
+html.windows-legacy:not(.dark) input::placeholder {
+  color: #767676 !important;
+}
+
+/* Light Header / Command Bar */
+html.windows-legacy:not(.dark) header {
+  background-color: #f3f3f3 !important;
+  border-bottom: 1px solid #d1d1d1 !important;
+  box-shadow: none !important;
+}
+
+html.windows-legacy:not(.dark) header * {
+  color: #000000 !important;
+}
+
+/* Light Sidebar (Navigation Pane) */
+html.windows-legacy:not(.dark) aside {
+  background-color: #f0f0f0 !important;
+  border-right: 1px solid #d1d1d1 !important;
+  box-shadow: none !important;
+}
+
+html.windows-legacy:not(.dark) aside button:not(.font-bold) {
+  border-radius: 2px !important;
+  background: transparent !important;
+  border: 1px solid transparent !important;
+  box-shadow: none !important;
+  color: #000000 !important;
+}
+
+html.windows-legacy:not(.dark) aside button:not(.font-bold):hover {
+  background-color: #e5f1fb !important;
+  border-color: #cde8ff !important;
+  color: #000000 !important;
+}
+
+html.windows-legacy:not(.dark) aside button.font-bold,
+html.windows-legacy:not(.dark) aside button[class*="var(--theme-secondary-subtle)"],
+html.windows-legacy:not(.dark) aside button[class*="bg-[var(--theme-secondary-subtle)]"] {
+  background-color: #cde8ff !important;
+  border: 1px solid #0078D7 !important;
+  border-radius: 2px !important;
+  color: #000000 !important;
+  font-weight: 600 !important;
+}
+
+html.windows-legacy:not(.dark) aside button.font-bold *,
+html.windows-legacy:not(.dark) aside button[class*="var(--theme-secondary-subtle)"] * {
+  color: #000000 !important;
+}
+
+/* Light Table / File Explorer Details View */
+html.windows-legacy:not(.dark) main {
+  background-color: #ffffff !important;
+}
+
+html.windows-legacy:not(.dark) .MuiTable-root {
+  background-color: #ffffff !important;
+}
+
+html.windows-legacy:not(.dark) .MuiTableHead-root .MuiTableCell-root,
+html.windows-legacy:not(.dark) th.MuiTableCell-root {
+  background: #f0f0f0 !important;
+  color: #333333 !important;
+  border-bottom: 1px solid #e5e5e5 !important;
+  border-right: 1px solid #e5e5e5 !important;
+  font-weight: 600 !important;
+  font-size: 11px !important;
+  text-transform: none !important;
+  letter-spacing: normal !important;
+  padding: 4px 8px !important;
+  box-shadow: none !important;
+  border-top: none !important;
+  border-left: none !important;
+}
+
+html.windows-legacy:not(.dark) .MuiTableHead-root .MuiTableCell-root:hover {
+  background: #e5f1fb !important;
+  color: #000000 !important;
+}
+
+html.windows-legacy:not(.dark) .MuiTableHead-root .MuiTableCell-root * {
+  color: #333333 !important;
+}
+
+html.windows-legacy:not(.dark) .MuiTableBody-root .MuiTableCell-root,
+html.windows-legacy:not(.dark) td.MuiTableCell-root {
+  background-color: #ffffff !important;
+  color: #000000 !important;
+  border-bottom: 1px solid #f2f2f2 !important;
+  border-right: 1px solid #f8f8f8 !important;
+  font-size: 12px !important;
+}
+
+html.windows-legacy:not(.dark) .MuiTableBody-root .MuiTableCell-root * {
+  color: #000000 !important;
+}
+
+html.windows-legacy:not(.dark) .MuiTableBody-root .MuiTableRow-root:hover .MuiTableCell-root {
+  background-color: #e5f1fb !important;
+  color: #000000 !important;
+}
+
+html.windows-legacy:not(.dark) .MuiTableBody-root .MuiTableRow-root[class*="var(--theme-secondary-subtle)"] .MuiTableCell-root,
+html.windows-legacy:not(.dark) .MuiTableBody-root .MuiTableRow-root.Mui-selected .MuiTableCell-root {
+  background-color: #cde8ff !important;
+  color: #000000 !important;
+  border-top: 1px solid #0078D7 !important;
+  border-bottom: 1px solid #0078D7 !important;
+}
+
+html.windows-legacy:not(.dark) .MuiTableBody-root .MuiTableRow-root[class*="var(--theme-secondary-subtle)"] *,
+html.windows-legacy:not(.dark) .MuiTableBody-root .MuiTableRow-root.Mui-selected * {
+  color: #000000 !important;
+}
+
+/* Light Progress Bar Container */
+html.windows-legacy:not(.dark) .MuiLinearProgress-root {
+  background-color: #e6e6e6 !important;
+  border: 1px solid #d1d1d1 !important;
+}
+
+/* Light Dialogs */
+html.windows-legacy:not(.dark) .MuiDialog-paper {
+  background-color: #ffffff !important;
+  border: 1px solid #0078D7 !important;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.22) !important;
+  color: #000000 !important;
+}
+
+html.windows-legacy:not(.dark) .MuiDialogTitle-root {
+  background-color: #f3f3f3 !important;
+  border-bottom: 1px solid #e5e5e5 !important;
+  color: #000000 !important;
+}
+
+html.windows-legacy:not(.dark) .MuiDialogTitle-root * {
+  color: #000000 !important;
+}
+
+html.windows-legacy:not(.dark) .MuiDialogContent-root {
+  background-color: #ffffff !important;
+  color: #000000 !important;
+}
+
+html.windows-legacy:not(.dark) .MuiDialogContent-root * {
+  color: #000000 !important;
+}
+
+html.windows-legacy:not(.dark) .MuiDialogActions-root {
+  background-color: #f3f3f3 !important;
+  border-top: 1px solid #e5e5e5 !important;
+}
+
+/* Light Menus */
+html.windows-legacy:not(.dark) .MuiMenu-paper {
+  background-color: #ffffff !important;
+  border: 1px solid #d1d1d1 !important;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.15) !important;
+  color: #000000 !important;
+}
+
+html.windows-legacy:not(.dark) .MuiMenuItem-root {
+  color: #000000 !important;
+}
+
+html.windows-legacy:not(.dark) .MuiMenuItem-root:hover {
+  background-color: #e5f1fb !important;
+  color: #000000 !important;
+}
+
+html.windows-legacy:not(.dark) .MuiMenuItem-root:hover * {
+  color: #000000 !important;
+}
+
+/* Light Scrollbars */
+html.windows-legacy:not(.dark) ::-webkit-scrollbar {
+  background-color: #f0f0f0;
+}
+
+html.windows-legacy:not(.dark) ::-webkit-scrollbar-thumb {
+  background-color: #cdcdcd;
+}
+
+html.windows-legacy:not(.dark) ::-webkit-scrollbar-thumb:hover {
+  background-color: #a6a6a6;
+}
+
+html.windows-legacy:not(.dark) ::-webkit-scrollbar-track {
+  background-color: #f0f0f0;
+}
+
+/* Light Settings Panels */
+html.windows-legacy:not(.dark) .bg-\[\#1D1616\],
+html.windows-legacy:not(.dark) .bg-\[\#160f0f\],
+html.windows-legacy:not(.dark) .bg-\[\#1A1212\],
+html.windows-legacy:not(.dark) .bg-\[\#140e0e\] {
+  background-color: #ffffff !important;
+  border-color: #e5e5e5 !important;
+}
+
+html.windows-legacy:not(.dark) .text-\[\#EEEEEE\],
+html.windows-legacy:not(.dark) .text-slate-800 {
+  color: #000000 !important;
+}
+
+html.windows-legacy:not(.dark) .text-\[\#b8a5a5\],
+html.windows-legacy:not(.dark) .text-slate-500 {
+  color: #555555 !important;
+}
+
+html.windows-legacy:not(.dark) .border-\[\#8E1616\]\/30,
+html.windows-legacy:not(.dark) .border-\[\#8E1616\]\/40,
+html.windows-legacy:not(.dark) .border-\[\#8E1616\]\/25 {
+  border-color: #d1d1d1 !important;
+}
+
+/* Light Status Badges & Chips */
+html.windows-legacy:not(.dark) .status-badge-success,
+html.windows-legacy:not(.dark) .status-chip-completed,
+html.windows-legacy:not(.dark) .MuiChip-root.status-chip-completed {
+  background-color: #dff6dd !important;
+  color: #107c10 !important;
+  border: 1px solid #bad8b7 !important;
+}
+html.windows-legacy:not(.dark) .status-badge-success *,
+html.windows-legacy:not(.dark) .status-chip-completed *,
+html.windows-legacy:not(.dark) .MuiChip-root.status-chip-completed * {
+  color: #107c10 !important;
+}
+
+html.windows-legacy:not(.dark) .status-badge-error,
+html.windows-legacy:not(.dark) .status-chip-error,
+html.windows-legacy:not(.dark) .MuiChip-root.status-chip-error {
+  background-color: #fde7e9 !important;
+  color: #a80000 !important;
+  border: 1px solid #f3b2b7 !important;
+}
+html.windows-legacy:not(.dark) .status-badge-error *,
+html.windows-legacy:not(.dark) .status-chip-error *,
+html.windows-legacy:not(.dark) .MuiChip-root.status-chip-error * {
+  color: #a80000 !important;
+}
+
+html.windows-legacy:not(.dark) .status-chip-active,
+html.windows-legacy:not(.dark) .MuiChip-root.status-chip-active {
+  background-color: #cde8ff !important;
+  color: #0078D7 !important;
+  border: 1px solid #0078D7 !important;
+}
+html.windows-legacy:not(.dark) .status-chip-active *,
+html.windows-legacy:not(.dark) .MuiChip-root.status-chip-active * {
+  color: #0078D7 !important;
+}
+
+html.windows-legacy:not(.dark) .status-chip-paused,
+html.windows-legacy:not(.dark) .MuiChip-root.status-chip-paused {
+  background-color: #fff4ce !important;
+  color: #797673 !important;
+  border: 1px solid #fce183 !important;
+}
+html.windows-legacy:not(.dark) .status-chip-paused *,
+html.windows-legacy:not(.dark) .MuiChip-root.status-chip-paused * {
+  color: #797673 !important;
+}
+
+html.windows-legacy:not(.dark) .status-chip-queued,
+html.windows-legacy:not(.dark) .status-chip-cancelled,
+html.windows-legacy:not(.dark) .MuiChip-root.status-chip-queued,
+html.windows-legacy:not(.dark) .MuiChip-root.status-chip-cancelled {
+  background-color: #f3f3f3 !important;
+  color: #616161 !important;
+  border: 1px solid #d1d1d1 !important;
+}
+html.windows-legacy:not(.dark) .status-chip-queued *,
+html.windows-legacy:not(.dark) .status-chip-cancelled *,
+html.windows-legacy:not(.dark) .MuiChip-root.status-chip-queued *,
+html.windows-legacy:not(.dark) .MuiChip-root.status-chip-cancelled * {
+  color: #616161 !important;
+}
+
+html.windows-legacy:not(.dark) .MuiSnackbar-root > div > div {
+  background-color: #ffffff !important;
+  color: #000000 !important;
+  border: 1px solid #0078D7 !important;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.15) !important;
+  border-radius: 2px !important;
+}
+html.windows-legacy:not(.dark) .MuiSnackbar-root span {
+  color: #000000 !important;
+}
+
+/* ==========================================================================
+   WINDOWS 10 DARK THEME
+   ========================================================================== */
+html.windows-legacy.dark body {
+  background-color: #191919 !important;
+  color: #ffffff !important;
+}
+
+/* Dark Action Buttons */
+html.windows-legacy.dark button:not(.btn-theme-primary),
+html.windows-legacy.dark .btn-theme-outlined,
+html.windows-legacy.dark .MuiButton-outlined,
+html.windows-legacy.dark .MuiButton-text {
+  background-color: #333333 !important;
+  color: #ffffff !important;
+  border: 1px solid #555555 !important;
+  box-shadow: none !important;
+  border-radius: 2px !important;
+  font-weight: 500 !important;
+  font-size: 11px !important;
+  transition: all 0.1s ease !important;
+}
+
+html.windows-legacy.dark button:not(.btn-theme-primary):hover,
+html.windows-legacy.dark .btn-theme-outlined:hover,
+html.windows-legacy.dark .MuiButton-outlined:hover,
+html.windows-legacy.dark .MuiButton-text:hover {
+  background-color: #3e3e3e !important;
+  border-color: #0078D7 !important;
+  color: #ffffff !important;
+}
+
+html.windows-legacy.dark button:not(.btn-theme-primary):active,
+html.windows-legacy.dark .btn-theme-outlined:active {
+  background-color: #1f1f1f !important;
+  border-color: #005499 !important;
+  color: #ffffff !important;
+}
+
+/* Dark Text Inputs */
+html.windows-legacy.dark input[type="text"]:not(.MuiInputBase-input),
+html.windows-legacy.dark input[type="search"]:not(.MuiInputBase-input),
+html.windows-legacy.dark input[type="number"]:not(.MuiInputBase-input),
+html.windows-legacy.dark textarea:not(.MuiInputBase-input),
+html.windows-legacy.dark .MuiInputBase-root,
+html.windows-legacy.dark .MuiOutlinedInput-root {
+  background-color: #1f1f1f !important;
+  color: #ffffff !important;
+  border: 1px solid #555555 !important;
+  box-shadow: none !important;
+  border-radius: 2px !important;
+}
+
+html.windows-legacy.dark input,
+html.windows-legacy.dark input::placeholder {
+  color: #ffffff !important;
+}
+
+html.windows-legacy.dark input::placeholder {
+  color: #888888 !important;
+}
+
+/* Dark Header / Command Bar */
+html.windows-legacy.dark header {
+  background-color: #1f1f1f !important;
+  border-bottom: 1px solid #333333 !important;
+  box-shadow: none !important;
+}
+
+html.windows-legacy.dark header * {
+  color: #ffffff !important;
+}
+
+/* Dark Sidebar (Navigation Pane) */
+html.windows-legacy.dark aside {
+  background-color: #1f1f1f !important;
+  border-right: 1px solid #333333 !important;
+  box-shadow: none !important;
+}
+
+html.windows-legacy.dark aside button:not(.font-bold) {
+  border-radius: 2px !important;
+  background: transparent !important;
+  border: 1px solid transparent !important;
+  box-shadow: none !important;
+  color: #cccccc !important;
+}
+
+html.windows-legacy.dark aside button:not(.font-bold):hover {
+  background-color: #2d2d2d !important;
+  border-color: #3d3d3d !important;
+  color: #ffffff !important;
+}
+
+html.windows-legacy.dark aside button.font-bold,
+html.windows-legacy.dark aside button[class*="var(--theme-secondary-subtle)"],
+html.windows-legacy.dark aside button[class*="bg-[var(--theme-secondary-subtle)]"] {
+  background-color: #333333 !important;
+  border: 1px solid #0078D7 !important;
+  border-radius: 2px !important;
+  color: #ffffff !important;
+  font-weight: 600 !important;
+}
+
+html.windows-legacy.dark aside button.font-bold *,
+html.windows-legacy.dark aside button[class*="var(--theme-secondary-subtle)"] * {
+  color: #ffffff !important;
+}
+
+/* Dark Table / File Explorer Details View */
+html.windows-legacy.dark main {
+  background-color: #191919 !important;
+}
+
+html.windows-legacy.dark .MuiTable-root {
+  background-color: #191919 !important;
+}
+
+html.windows-legacy.dark .MuiTableHead-root .MuiTableCell-root,
+html.windows-legacy.dark th.MuiTableCell-root {
+  background: #252525 !important;
+  color: #cccccc !important;
+  border-bottom: 1px solid #383838 !important;
+  border-right: 1px solid #383838 !important;
+  font-weight: 600 !important;
+  font-size: 11px !important;
+  text-transform: none !important;
+  letter-spacing: normal !important;
+  padding: 4px 8px !important;
+  box-shadow: none !important;
+  border-top: none !important;
+  border-left: none !important;
+}
+
+html.windows-legacy.dark .MuiTableHead-root .MuiTableCell-root:hover {
+  background: #2d2d2d !important;
+  color: #ffffff !important;
+}
+
+html.windows-legacy.dark .MuiTableHead-root .MuiTableCell-root * {
+  color: #cccccc !important;
+}
+
+html.windows-legacy.dark .MuiTableBody-root .MuiTableCell-root,
+html.windows-legacy.dark td.MuiTableCell-root {
+  background-color: #191919 !important;
+  color: #ffffff !important;
+  border-bottom: 1px solid #282828 !important;
+  border-right: 1px solid #282828 !important;
+  font-size: 12px !important;
+}
+
+html.windows-legacy.dark .MuiTableBody-root .MuiTableCell-root * {
+  color: #ffffff !important;
+}
+
+html.windows-legacy.dark .MuiTableBody-root .MuiTableRow-root:hover .MuiTableCell-root {
+  background-color: #262626 !important;
+  color: #ffffff !important;
+}
+
+html.windows-legacy.dark .MuiTableBody-root .MuiTableRow-root[class*="var(--theme-secondary-subtle)"] .MuiTableCell-root,
+html.windows-legacy.dark .MuiTableBody-root .MuiTableRow-root.Mui-selected .MuiTableCell-root {
+  background-color: #1a3b5c !important;
+  color: #ffffff !important;
+  border-top: 1px solid #0078D7 !important;
+  border-bottom: 1px solid #0078D7 !important;
+}
+
+html.windows-legacy.dark .MuiTableBody-root .MuiTableRow-root[class*="var(--theme-secondary-subtle)"] *,
+html.windows-legacy.dark .MuiTableBody-root .MuiTableRow-root.Mui-selected * {
+  color: #ffffff !important;
+}
+
+/* Dark Progress Bar Container */
+html.windows-legacy.dark .MuiLinearProgress-root {
+  background-color: #333333 !important;
+  border: 1px solid #444444 !important;
+}
+
+/* Dark Dialogs */
+html.windows-legacy.dark .MuiDialog-paper {
+  background-color: #202020 !important;
+  border: 1px solid #0078D7 !important;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.6) !important;
+  color: #ffffff !important;
+}
+
+html.windows-legacy.dark .MuiDialogTitle-root {
+  background-color: #252525 !important;
+  border-bottom: 1px solid #333333 !important;
+  color: #ffffff !important;
+}
+
+html.windows-legacy.dark .MuiDialogTitle-root * {
+  color: #ffffff !important;
+}
+
+html.windows-legacy.dark .MuiDialogContent-root {
+  background-color: #202020 !important;
+  color: #ffffff !important;
+}
+
+html.windows-legacy.dark .MuiDialogContent-root * {
+  color: #ffffff !important;
+}
+
+html.windows-legacy.dark .MuiDialogActions-root {
+  background-color: #252525 !important;
+  border-top: 1px solid #333333 !important;
+}
+
+/* Dark Menus */
+html.windows-legacy.dark .MuiMenu-paper {
+  background-color: #252525 !important;
+  border: 1px solid #383838 !important;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.4) !important;
+  color: #ffffff !important;
+}
+
+html.windows-legacy.dark .MuiMenuItem-root {
+  color: #ffffff !important;
+}
+
+html.windows-legacy.dark .MuiMenuItem-root:hover {
+  background-color: #333333 !important;
+  color: #ffffff !important;
+}
+
+html.windows-legacy.dark .MuiMenuItem-root:hover * {
+  color: #ffffff !important;
+}
+
+/* Dark Scrollbars */
+html.windows-legacy.dark ::-webkit-scrollbar {
+  background-color: #1f1f1f;
+}
+
+html.windows-legacy.dark ::-webkit-scrollbar-thumb {
+  background-color: #4f4f4f;
+}
+
+html.windows-legacy.dark ::-webkit-scrollbar-thumb:hover {
+  background-color: #666666;
+}
+
+html.windows-legacy.dark ::-webkit-scrollbar-track {
+  background-color: #1f1f1f;
+}
+
+/* Dark Settings Panels */
+html.windows-legacy.dark .bg-\[\#1D1616\],
+html.windows-legacy.dark .bg-\[\#160f0f\],
+html.windows-legacy.dark .bg-\[\#1A1212\],
+html.windows-legacy.dark .bg-\[\#140e0e\] {
+  background-color: #202020 !important;
+  border-color: #333333 !important;
+}
+
+html.windows-legacy.dark .text-\[\#EEEEEE\],
+html.windows-legacy.dark .text-slate-800 {
+  color: #ffffff !important;
+}
+
+html.windows-legacy.dark .text-\[\#b8a5a5\],
+html.windows-legacy.dark .text-slate-500 {
+  color: #aaaaaa !important;
+}
+
+html.windows-legacy.dark .border-\[\#8E1616\]\/30,
+html.windows-legacy.dark .border-\[\#8E1616\]\/40,
+html.windows-legacy.dark .border-\[\#8E1616\]\/25 {
+  border-color: #383838 !important;
+}
+
+/* Dark Status Badges & Chips */
+html.windows-legacy.dark .status-badge-success,
+html.windows-legacy.dark .status-chip-completed,
+html.windows-legacy.dark .MuiChip-root.status-chip-completed {
+  background-color: rgba(16, 124, 16, 0.25) !important;
+  color: #6ccb5f !important;
+  border: 1px solid rgba(16, 124, 16, 0.5) !important;
+}
+html.windows-legacy.dark .status-badge-success *,
+html.windows-legacy.dark .status-chip-completed *,
+html.windows-legacy.dark .MuiChip-root.status-chip-completed * {
+  color: #6ccb5f !important;
+}
+
+html.windows-legacy.dark .status-badge-error,
+html.windows-legacy.dark .status-chip-error,
+html.windows-legacy.dark .MuiChip-root.status-chip-error {
+  background-color: rgba(168, 0, 0, 0.25) !important;
+  color: #ff99a4 !important;
+  border: 1px solid rgba(168, 0, 0, 0.5) !important;
+}
+html.windows-legacy.dark .status-badge-error *,
+html.windows-legacy.dark .status-chip-error *,
+html.windows-legacy.dark .MuiChip-root.status-chip-error * {
+  color: #ff99a4 !important;
+}
+
+html.windows-legacy.dark .status-chip-active,
+html.windows-legacy.dark .MuiChip-root.status-chip-active {
+  background-color: rgba(0, 120, 215, 0.25) !important;
+  color: #60cdff !important;
+  border: 1px solid #0078D7 !important;
+}
+html.windows-legacy.dark .status-chip-active *,
+html.windows-legacy.dark .MuiChip-root.status-chip-active * {
+  color: #60cdff !important;
+}
+
+html.windows-legacy.dark .status-chip-paused,
+html.windows-legacy.dark .MuiChip-root.status-chip-paused {
+  background-color: rgba(216, 59, 1, 0.25) !important;
+  color: #fce183 !important;
+  border: 1px solid rgba(252, 225, 131, 0.4) !important;
+}
+html.windows-legacy.dark .status-chip-paused *,
+html.windows-legacy.dark .MuiChip-root.status-chip-paused * {
+  color: #fce183 !important;
+}
+
+html.windows-legacy.dark .status-chip-queued,
+html.windows-legacy.dark .status-chip-cancelled,
+html.windows-legacy.dark .MuiChip-root.status-chip-queued,
+html.windows-legacy.dark .MuiChip-root.status-chip-cancelled {
+  background-color: #2b2b2b !important;
+  color: #cccccc !important;
+  border: 1px solid #444444 !important;
+}
+html.windows-legacy.dark .status-chip-queued *,
+html.windows-legacy.dark .status-chip-cancelled *,
+html.windows-legacy.dark .MuiChip-root.status-chip-queued *,
+html.windows-legacy.dark .MuiChip-root.status-chip-cancelled * {
+  color: #cccccc !important;
+}
+
+html.windows-legacy.dark .MuiSnackbar-root > div > div {
+  background-color: #252525 !important;
+  color: #ffffff !important;
+  border: 1px solid #0078D7 !important;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.4) !important;
+  border-radius: 2px !important;
+}
+html.windows-legacy.dark .MuiSnackbar-root span {
+  color: #ffffff !important;
+}
+
+/* ==========================================================================
+   SHARED WINDOWS 10 CONTROLS (Both Light and Dark)
+   ========================================================================== */
+/* Windows 10 Signature Primary Accent Button (#0078D7) */
+html.windows-legacy .btn-theme-primary,
+html.windows-legacy .MuiButton-contained,
+html.windows-legacy .MuiButton-containedPrimary {
+  background-color: #0078D7 !important;
+  color: #ffffff !important;
+  border: 1px solid #0078D7 !important;
+  box-shadow: none !important;
+  border-radius: 2px !important;
+  font-weight: 600 !important;
+  font-size: 11px !important;
+  transition: all 0.1s ease !important;
+}
+
+html.windows-legacy .btn-theme-primary:hover,
+html.windows-legacy .MuiButton-contained:hover,
+html.windows-legacy .MuiButton-containedPrimary:hover {
+  background-color: #1988e0 !important;
+  border-color: #1988e0 !important;
+  color: #ffffff !important;
+}
+
+html.windows-legacy .btn-theme-primary:active,
+html.windows-legacy .MuiButton-contained:active {
+  background-color: #0063B1 !important;
+  border-color: #0063B1 !important;
+  color: #ffffff !important;
+}
+
+html.windows-legacy .btn-theme-primary *,
+html.windows-legacy .btn-theme-primary:hover *,
+html.windows-legacy button.btn-theme-primary *,
+html.windows-legacy .MuiButton-contained *,
+html.windows-legacy .MuiButton-containedPrimary * {
+  color: #ffffff !important;
+}
+
+/* Ensure inner inputs inside MUI components NEVER have internal borders or nested outlines */
+html.windows-legacy .MuiInputBase-root input,
+html.windows-legacy .MuiOutlinedInput-root input,
+html.windows-legacy .MuiInputBase-input,
+html.windows-legacy .MuiOutlinedInput-input {
+  border: none !important;
+  outline: none !important;
+  box-shadow: none !important;
+  background-color: transparent !important;
+  border-radius: 0 !important;
+}
+
+/* Eliminate notchedOutline border since container already has the Windows 10 border */
+html.windows-legacy .MuiOutlinedInput-notchedOutline {
+  border: none !important;
+}
+
+html.windows-legacy input[type="text"]:not(.MuiInputBase-input):focus,
+html.windows-legacy input[type="search"]:not(.MuiInputBase-input):focus,
+html.windows-legacy textarea:not(.MuiInputBase-input):focus,
+html.windows-legacy .MuiInputBase-root.Mui-focused,
+html.windows-legacy .MuiOutlinedInput-root.Mui-focused {
+  border: 2px solid #0078D7 !important;
+  outline: none !important;
+}
+
+/* Windows 10 Green Transfer Progress Bar */
+html.windows-legacy .MuiLinearProgress-root {
+  border-radius: 2px !important;
+  height: 10px !important;
+  box-shadow: none !important;
+}
+
+html.windows-legacy .MuiLinearProgress-bar {
+  background-color: #06b025 !important;
+  background-image: none !important;
+  border-radius: 1px !important;
+}
+
+/* Windows 10 Modern Dialog Windows Structure */
+html.windows-legacy .MuiDialog-paper {
+  border-radius: 2px !important;
+  padding: 0 !important;
+}
+
+html.windows-legacy .MuiDialogTitle-root {
+  font-weight: 600 !important;
+  font-size: 13px !important;
+  padding: 10px 16px !important;
+  margin-bottom: 0 !important;
+}
+
+html.windows-legacy .MuiDialogContent-root {
+  padding: 16px !important;
+}
+
+html.windows-legacy .MuiDialogActions-root {
+  padding: 12px 16px !important;
+}
+
+/* Windows 10 Flyout Menus */
+html.windows-legacy .MuiMenu-paper {
+  border-radius: 2px !important;
+}
+
+html.windows-legacy .MuiMenuItem-root {
+  font-size: 12px !important;
+}
+
+/* Windows 10 Flat Modern Scrollbars Structure */
+html.windows-legacy ::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+
+html.windows-legacy ::-webkit-scrollbar-thumb {
+  border-radius: 0px;
+  border: none;
+  box-shadow: none;
+}
+
+html.windows-legacy ::-webkit-scrollbar-track {
+  box-shadow: none;
 }
 
