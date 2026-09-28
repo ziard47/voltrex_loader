@@ -1,0 +1,43 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1920 1080" width="1920" height="1080">
+  <defs>
+    <linearGradient id="bg4" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#0b0e16"/>
+      <stop offset="100%" stop-color="#141a27"/>
+    </linearGradient>
+    <pattern id="grid4" width="40" height="40" patternUnits="userSpaceOnUse">
+      <path d="M 40 0 L 0 0 0 40" fill="none" stroke="rgba(255,255,255,0.03)" stroke-width="1"/>
+    </pattern>
+  </defs>
+
+  <rect width="1920" height="1080" fill="url(#bg4)"/>
+  <rect width="1920" height="1080" fill="url(#grid4)"/>
+
+  <!-- Window Frame -->
+  <rect x="80" y="60" width="1760" height="960" rx="16" fill="#101520" stroke="rgba(255,255,255,0.1)" stroke-width="1.5"/>
+  <rect x="80" y="60" width="1760" height="54" rx="16" fill="#171e2c"/>
+  <circle cx="120" cy="87" r="7" fill="#ef4444"/>
+  <circle cx="145" cy="87" r="7" fill="#f59e0b"/>
+  <circle cx="170" cy="87" r="7" fill="#10b981"/>
+  <text x="210" y="93" fill="#94a3b8" font-family="-apple-system, BlinkMacSystemFont, Segoe UI, sans-serif" font-size="16" font-weight="600">Voltrex Loader — Batch URL Capture &amp; Wildcard Sniffer</text>
+
+  <!-- Batch Modal / View -->
+  <rect x="300" y="160" width="1320" height="740" rx="12" fill="#141a26" stroke="rgba(255,255,255,0.1)"/>
+  <text x="340" y="215" fill="#ffffff" font-family="-apple-system, BlinkMacSystemFont, Segoe UI, sans-serif" font-size="20" font-weight="700">Batch Pattern Queue: https://server.cdn/assets/package_[01-20].zip</text>
+
+  <!-- Batch List Wireframe -->
+  <g transform="translate(340, 250)">
+    <rect x="0" y="0" width="1240" height="50" rx="6" fill="#192130"/>
+    <rect x="0" y="60" width="1240" height="50" rx="6" fill="#171e2c"/>
+    <rect x="0" y="120" width="1240" height="50" rx="6" fill="#171e2c"/>
+    <rect x="0" y="180" width="1240" height="50" rx="6" fill="#171e2c"/>
+    <rect x="0" y="240" width="1240" height="50" rx="6" fill="#171e2c"/>
+  </g>
+
+  <!-- Watermark -->
+  <g transform="translate(960, 680)">
+    <rect x="-280" y="-60" width="560" height="120" rx="12" fill="#090c13" stroke="rgba(255,255,255,0.15)" stroke-width="2"/>
+    <text x="0" y="-15" fill="#f8fafc" font-family="-apple-system, BlinkMacSystemFont, Segoe UI, sans-serif" font-size="20" font-weight="700" text-anchor="middle">Batch Capture &amp; Wildcard Queue</text>
+    <text x="0" y="16" fill="#f59e0b" font-family="JetBrains Mono, monospace" font-size="14" font-weight="600" text-anchor="middle">Placeholder Screenshot #4</text>
+    <text x="0" y="38" fill="#64748b" font-family="-apple-system, BlinkMacSystemFont, Segoe UI, sans-serif" font-size="12" text-anchor="middle">Drop "screenshot-4.png" into web/assets/screenshots/</text>
+  </g>
+</svg>

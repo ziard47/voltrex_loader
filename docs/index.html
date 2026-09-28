@@ -1,0 +1,1231 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Voltrex Loader — High-Performance Download Accelerator & Manager</title>
+  <meta name="description" content="Voltrex Loader is a modern, high-performance cross-platform download manager engineered with segmented multi-connection acceleration, range recovery, automatic category sorting, and seamless browser integration for Linux, SteamOS, and Windows." />
+  <meta name="keywords" content="download manager, idm alternative, fdm alternative, electron download accelerator, multi-stream download, range resume, steamos download manager, linux appimage downloader, windows portable downloader" />
+  <meta name="author" content="Mohomed Ziard | Voltrex Digital" />
+
+  <!-- Open Graph / Social Media -->
+  <meta property="og:type" content="website" />
+  <meta property="og:title" content="Voltrex Loader — Next-Gen Multi-Stream Download Accelerator" />
+  <meta property="og:description" content="Download files up to 10x faster with 2-32 parallel HTTP range streams, intelligent URL probing, auto-retry recovery, and browser extension capture for Linux & Windows." />
+  <meta property="og:image" content="assets/banner.jpg" />
+
+  <link rel="icon" type="image/png" href="assets/icon.png" />
+
+  <!-- Google Fonts: Outfit & JetBrains Mono -->
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700&family=Outfit:wght@400;500;600;700;800;900&display=swap" rel="stylesheet" />
+
+  <!-- Font Awesome 6 Icons (Local Vendor + CDN Fallback) -->
+  <link rel="stylesheet" href="vendor/fontawesome/css/all.min.css" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" />
+
+  <link rel="stylesheet" href="css/style.css" />
+</head>
+<body id="top">
+
+  <!-- ==========================================================================
+       Minimalist Navigation Bar
+       ========================================================================== -->
+  <header class="site-header">
+    <div class="container nav-inner">
+      <a href="#top" class="brand-wrapper">
+        <div class="brand-logo-container">
+          <img src="assets/icon.png" alt="Voltrex Loader Logo" />
+        </div>
+        <span class="brand-title">VOLTREX LOADER</span>
+        <span class="brand-version-badge">v1.2.0</span>
+      </a>
+
+      <ul class="nav-links">
+        <li><a href="#features" class="nav-link"><i class="fa-solid fa-bolt"></i> <span>Features</span></a></li>
+        <li><a href="#screenshots" class="nav-link"><i class="fa-solid fa-images"></i> <span>Screenshots</span></a></li>
+        <li><a href="#extension" class="nav-link"><i class="fa-solid fa-puzzle-piece"></i> <span>Extension</span></a></li>
+        <li><a href="#faq" class="nav-link"><i class="fa-solid fa-circle-question"></i> <span>FAQ</span></a></li>
+        <li class="mobile-only-link"><a href="https://github.com/ziard47/voltrex_loader" target="_blank" rel="noopener noreferrer" class="nav-link"><i class="fa-brands fa-github"></i> <span>GitHub Source</span></a></li>
+      </ul>
+
+      <div class="nav-actions">
+        <a href="https://github.com/ziard47/voltrex_loader" target="_blank" rel="noopener noreferrer" class="btn-github">
+          <i class="fa-brands fa-github"></i>
+          <span>GitHub</span>
+        </a>
+        <a href="#downloads" class="btn-nav-download">
+          <i class="fa-solid fa-download"></i>
+          <span>Download</span>
+        </a>
+        <button class="mobile-nav-toggle" aria-label="Toggle Navigation">
+          <i class="fa-solid fa-bars"></i>
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <!-- ==========================================================================
+       Hero Section
+       ========================================================================== -->
+  <section class="hero-section">
+    <div class="container">
+      <h1 class="hero-title">
+        Unleash Maximum Bandwidth.<br />
+        <span class="hero-title-accent">Engineered for Speed & Resilience.</span>
+      </h1>
+
+      <p class="hero-subtitle">
+        A high-performance, open-source download accelerator built with Electron, React, and modern web standards. Featuring 2 to 32 parallel HTTP Range streams, automated category sorting, range resume recovery, and instant browser extension capture for Linux, SteamOS, and Windows.
+      </p>
+
+      <div class="hero-actions">
+        <a href="#downloads" class="btn-primary-action">
+          <i class="fa-solid fa-download"></i>
+          <span>Download Voltrex Loader</span>
+        </a>
+        <a href="#simulator" class="btn-secondary-action">
+          <i class="fa-solid fa-play"></i>
+          <span>Interactive Live Simulator</span>
+        </a>
+      </div>
+
+      <div class="hero-platform-chips">
+        <span class="platform-chip">
+          <i class="fa-brands fa-linux"></i>
+          <span>Linux AppImage & Installer</span>
+        </span>
+        <span class="platform-chip">
+          <i class="fa-solid fa-gamepad"></i>
+          <span>Steam Deck & SteamOS</span>
+        </span>
+        <span class="platform-chip">
+          <i class="fa-brands fa-windows"></i>
+          <span>Windows 10 / 11 64-bit Portable</span>
+        </span>
+        <span class="platform-chip">
+          <i class="fa-brands fa-chrome"></i>
+          <span>Chromium Browser Extension</span>
+        </span>
+      </div>
+
+      <!-- Quick Metric Ticker -->
+      <div class="metrics-ticker">
+        <div class="metric-card">
+          <div class="metric-num red">10x</div>
+          <div class="metric-label">Max Speed Acceleration</div>
+        </div>
+        <div class="metric-card">
+          <div class="metric-num cyan">32</div>
+          <div class="metric-label">Concurrent Streams per File</div>
+        </div>
+        <div class="metric-card">
+          <div class="metric-num green">100%</div>
+          <div class="metric-label">Range Resume Recovery</div>
+        </div>
+        <div class="metric-card">
+          <div class="metric-num purple">0 ms</div>
+          <div class="metric-label">Localhost Bridge Overhead</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ==========================================================================
+       Interactive Live Simulator Section
+       ========================================================================== -->
+  <section class="section section-alt" id="simulator">
+    <div class="container">
+      <div class="section-header">
+        <span class="section-tag cyan">Interactive Experience</span>
+        <h2 class="section-title">See the Range Streaming Engine in Action</h2>
+        <p class="section-description">
+          Experience the live telemetry, dynamic segmented chunk matrix, and speed gauges exactly as they render inside the desktop app.
+        </p>
+      </div>
+
+      <div class="simulator-wrapper">
+        <div class="app-window-frame">
+          <!-- Window Header -->
+          <div class="app-window-header">
+            <div class="app-header-left">
+              <div class="window-dots">
+                <span class="window-dot red"></span>
+                <span class="window-dot yellow"></span>
+                <span class="window-dot green"></span>
+              </div>
+              <div class="window-app-name">
+                <img src="assets/icon.png" alt="Icon" style="width: 15px; height: 15px; border-radius: 2px;" />
+                <span>Voltrex Loader v1.2.0</span>
+              </div>
+              <div class="window-status-pill" id="simStatusBadge">
+                <i class="fa-solid fa-circle"></i>
+                <span>DOWNLOADING</span>
+              </div>
+            </div>
+
+            <div class="app-header-controls">
+              <button class="sim-control-btn" id="btnOpenProbeModal">
+                <i class="fa-solid fa-magnifying-glass"></i>
+                <span>Probe URL</span>
+              </button>
+              <button class="sim-control-btn active-red" id="btnBoostThreads">
+                <i class="fa-solid fa-bolt"></i>
+                <span>Boost to 32 Streams</span>
+              </button>
+            </div>
+          </div>
+
+          <!-- Window Inner Layout -->
+          <div class="app-window-body">
+            <!-- Sidebar -->
+            <aside class="sim-sidebar">
+              <div>
+                <div class="sim-sidebar-group-title">Status</div>
+                <div class="sim-nav-item active">
+                  <div class="sim-nav-left">
+                    <i class="fa-solid fa-arrow-down"></i>
+                    <span>Downloading</span>
+                  </div>
+                  <span class="sim-nav-count">1</span>
+                </div>
+                <div class="sim-nav-item">
+                  <div class="sim-nav-left">
+                    <i class="fa-solid fa-pause"></i>
+                    <span>Paused</span>
+                  </div>
+                  <span class="sim-nav-count">0</span>
+                </div>
+                <div class="sim-nav-item">
+                  <div class="sim-nav-left">
+                    <i class="fa-solid fa-check"></i>
+                    <span>Completed</span>
+                  </div>
+                  <span class="sim-nav-count">14</span>
+                </div>
+              </div>
+
+              <div>
+                <div class="sim-sidebar-group-title">Categories</div>
+                <div class="sim-nav-item">
+                  <div class="sim-nav-left">
+                    <i class="fa-solid fa-file-zipper"></i>
+                    <span>Compressed</span>
+                  </div>
+                  <span class="sim-nav-count">6</span>
+                </div>
+                <div class="sim-nav-item">
+                  <div class="sim-nav-left">
+                    <i class="fa-solid fa-film"></i>
+                    <span>Videos</span>
+                  </div>
+                  <span class="sim-nav-count">4</span>
+                </div>
+                <div class="sim-nav-item">
+                  <div class="sim-nav-left">
+                    <i class="fa-solid fa-file-lines"></i>
+                    <span>Documents</span>
+                  </div>
+                  <span class="sim-nav-count">3</span>
+                </div>
+                <div class="sim-nav-item">
+                  <div class="sim-nav-left">
+                    <i class="fa-solid fa-microchip"></i>
+                    <span>Programs</span>
+                  </div>
+                  <span class="sim-nav-count">2</span>
+                </div>
+              </div>
+            </aside>
+
+            <!-- Main Content Area -->
+            <main class="sim-content">
+              <!-- Top Telemetry Row -->
+              <div class="sim-topbar">
+                <div class="sim-speed-meter">
+                  <div class="sim-speed-icon-box">
+                    <i class="fa-solid fa-gauge-high"></i>
+                  </div>
+                  <div class="sim-speed-text-group">
+                    <span class="sim-speed-val" id="simSpeedVal">48.6 MB/s</span>
+                    <span class="sim-speed-sub">Aggregate Transfer Rate</span>
+                  </div>
+                </div>
+
+                <div class="sim-concurrency-controls">
+                  <span>Concurrency: <strong>3 tasks</strong></span>
+                  <span class="sim-badge-thread" id="simActiveThreadCount">16 Threads</span>
+                </div>
+              </div>
+
+              <!-- Active Download Item Card -->
+              <div class="sim-downloads-list">
+                <div class="sim-download-card">
+                  <div class="sim-dl-header">
+                    <div class="sim-dl-info">
+                      <div class="sim-file-icon">
+                        <i class="fa-solid fa-file-arrow-down"></i>
+                      </div>
+                      <div>
+                        <div class="sim-dl-title">ubuntu-24.04-desktop-amd64.iso</div>
+                        <div class="sim-dl-meta">
+                          <span style="color: var(--accent-primary); font-weight: 600;">HIGH PRIORITY</span>
+                          <span>•</span>
+                          <span>HTTP Range: bytes supported</span>
+                          <span>•</span>
+                          <span>~/Downloads/Linux_ISOs/</span>
+                        </div>
+                      </div>
+                    </div>
+
+                    <div class="sim-dl-actions">
+                      <button class="sim-action-btn" id="btnPauseSim" title="Pause / Resume">
+                        <i class="fa-solid fa-pause"></i>
+                      </button>
+                    </div>
+                  </div>
+
+                  <!-- Progress Bar -->
+                  <div class="sim-progress-bar-container">
+                    <div class="sim-progress-fill" id="simProgressFill"></div>
+                  </div>
+
+                  <div class="sim-dl-footer">
+                    <div id="simBytesDisplay">3.62 GB / 5.8 GB</div>
+                    <div style="color: #fff; font-weight: 700;" id="simProgressPercent">62.4%</div>
+                    <div>ETA: <span id="simEtaDisplay" style="color: #fff; font-weight: 700;">45s</span></div>
+                  </div>
+                </div>
+
+                <!-- Chunk Matrix Visualizer Component -->
+                <div class="sim-chunk-matrix-card">
+                  <div class="sim-chunk-header">
+                    <div class="sim-chunk-title">
+                      <i class="fa-solid fa-border-all"></i>
+                      <span>Multi-Connection Chunk Matrix (32 Parallel Range Streams)</span>
+                    </div>
+                    <div style="font-size: 0.7rem; color: var(--text-muted); display: flex; gap: 10px;">
+                      <span style="display: inline-flex; align-items: center; gap: 4px;"><span style="width: 7px; height: 7px; background: var(--accent-green); border-radius: 1px;"></span> Done</span>
+                      <span style="display: inline-flex; align-items: center; gap: 4px;"><span style="width: 7px; height: 7px; background: var(--accent-primary); border-radius: 1px;"></span> Streaming</span>
+                      <span style="display: inline-flex; align-items: center; gap: 4px;"><span style="width: 7px; height: 7px; background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.1); border-radius: 1px;"></span> Queued</span>
+                    </div>
+                  </div>
+
+                  <div class="sim-chunk-grid" id="simChunkGrid">
+                    <!-- Populated dynamically by JS -->
+                  </div>
+                </div>
+              </div>
+            </main>
+          </div>
+        </div>
+
+        <!-- Simulator Interactive Actions Bar -->
+        <div class="simulator-cta-bar">
+          <div>
+            <strong>Interactive Controls:</strong> Test multi-threaded chunk saturation and broken connection recovery.
+          </div>
+          <div class="sim-interactive-triggers">
+            <button class="btn-trigger cyan" id="btnDropResumeSim">
+              <i class="fa-solid fa-triangle-exclamation"></i>
+              <span>Simulate Connection Drop & Resume</span>
+            </button>
+            <a href="#downloads" class="btn-trigger primary">
+              <i class="fa-solid fa-download"></i>
+              <span>Get Desktop App</span>
+            </a>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ==========================================================================
+       Apple-Style Sticky Scroll Screenshot Showcase
+       ========================================================================== -->
+  <section class="scroll-tour-section" id="screenshots">
+    <div class="scroll-tour-track" id="scrollTourTrack">
+      <div class="scroll-tour-sticky">
+        <div class="container">
+          <div class="scroll-tour-layout">
+            <!-- Left Column: Story & Step Navigator -->
+            <div class="scroll-tour-left">
+              <span class="scroll-tour-tag">
+                <i class="fa-solid fa-camera"></i>
+                <span>Visual Tour</span>
+              </span>
+              <h2 class="scroll-tour-heading">
+                Engineered with Precision.<br />
+                <span style="color: var(--accent-primary);">Scroll to Explore.</span>
+              </h2>
+
+              <div class="scroll-steps-list" id="tourStepsList">
+                <div class="scroll-step-item active" data-step="0">
+                  <div class="scroll-step-meta">
+                    <span class="scroll-step-num">01</span>
+                    <span class="scroll-step-title">Dashboard &amp; Telemetry</span>
+                  </div>
+                  <p class="scroll-step-desc">
+                    Real-time global bandwidth speedometer, active task counts, category sorting, and priority task scheduling.
+                  </p>
+                </div>
+
+                <div class="scroll-step-item" data-step="1">
+                  <div class="scroll-step-meta">
+                    <span class="scroll-step-num">02</span>
+                    <span class="scroll-step-title">32-Stream Chunk Matrix</span>
+                  </div>
+                  <p class="scroll-step-desc">
+                    Live visualization of 2 to 32 parallel range sockets writing concurrently to pre-allocated disk sectors.
+                  </p>
+                </div>
+
+                <div class="scroll-step-item" data-step="2">
+                  <div class="scroll-step-meta">
+                    <span class="scroll-step-num">03</span>
+                    <span class="scroll-step-title">URL Probing &amp; Setup</span>
+                  </div>
+                  <p class="scroll-step-desc">
+                    Pre-download HTTP HEAD analysis verifying byte range support, MIME types, and Content-Length.
+                  </p>
+                </div>
+
+                <div class="scroll-step-item" data-step="3">
+                  <div class="scroll-step-meta">
+                    <span class="scroll-step-num">04</span>
+                    <span class="scroll-step-title">Batch Queue &amp; Sniffer</span>
+                  </div>
+                  <p class="scroll-step-desc">
+                    Download sequenced files with wildcard expressions ([01-100]), clipboard parsing, and parallel queue scheduling.
+                  </p>
+                </div>
+
+                <div class="scroll-step-item" data-step="4">
+                  <div class="scroll-step-meta">
+                    <span class="scroll-step-num">05</span>
+                    <span class="scroll-step-title">Settings &amp; Windows 10 Theme</span>
+                  </div>
+                  <p class="scroll-step-desc">
+                    Signature Windows 10 blue (Light &amp; Dark), SteamOS mode, and customizable concurrency limits.
+                  </p>
+                </div>
+              </div>
+
+              <!-- Visual Tour Progress Bar -->
+              <div>
+                <div style="display: flex; justify-content: space-between; font-size: 0.72rem; color: var(--text-muted); font-family: var(--font-mono); margin-bottom: 4px;">
+                  <span>Scroll Progress</span>
+                  <span id="tourProgressText">Step 1 of 5</span>
+                </div>
+                <div class="scroll-tour-progress-bar">
+                  <div class="scroll-tour-progress-fill" id="tourProgressFill"></div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Right Column: Pinned Desktop Window Stage -->
+            <div class="scroll-tour-stage">
+              <div class="tour-window-frame">
+                <div class="tour-window-header">
+                  <div class="window-dots">
+                    <span class="window-dot red"></span>
+                    <span class="window-dot yellow"></span>
+                    <span class="window-dot green"></span>
+                  </div>
+                  <div class="tour-window-title" id="tourWindowTitle">
+                    <i class="fa-solid fa-desktop" style="font-size: 0.72rem; color: var(--text-muted);"></i>
+                    <span>Voltrex Loader — Dashboard &amp; Telemetry</span>
+                  </div>
+                  <div style="font-size: 0.7rem; font-family: var(--font-mono); color: var(--text-muted);" id="tourWindowBadge">
+                    01 / 05
+                  </div>
+                </div>
+
+                <div class="tour-screen-stack">
+                  <!-- Screen 0 -->
+                  <div class="tour-screen-slide active" data-index="0">
+                    <img src="assets/screenshots/screenshot-1.png" onerror="this.onerror=null; this.src='assets/screenshots/screenshot-1.svg';" alt="Dashboard Screenshot" class="tour-screen-img" />
+                  </div>
+                  <!-- Screen 1 -->
+                  <div class="tour-screen-slide" data-index="1">
+                    <img src="assets/screenshots/screenshot-2.png" onerror="this.onerror=null; this.src='assets/screenshots/screenshot-2.svg';" alt="Chunk Matrix Screenshot" class="tour-screen-img" />
+                  </div>
+                  <!-- Screen 2 -->
+                  <div class="tour-screen-slide" data-index="2">
+                    <img src="assets/screenshots/screenshot-3.png" onerror="this.onerror=null; this.src='assets/screenshots/screenshot-3.svg';" alt="URL Probing Screenshot" class="tour-screen-img" />
+                  </div>
+                  <!-- Screen 3 -->
+                  <div class="tour-screen-slide" data-index="3">
+                    <img src="assets/screenshots/screenshot-4.png" onerror="this.onerror=null; this.src='assets/screenshots/screenshot-4.svg';" alt="Batch Queue Screenshot" class="tour-screen-img" />
+                  </div>
+                  <!-- Screen 4 -->
+                  <div class="tour-screen-slide" data-index="4">
+                    <img src="assets/screenshots/screenshot-5.png" onerror="this.onerror=null; this.src='assets/screenshots/screenshot-5.svg';" alt="Settings Screenshot" class="tour-screen-img" />
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ==========================================================================
+       Acceleration Engine Benchmark Feature
+       ========================================================================== -->
+  <section class="section" id="benchmark">
+    <div class="container">
+      <div class="engine-grid">
+        <div class="engine-content">
+          <span class="section-tag red">Range Streaming Technology</span>
+          <h2 class="engine-title">Why Multi-Stream Range Streaming Destroys Browser Downloads</h2>
+          <p class="engine-lead">
+            Standard web browsers download files through a <strong>single TCP socket</strong>. If the server or routing node throttles that connection or drops packets, your entire download stalls or fails completely.
+          </p>
+
+          <ul class="feature-check-list">
+            <li class="feature-check-item">
+              <div class="check-icon-circle"><i class="fa-solid fa-check"></i></div>
+              <div class="check-text-group">
+                <strong>Up to 32 Concurrent Sockets</strong>
+                <span>Voltrex splits files into mathematical byte ranges using <code>Range: bytes=start-end</code> headers and requests them simultaneously, saturating your full network capacity.</span>
+              </div>
+            </li>
+            <li class="feature-check-item">
+              <div class="check-icon-circle"><i class="fa-solid fa-check"></i></div>
+              <div class="check-text-group">
+                <strong>Zero-Thrash In-Place Disk Assembly</strong>
+                <span>Streams write directly into their designated byte offsets inside a pre-allocated sparse file, avoiding unnecessary memory buffers and disk thrashing.</span>
+              </div>
+            </li>
+            <li class="feature-check-item">
+              <div class="check-icon-circle"><i class="fa-solid fa-check"></i></div>
+              <div class="check-text-group">
+                <strong>Broken Connection Recovery</strong>
+                <span>If your network flickers or the server resets, completed segments remain intact on disk. Only unfinished byte intervals are re-requested.</span>
+              </div>
+            </li>
+          </ul>
+        </div>
+
+        <!-- Interactive Speed Comparison Estimator Card -->
+        <div class="speed-comparison-card">
+          <div class="slider-group">
+            <div class="slider-label-row">
+              <span class="slider-label">Select File Size to Compare:</span>
+              <span class="slider-value-display" id="sliderSizeDisplay">25 GB</span>
+            </div>
+            <input type="range" min="1" max="100" value="25" class="custom-range-slider" id="fileSizeSlider" />
+          </div>
+
+          <div class="benchmark-results">
+            <!-- Voltrex Row -->
+            <div class="benchmark-bar-row">
+              <div class="benchmark-meta">
+                <span class="benchmark-label" style="color: var(--accent-primary);">
+                  <i class="fa-solid fa-bolt"></i>
+                  <span>Voltrex Loader (32 Parallel Streams)</span>
+                </span>
+                <span class="benchmark-time" id="timeVoltrex" style="color: #fff;">7m 7s</span>
+              </div>
+              <div class="benchmark-progress">
+                <div class="benchmark-fill-voltrex" id="barVoltrex"></div>
+              </div>
+            </div>
+
+            <!-- Standard Browser Row -->
+            <div class="benchmark-bar-row">
+              <div class="benchmark-meta">
+                <span class="benchmark-label" style="color: var(--text-muted);">
+                  <i class="fa-brands fa-chrome"></i>
+                  <span>Standard Browser (Single Connection)</span>
+                </span>
+                <span class="benchmark-time" id="timeBrowser" style="color: var(--text-secondary);">59m 16s</span>
+              </div>
+              <div class="benchmark-progress">
+                <div class="benchmark-fill-browser" id="barBrowser"></div>
+              </div>
+            </div>
+          </div>
+
+          <div style="margin-top: 14px; font-size: 0.74rem; color: var(--text-muted); text-align: center;">
+            * Based on standard multi-chunk TCP windowing benchmark.
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ==========================================================================
+       Features Grid
+       ========================================================================== -->
+  <section class="section section-alt" id="features">
+    <div class="container">
+      <div class="section-header">
+        <span class="section-tag red">Engineered Without Compromise</span>
+        <h2 class="section-title">Built for Power Users & Gamers</h2>
+        <p class="section-description">
+          Packed with essential features inspired by IDM and FDM, rebuilt from scratch with modern web standards, zero advertisements, and complete privacy.
+        </p>
+      </div>
+
+      <div class="features-grid">
+        <!-- Feature 1 -->
+        <div class="feature-card red">
+          <div>
+            <div class="feature-icon-wrapper">
+              <i class="fa-solid fa-bolt"></i>
+            </div>
+            <h3 class="feature-card-title">Multi-Segment Acceleration</h3>
+            <p class="feature-card-desc">
+              Splits incoming files into 2 to 32 concurrent HTTP Range byte streams writing in-place to disk, saturating high-bandwidth connections.
+            </p>
+          </div>
+          <div class="feature-badge-row">
+            <span class="feature-pill">2 to 32 Threads</span>
+            <span class="feature-pill">Sparse Writing</span>
+          </div>
+        </div>
+
+        <!-- Feature 2 -->
+        <div class="feature-card cyan">
+          <div>
+            <div class="feature-icon-wrapper">
+              <i class="fa-solid fa-magnifying-glass"></i>
+            </div>
+            <h3 class="feature-card-title">Real-time URL Probing</h3>
+            <p class="feature-card-desc">
+              Inspects remote host capability before initiating. Extracts Content-Disposition filenames, exact byte lengths, MIME types, and Range support.
+            </p>
+          </div>
+          <div class="feature-badge-row">
+            <span class="feature-pill">Accept-Ranges: bytes</span>
+            <span class="feature-pill">Metadata Preview</span>
+          </div>
+        </div>
+
+        <!-- Feature 3 -->
+        <div class="feature-card green">
+          <div>
+            <div class="feature-icon-wrapper">
+              <i class="fa-solid fa-folder-tree"></i>
+            </div>
+            <h3 class="feature-card-title">Category Auto-Sorting</h3>
+            <p class="feature-card-desc">
+              Automatically routes incoming files into designated folders: Videos, Audio, Compressed, Documents, Programs, or custom user targets.
+            </p>
+          </div>
+          <div class="feature-badge-row">
+            <span class="feature-pill">Smart Routing</span>
+            <span class="feature-pill">Folder Locking</span>
+          </div>
+        </div>
+
+        <!-- Feature 4 -->
+        <div class="feature-card purple">
+          <div>
+            <div class="feature-icon-wrapper">
+              <i class="fa-solid fa-gamepad"></i>
+            </div>
+            <h3 class="feature-card-title">SteamOS & Deck Ready</h3>
+            <p class="feature-card-desc">
+              Tailored for Linux gaming handhelds and desktops. Complete with automated desktop launcher scripts, AppImage support, and terminal symlinks.
+            </p>
+          </div>
+          <div class="feature-badge-row">
+            <span class="feature-pill">SteamOS Mode</span>
+            <span class="feature-pill">Desktop Integration</span>
+          </div>
+        </div>
+
+        <!-- Feature 5 -->
+        <div class="feature-card blue">
+          <div>
+            <div class="feature-icon-wrapper">
+              <i class="fa-brands fa-windows"></i>
+            </div>
+            <h3 class="feature-card-title">Windows 10 Native Theme</h3>
+            <p class="feature-card-desc">
+              Switch seamlessly between Cyberpunk Dark, Windows 10 Light, and SteamOS Dark modes across all tables, wizards, and modals.
+            </p>
+          </div>
+          <div class="feature-badge-row">
+            <span class="feature-pill">Light & Dark</span>
+            <span class="feature-pill">Signature Blue</span>
+          </div>
+        </div>
+
+        <!-- Feature 6 -->
+        <div class="feature-card amber">
+          <div>
+            <div class="feature-icon-wrapper">
+              <i class="fa-solid fa-layer-group"></i>
+            </div>
+            <h3 class="feature-card-title">Batch Capture & Regex</h3>
+            <p class="feature-card-desc">
+              Queue bulk downloads with wildcards, clipboard URL scanning, and automatic deduplication with priority-weighted execution.
+            </p>
+          </div>
+          <div class="feature-badge-row">
+            <span class="feature-pill">Batch Queue</span>
+            <span class="feature-pill">Clipboard Sniffer</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ==========================================================================
+       Browser Extension Spotlight
+       ========================================================================== -->
+  <section class="section" id="extension">
+    <div class="container">
+      <div class="extension-showcase">
+        <div class="extension-left">
+          <span class="section-tag cyan">Zero-Config Browser Integration</span>
+          <h2 class="extension-title">Catch Every Download Directly from Your Browser</h2>
+          <p class="extension-desc">
+            Equipped with a dedicated Manifest V3 browser extension. Click any file link or right-click any video, stream, or archive to send it straight to Voltrex Loader with zero latency over a lightweight local bridge server (<code>http://127.0.0.1:9580</code>).
+          </p>
+
+          <div class="browser-support-row">
+            <a href="https://microsoftedge.microsoft.com/addons/detail/voltrex-loader-browser-/pfnheekehhghpdpbiplfaadeeocnhfpk" target="_blank" rel="noopener noreferrer" class="browser-pill edge-store-pill">
+              <i class="fa-brands fa-edge" style="color: #0078d7;"></i>
+              <span>Microsoft Edge</span>
+              <span class="badge-official">Store</span>
+            </a>
+            <div class="browser-pill"><i class="fa-brands fa-chrome"></i> Google Chrome</div>
+            <div class="browser-pill"><i class="fa-solid fa-shield"></i> Brave Browser</div>
+            <div class="browser-pill"><i class="fa-brands fa-opera"></i> Opera & Vivaldi</div>
+          </div>
+
+          <div style="margin-top: 14px; display: flex; gap: 12px; flex-wrap: wrap;">
+            <a href="https://microsoftedge.microsoft.com/addons/detail/voltrex-loader-browser-/pfnheekehhghpdpbiplfaadeeocnhfpk" target="_blank" rel="noopener noreferrer" class="btn-primary-action" style="background: #0078d7; border-color: #0078d7;">
+              <i class="fa-brands fa-edge"></i>
+              <span>Get on Edge Add-ons Store</span>
+            </a>
+            <a href="https://github.com/ziard47/voltrex_loader/releases/download/v1.2.0/voltrex-loader-browser-extension.zip" target="_blank" class="btn-secondary-action">
+              <i class="fa-solid fa-download"></i>
+              <span>Download ZIP (Chrome / Brave)</span>
+            </a>
+          </div>
+        </div>
+
+        <div class="extension-steps-card">
+          <div class="extension-steps-title">
+            <i class="fa-solid fa-list-check"></i>
+            <span>Extension Installation</span>
+          </div>
+
+          <div class="extension-edge-note" style="margin-bottom: 14px; padding: 10px 14px; background: rgba(0, 120, 215, 0.08); border: 1px solid rgba(0, 120, 215, 0.25); border-radius: var(--radius-xs); font-size: 0.8rem; color: #cbd5e1; display: flex; align-items: center; gap: 8px;">
+            <i class="fa-brands fa-edge" style="color: #0078d7; font-size: 1.1rem; flex-shrink: 0;"></i>
+            <span><strong>Edge Users:</strong> Install in 1 click from the <a href="https://microsoftedge.microsoft.com/addons/detail/voltrex-loader-browser-/pfnheekehhghpdpbiplfaadeeocnhfpk" target="_blank" rel="noopener noreferrer" style="color: #60a5fa; text-decoration: underline; font-weight: 600;">Microsoft Edge Store</a> without developer mode.</span>
+          </div>
+
+          <div class="install-step">
+            <div class="step-num">1</div>
+            <div class="step-content">
+              <strong>Extract Extension ZIP (Chrome / Brave)</strong>
+              <p>Unzip <code>voltrex-loader-browser-extension.zip</code> to any permanent folder on your system.</p>
+            </div>
+          </div>
+
+          <div class="install-step">
+            <div class="step-num">2</div>
+            <div class="step-content">
+              <strong>Enable Developer Mode</strong>
+              <p>Open <code>chrome://extensions</code> in your Chromium browser and toggle <strong>Developer mode</strong> in the top-right corner.</p>
+            </div>
+          </div>
+
+          <div class="install-step">
+            <div class="step-num">3</div>
+            <div class="step-content">
+              <strong>Click "Load Unpacked"</strong>
+              <p>Select the unzipped folder. That's it! Voltrex Loader will automatically intercept your download clicks.</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ==========================================================================
+       Feature Comparison Matrix Table
+       ========================================================================== -->
+  <section class="section section-alt" id="comparison">
+    <div class="container">
+      <div class="section-header">
+        <span class="section-tag green">Honest Benchmark</span>
+        <h2 class="section-title">How Voltrex Compares</h2>
+        <p class="section-description">
+          See why users are replacing legacy, bloated download managers with Voltrex Loader.
+        </p>
+      </div>
+
+      <div class="table-wrapper">
+        <table class="comparison-table">
+          <thead>
+            <tr>
+              <th>Feature Capability</th>
+              <th class="highlight-col" style="color: var(--accent-primary);"><i class="fa-solid fa-bolt"></i> Voltrex Loader</th>
+              <th>Internet Download Mgr (IDM)</th>
+              <th>Free Download Mgr (FDM)</th>
+              <th>Standard Browser</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td class="feature-name-col">Multi-Segment Range Streaming (2-32 Threads)</td>
+              <td class="highlight-col"><span class="check-yes"><i class="fa-solid fa-check"></i> Up to 32 Streams</span></td>
+              <td><span class="check-yes"><i class="fa-solid fa-check"></i> Up to 32 Streams</span></td>
+              <td><span class="check-yes"><i class="fa-solid fa-check"></i> Supported</span></td>
+              <td><span class="check-no"><i class="fa-solid fa-xmark"></i> Single Stream (1x)</span></td>
+            </tr>
+            <tr>
+              <td class="feature-name-col">Native Linux & SteamOS Desktop Support</td>
+              <td class="highlight-col"><span class="check-yes"><i class="fa-solid fa-check"></i> AppImage & Deck Script</span></td>
+              <td><span class="check-no"><i class="fa-solid fa-xmark"></i> Windows Only</span></td>
+              <td><span class="check-yes"><i class="fa-solid fa-check"></i> Linux Available</span></td>
+              <td><span class="check-yes"><i class="fa-solid fa-check"></i> Built-in</span></td>
+            </tr>
+            <tr>
+              <td class="feature-name-col">100% Free & Open Source (MIT)</td>
+              <td class="highlight-col"><span class="check-yes"><i class="fa-solid fa-check"></i> Free & Open Source</span></td>
+              <td><span class="check-no"><i class="fa-solid fa-xmark"></i> $24.95 Paid License</span></td>
+              <td><span class="check-no"><i class="fa-solid fa-xmark"></i> Proprietary Source</span></td>
+              <td><span class="check-yes"><i class="fa-solid fa-check"></i> Free</span></td>
+            </tr>
+            <tr>
+              <td class="feature-name-col">Zero Telemetry, Ads, or Bundled Junk</td>
+              <td class="highlight-col"><span class="check-yes"><i class="fa-solid fa-check"></i> Zero Ads / 100% Clean</span></td>
+              <td><span class="check-no"><i class="fa-solid fa-xmark"></i> Registration popups</span></td>
+              <td><span class="check-no"><i class="fa-solid fa-xmark"></i> Promoted features</span></td>
+              <td><span class="check-yes"><i class="fa-solid fa-check"></i> Clean</span></td>
+            </tr>
+            <tr>
+              <td class="feature-name-col">Live Visual Chunk Progress Matrix</td>
+              <td class="highlight-col"><span class="check-yes"><i class="fa-solid fa-check"></i> Real-time 32 Block Grid</span></td>
+              <td><span class="check-yes"><i class="fa-solid fa-check"></i> Segment Bars</span></td>
+              <td><span class="check-yes"><i class="fa-solid fa-check"></i> Progress Bars</span></td>
+              <td><span class="check-no"><i class="fa-solid fa-xmark"></i> Basic Bar</span></td>
+            </tr>
+            <tr>
+              <td class="feature-name-col">Chromium Extension (Zero Native Host Config)</td>
+              <td class="highlight-col"><span class="check-yes"><i class="fa-solid fa-check"></i> Zero Config (Localhost)</span></td>
+              <td><span class="check-yes"><i class="fa-solid fa-check"></i> Requires Registry Host</span></td>
+              <td><span class="check-yes"><i class="fa-solid fa-check"></i> Requires Native Host</span></td>
+              <td><span class="check-yes"><i class="fa-solid fa-check"></i> Built-in</span></td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </section>
+
+  <!-- ==========================================================================
+       Official Downloads Hub
+       ========================================================================== -->
+  <section class="section" id="downloads">
+    <div class="container">
+      <div class="section-header">
+        <span class="section-tag red">Official Releases</span>
+        <h2 class="section-title">Get Voltrex Loader v1.2.0</h2>
+        <p class="section-description">
+          Choose your operating system. Free, secure, portable, and ready to run immediately.
+        </p>
+      </div>
+
+      <div class="downloads-grid">
+        <!-- Linux & SteamOS Card -->
+        <div class="download-card featured">
+          <div class="card-top">
+            <div class="os-icon-wrapper" style="color: var(--accent-primary);">
+              <i class="fa-brands fa-linux"></i>
+            </div>
+            <h3 class="os-title">Linux & SteamOS</h3>
+            <p class="os-desc">
+              Standalone AppImage and complete automated installer tailored for Steam Deck Desktop mode, Ubuntu, Arch, and Fedora.
+            </p>
+
+            <div class="os-specs">
+              <div class="os-spec-row">
+                <span>Primary Package:</span>
+                <span class="os-spec-val">Voltrex Loader-1.2.0.AppImage</span>
+              </div>
+              <div class="os-spec-row">
+                <span>Architecture:</span>
+                <span class="os-spec-val">x86_64</span>
+              </div>
+              <div class="os-spec-row">
+                <span>Size:</span>
+                <span class="os-spec-val">~108 MB</span>
+              </div>
+            </div>
+          </div>
+
+          <div>
+            <a href="https://github.com/ziard47/voltrex_loader/releases/download/v1.2.0/Voltrex.Loader-1.2.0.AppImage" target="_blank" class="btn-card-download red">
+              <i class="fa-solid fa-download"></i>
+              <span>Download AppImage</span>
+            </a>
+            <a href="https://github.com/ziard47/voltrex_loader/releases/download/v1.2.0/voltrex-loader-1.2.0-linux.tar.gz" target="_blank" class="card-alt-link">
+              Or download SteamOS installer archive (.tar.gz)
+            </a>
+          </div>
+        </div>
+
+        <!-- Windows Card -->
+        <div class="download-card">
+          <div class="card-top">
+            <div class="os-icon-wrapper" style="color: var(--accent-win-blue);">
+              <i class="fa-brands fa-windows"></i>
+            </div>
+            <h3 class="os-title">Windows 10 / 11</h3>
+            <p class="os-desc">
+              Portable 64-bit distribution. Extract and run immediately without administrative privileges or registry bloat.
+            </p>
+
+            <div class="os-specs">
+              <div class="os-spec-row">
+                <span>Package:</span>
+                <span class="os-spec-val">voltrex-loader-1.2.0-win.zip</span>
+              </div>
+              <div class="os-spec-row">
+                <span>Compatibility:</span>
+                <span class="os-spec-val">Windows 10 / 11 (64-bit)</span>
+              </div>
+              <div class="os-spec-row">
+                <span>Size:</span>
+                <span class="os-spec-val">~115 MB</span>
+              </div>
+            </div>
+          </div>
+
+          <div>
+            <a href="https://github.com/ziard47/voltrex_loader/releases/download/v1.2.0/voltrex-loader-1.2.0-win.zip" target="_blank" class="btn-card-download blue">
+              <i class="fa-solid fa-download"></i>
+              <span>Download Portable (.ZIP)</span>
+            </a>
+            <span class="card-alt-link">Extract & launch voltrex-loader.exe</span>
+          </div>
+        </div>
+
+        <!-- Extension Card -->
+        <div class="download-card">
+          <div class="card-top">
+            <div class="os-icon-wrapper" style="color: var(--accent-cyan);">
+              <i class="fa-solid fa-puzzle-piece"></i>
+            </div>
+            <h3 class="os-title">Browser Extension</h3>
+            <p class="os-desc">
+              Manifest V3 extension for Chrome, Brave, and Edge. Intercepts file download clicks and routes them to Voltrex automatically.
+            </p>
+
+            <div class="os-specs">
+              <div class="os-spec-row">
+                <span>Package:</span>
+                <span class="os-spec-val">voltrex-browser-ext.zip</span>
+              </div>
+              <div class="os-spec-row">
+                <span>Manifest:</span>
+                <span class="os-spec-val">V3 (Chromium)</span>
+              </div>
+              <div class="os-spec-row">
+                <span>Size:</span>
+                <span class="os-spec-val">24 KB</span>
+              </div>
+            </div>
+          </div>
+
+          <div>
+            <a href="https://microsoftedge.microsoft.com/addons/detail/voltrex-loader-browser-/pfnheekehhghpdpbiplfaadeeocnhfpk" target="_blank" rel="noopener noreferrer" class="btn-card-download blue" style="margin-bottom: 8px;">
+              <i class="fa-brands fa-edge"></i>
+              <span>Get on Edge Add-ons</span>
+            </a>
+            <a href="https://github.com/ziard47/voltrex_loader/releases/download/v1.2.0/voltrex-loader-browser-extension.zip" target="_blank" class="btn-card-download cyan">
+              <i class="fa-solid fa-download"></i>
+              <span>Download ZIP (Chrome / Brave)</span>
+            </a>
+            <a href="#extension" class="card-alt-link">View setup guide</a>
+          </div>
+        </div>
+      </div>
+
+      <!-- Quick Terminal Commands Box with Copy Buttons -->
+      <div class="terminal-box">
+        <div class="terminal-header">
+          <div class="terminal-title">
+            <i class="fa-solid fa-terminal"></i>
+            <span>Quick Terminal Launch (Linux / SteamOS Desktop)</span>
+          </div>
+          <span style="font-size: 0.72rem; color: var(--text-muted);">Click button to copy</span>
+        </div>
+
+        <div style="display: flex; flex-direction: column; gap: 10px;">
+          <div class="terminal-code-row">
+            <code>chmod +x "Voltrex Loader-1.2.0.AppImage" &amp;&amp; ./"Voltrex Loader-1.2.0.AppImage"</code>
+            <button class="btn-copy" data-copy="chmod +x &quot;Voltrex Loader-1.2.0.AppImage&quot; &amp;&amp; ./&quot;Voltrex Loader-1.2.0.AppImage&quot;">
+              <i class="fa-regular fa-copy"></i>
+              <span>Copy</span>
+            </button>
+          </div>
+
+          <div class="terminal-code-row">
+            <code>tar -xzf voltrex-loader-1.2.0-linux.tar.gz &amp;&amp; cd voltrex-loader-1.2.0-linux &amp;&amp; bash install.sh</code>
+            <button class="btn-copy" data-copy="tar -xzf voltrex-loader-1.2.0-linux.tar.gz &amp;&amp; cd voltrex-loader-1.2.0-linux &amp;&amp; bash install.sh">
+              <i class="fa-regular fa-copy"></i>
+              <span>Copy</span>
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ==========================================================================
+       What's New in v1.2.0 Box
+       ========================================================================== -->
+  <section class="section section-alt">
+    <div class="container">
+      <div class="changelog-box">
+        <div class="changelog-header-row">
+          <div class="changelog-ver-title">
+            <i class="fa-solid fa-code-branch" style="color: var(--accent-primary);"></i>
+            <span>What's New in Release v1.2.0</span>
+          </div>
+          <span class="sim-badge-thread">Latest Stable Release</span>
+        </div>
+
+        <div class="changelog-items">
+          <div class="changelog-item-card">
+            <span class="changelog-item-badge">ACCELERATION</span>
+            <strong>Segmented Multi-Connection Engine</strong>
+            <p>Download resumable files up to 10x faster with 2-32 parallel HTTP Range streams written in-place concurrently, complete with live chunk matrix visualizer.</p>
+          </div>
+
+          <div class="changelog-item-card">
+            <span class="changelog-item-badge" style="color: var(--accent-green); background: rgba(16, 185, 129, 0.1);">ORGANIZATION</span>
+            <strong>Category Auto-Sorting</strong>
+            <p>Automatically sorts incoming transfers into designated subdirectories (Videos, Audio, Documents, Compressed, Programs, Others) with folder locking.</p>
+          </div>
+
+          <div class="changelog-item-card">
+            <span class="changelog-item-badge" style="color: var(--accent-win-blue); background: rgba(0, 120, 215, 0.12);">THEMES</span>
+            <strong>Windows 10 Native Theme</strong>
+            <p>Signature blue desktop controls with Light &amp; Dark mode support throughout all modals, data tables, and telemetry bars.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ==========================================================================
+       Frequently Asked Questions (FAQ)
+       ========================================================================== -->
+  <section class="section" id="faq">
+    <div class="container">
+      <div class="section-header">
+        <span class="section-tag cyan">Got Questions?</span>
+        <h2 class="section-title">Frequently Asked Questions</h2>
+        <p class="section-description">
+          Everything you need to know about Voltrex Loader, range streaming, and platform compatibility.
+        </p>
+      </div>
+
+      <div class="faq-grid">
+        <div class="faq-item open">
+          <button class="faq-question">
+            <span>Is Voltrex Loader completely free and open-source?</span>
+            <i class="fa-solid fa-chevron-down faq-icon-chevron"></i>
+          </button>
+          <div class="faq-answer">
+            Yes! Voltrex Loader is 100% free and open-source under the permissive MIT license. There are zero nag screens, no trial periods, no bundled toolbars, and no telemetry tracking your downloaded files.
+          </div>
+        </div>
+
+        <div class="faq-item">
+          <button class="faq-question">
+            <span>How does the multi-stream acceleration speed up downloads?</span>
+            <i class="fa-solid fa-chevron-down faq-icon-chevron"></i>
+          </button>
+          <div class="faq-answer">
+            When a server supports HTTP Range requests (verified automatically by Voltrex during probing), Voltrex splits the target file into up to 32 separate byte intervals. Each chunk is streamed concurrently over its own socket and written directly to its pre-allocated byte position on disk. This bypasses per-connection server bottlenecks and maximizes your network bandwidth.
+          </div>
+        </div>
+
+        <div class="faq-item">
+          <button class="faq-question">
+            <span>Can I resume interrupted downloads if my connection drops?</span>
+            <i class="fa-solid fa-chevron-down faq-icon-chevron"></i>
+          </button>
+          <div class="faq-answer">
+            Yes. Voltrex preserves written <code>.part</code> chunks and metadata on disk. If the network drops or the computer reboots, clicking Resume will re-probe the server's byte ranges and download only the missing fragments without restarting from scratch.
+          </div>
+        </div>
+
+        <div class="faq-item">
+          <button class="faq-question">
+            <span>How do I install Voltrex Loader on Steam Deck (SteamOS)?</span>
+            <i class="fa-solid fa-chevron-down faq-icon-chevron"></i>
+          </button>
+          <div class="faq-answer">
+            Switch your Steam Deck to Desktop Mode. Download the standalone <code>Voltrex Loader-1.2.0.AppImage</code>, right click it, select Properties &gt; Permissions, and check "Is Executable", then double-click to run! Alternatively, download <code>voltrex-loader-1.2.0-linux.tar.gz</code> and run <code>bash install.sh</code> to automatically add desktop icons and application launcher entries.
+          </div>
+        </div>
+
+        <div class="faq-item">
+          <button class="faq-question">
+            <span>Does the browser extension work on Brave, Edge, and Opera?</span>
+            <i class="fa-solid fa-chevron-down faq-icon-chevron"></i>
+          </button>
+          <div class="faq-answer">
+            Yes! The extension is built using the standard Chromium Manifest V3 specification and works out of the box in Google Chrome, Brave Browser, Microsoft Edge, Vivaldi, and Opera. For Microsoft Edge users, you can install it in 1-click directly from the official <a href="https://microsoftedge.microsoft.com/addons/detail/voltrex-loader-browser-/pfnheekehhghpdpbiplfaadeeocnhfpk" target="_blank" rel="noopener noreferrer" style="color: #60a5fa; text-decoration: underline;">Microsoft Edge Add-ons Store</a> without developer mode!
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ==========================================================================
+       CTA Footer Banner
+       ========================================================================== -->
+  <section class="section">
+    <div class="container">
+      <div class="footer-cta">
+        <h2 class="footer-cta-title">Ready for Next-Gen Download Speeds?</h2>
+        <p class="footer-cta-sub">
+          Download Voltrex Loader today. Enjoy faster downloads, live telemetry, and resilient range recovery across all your Linux, SteamOS, and Windows machines.
+        </p>
+        <div style="display: flex; justify-content: center; gap: 12px; flex-wrap: wrap;">
+          <a href="#downloads" class="btn-primary-action">
+            <i class="fa-solid fa-download"></i>
+            <span>Download Voltrex Loader v1.2.0</span>
+          </a>
+          <a href="https://github.com/ziard47/voltrex_loader" target="_blank" rel="noopener noreferrer" class="btn-secondary-action">
+            <i class="fa-brands fa-github"></i>
+            <span>Star on GitHub</span>
+          </a>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ==========================================================================
+       Site Footer
+       ========================================================================== -->
+  <footer class="site-footer">
+    <div class="container">
+      <div class="footer-grid">
+        <div>
+          <div class="brand-wrapper">
+            <div class="brand-logo-container" style="width: 26px; height: 26px;">
+              <img src="assets/icon.png" alt="Logo" />
+            </div>
+            <span class="brand-title" style="font-size: 0.95rem;">VOLTREX LOADER</span>
+          </div>
+          <p class="footer-brand-desc">
+            High-performance cross-platform download accelerator engineered for Linux, SteamOS, and Windows. Built with Electron, React, and modern web technologies.
+          </p>
+        </div>
+
+        <div>
+          <div class="footer-col-title">Navigation</div>
+          <ul class="footer-links">
+            <li><a href="#features">Key Features</a></li>
+            <li><a href="#simulator">Live Simulator</a></li>
+            <li><a href="#benchmark">Engine Benchmark</a></li>
+            <li><a href="#extension">Browser Extension</a></li>
+            <li><a href="#downloads">Downloads Hub</a></li>
+          </ul>
+        </div>
+
+        <div>
+          <div class="footer-col-title">Platforms</div>
+          <ul class="footer-links">
+            <li><a href="#downloads">Linux AppImage</a></li>
+            <li><a href="#downloads">Steam Deck Desktop</a></li>
+            <li><a href="#downloads">Windows 10 / 11 Portable</a></li>
+            <li><a href="#extension">Chromium Manifest V3</a></li>
+          </ul>
+        </div>
+
+        <div>
+          <div class="footer-col-title">Open Source</div>
+          <ul class="footer-links">
+            <li><a href="https://github.com/ziard47/voltrex_loader" target="_blank" rel="noopener noreferrer">GitHub Repository</a></li>
+            <li><a href="https://github.com/ziard47/voltrex_loader/releases" target="_blank" rel="noopener noreferrer">Release Notes</a></li>
+            <li><a href="https://github.com/ziard47/voltrex_loader/blob/main/LICENSE" target="_blank" rel="noopener noreferrer">MIT License</a></li>
+            <li><a href="https://github.com/ziard47/voltrex_loader/issues" target="_blank" rel="noopener noreferrer">Report Issue</a></li>
+          </ul>
+        </div>
+      </div>
+
+      <div class="footer-bottom">
+        <div>
+          © 2026 <strong>Voltrex Loader</strong>. Developed by <strong>Mohomed Ziard | Voltrex Digital</strong>. MIT License.
+        </div>
+        <a href="#top" class="scroll-top-btn">
+          <span>Back to top</span>
+          <i class="fa-solid fa-arrow-up"></i>
+        </a>
+      </div>
+    </div>
+  </footer>
+
+  <!-- ==========================================================================
+       Simulated URL Probe Modal
+       ========================================================================== -->
+  <div class="modal-overlay" id="probeModal">
+    <div class="probe-modal">
+      <div class="probe-modal-header">
+        <div style="display: flex; align-items: center; gap: 8px;">
+          <i class="fa-solid fa-magnifying-glass" style="color: var(--accent-cyan); font-size: 0.85rem;"></i>
+          <strong style="font-size: 0.9rem;">Live URL Prober (Simulated)</strong>
+        </div>
+        <button id="btnCloseProbeModal" style="color: var(--text-muted); padding: 4px;">
+          <i class="fa-solid fa-xmark"></i>
+        </button>
+      </div>
+
+      <div class="probe-modal-body">
+        <p style="font-size: 0.8rem; color: var(--text-secondary);">
+          Test how Voltrex sends an HTTP HEAD request to determine file details, byte range acceleration support, and resume capabilities before downloading.
+        </p>
+
+        <div class="probe-input-group">
+          <input type="text" id="probeInputUrl" class="probe-input" value="https://releases.ubuntu.com/24.04/ubuntu-24.04-desktop-amd64.iso" placeholder="Enter download URL..." />
+          <button id="btnExecuteProbe" class="btn-card-download cyan" style="width: auto; padding: 0 14px; margin: 0; font-size: 0.8rem;">Probe Link</button>
+        </div>
+
+        <div class="probe-result-box">
+          <div class="probe-result-row">
+            <span class="probe-key">HTTP Status:</span>
+            <span class="probe-val" id="probeResStatus">200 OK (Host Online)</span>
+          </div>
+          <div class="probe-result-row">
+            <span class="probe-key">Accept-Ranges:</span>
+            <span class="probe-val" id="probeResRanges">bytes (Range Streaming Enabled)</span>
+          </div>
+          <div class="probe-result-row">
+            <span class="probe-key">File Size:</span>
+            <span class="probe-val" id="probeResSize">5,842,918,400 bytes (5.44 GB)</span>
+          </div>
+          <div class="probe-result-row">
+            <span class="probe-key">MIME Content-Type:</span>
+            <span class="probe-val" id="probeResType">application/x-iso9660-image</span>
+          </div>
+          <div class="probe-result-row">
+            <span class="probe-key">Server Filename:</span>
+            <span class="probe-val" id="probeResFilename">ubuntu-24.04-desktop-amd64.iso</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script src="js/main.js"></script>
+</body>
+</html>

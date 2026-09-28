@@ -1,0 +1,36 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1920 1080" width="1920" height="1080">
+  <defs>
+    <linearGradient id="bg5" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#0a0c12"/>
+      <stop offset="100%" stop-color="#111622"/>
+    </linearGradient>
+    <pattern id="grid5" width="40" height="40" patternUnits="userSpaceOnUse">
+      <path d="M 40 0 L 0 0 0 40" fill="none" stroke="rgba(255,255,255,0.03)" stroke-width="1"/>
+    </pattern>
+  </defs>
+
+  <rect width="1920" height="1080" fill="url(#bg5)"/>
+  <rect width="1920" height="1080" fill="url(#grid5)"/>
+
+  <!-- Window Frame -->
+  <rect x="80" y="60" width="1760" height="960" rx="16" fill="#10141e" stroke="rgba(255,255,255,0.1)" stroke-width="1.5"/>
+  <rect x="80" y="60" width="1760" height="54" rx="16" fill="#171e2c"/>
+  <circle cx="120" cy="87" r="7" fill="#ef4444"/>
+  <circle cx="145" cy="87" r="7" fill="#f59e0b"/>
+  <circle cx="170" cy="87" r="7" fill="#10b981"/>
+  <text x="210" y="93" fill="#94a3b8" font-family="-apple-system, BlinkMacSystemFont, Segoe UI, sans-serif" font-size="16" font-weight="600">Voltrex Loader — Settings &amp; Windows 10 Dynamic Themes</text>
+
+  <!-- Settings Grid -->
+  <g transform="translate(160, 160)">
+    <rect x="0" y="0" width="380" height="740" rx="10" fill="#151b27" stroke="rgba(255,255,255,0.08)"/>
+    <rect x="420" y="0" width="1180" height="740" rx="10" fill="#131824" stroke="rgba(255,255,255,0.08)"/>
+  </g>
+
+  <!-- Watermark -->
+  <g transform="translate(960, 580)">
+    <rect x="-280" y="-60" width="560" height="120" rx="12" fill="#090c13" stroke="rgba(255,255,255,0.15)" stroke-width="2"/>
+    <text x="0" y="-15" fill="#f8fafc" font-family="-apple-system, BlinkMacSystemFont, Segoe UI, sans-serif" font-size="20" font-weight="700" text-anchor="middle">Settings &amp; Theme Customization</text>
+    <text x="0" y="16" fill="#8b5cf6" font-family="JetBrains Mono, monospace" font-size="14" font-weight="600" text-anchor="middle">Placeholder Screenshot #5</text>
+    <text x="0" y="38" fill="#64748b" font-family="-apple-system, BlinkMacSystemFont, Segoe UI, sans-serif" font-size="12" text-anchor="middle">Drop "screenshot-5.png" into web/assets/screenshots/</text>
+  </g>
+</svg>
