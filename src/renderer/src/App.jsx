@@ -7,6 +7,7 @@ import BatchDownloadModal from './components/BatchDownloadModal';
 import CaptureBatchPromptModal from './components/CaptureBatchPromptModal';
 import WhatsNewModal from './components/WhatsNewModal';
 import SetupWizardModal from './components/SetupWizardModal';
+import UpdateModal from './components/UpdateModal';
 import SettingsPage from './components/SettingsPage';
 import { getFileCategory } from './utils/formatters';
 
@@ -18,6 +19,7 @@ export default function App() {
   const [searchQuery, setSearchQuery] = useState('');
   const [concurrency, setConcurrency] = useState(3);
   const [defaultSavePath, setDefaultSavePath] = useState('');
+  const [settings, setSettings] = useState(null);
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [isBatchModalOpen, setIsBatchModalOpen] = useState(false);
   const [batchInitialUrls, setBatchInitialUrls] = useState('');
@@ -25,10 +27,12 @@ export default function App() {
   const [capturedData, setCapturedData] = useState(null);
   const [pendingCapture, setPendingCapture] = useState(null);
   const [currentSingleData, setCurrentSingleData] = useState(null);
-  const [appVersion, setAppVersion] = useState('1.2.0');
-  const [settings, setSettings] = useState(null);
+  const [appVersion, setAppVersion] = useState('1.3.0');
   const [isWhatsNewOpen, setIsWhatsNewOpen] = useState(false);
   const [isSetupWizardOpen, setIsSetupWizardOpen] = useState(false);
+  const [isUpdateModalOpen, setIsUpdateModalOpen] = useState(false);
+  const [availableUpdateInfo, setAvailableUpdateInfo] = useState(null);
+  const [addModalTab, setAddModalTab] = useState('single');
 
   const isAddModalOpenRef = useRef(false);
   const isBatchModalOpenRef = useRef(false);
@@ -100,9 +104,9 @@ export default function App() {
       } else {
         // Check app version and display "What's New" modal if updated
         try {
-          let ver = '1.2.0';
+          let ver = '1.3.0';
           if (window.electronAPI?.getAppVersion) {
-            ver = await window.electronAPI.getAppVersion() || '1.2.0';
+            ver = await window.electronAPI.getAppVersion() || '1.3.0';
           }
           setAppVersion(ver);
           const lastSeen = localStorage.getItem('voltrex_last_seen_version');
@@ -112,6 +116,21 @@ export default function App() {
         } catch (verErr) {
           console.error('Error verifying app version:', verErr);
         }
+      }
+
+      // Check GitHub for updates quietly in background
+      try {
+        if (window.electronAPI?.checkForUpdates) {
+          window.electronAPI.checkForUpdates().then((res) => {
+            if (res && res.success && res.updateAvailable) {
+              setAvailableUpdateInfo(res);
+            }
+          }).catch((err) => {
+            console.warn('Background update check:', err.message);
+          });
+        }
+      } catch (upErr) {
+        console.warn('Updater initial check skipped:', upErr);
       }
     } catch (err) {
       console.error('Failed to load initial data:', err);
@@ -154,9 +173,13 @@ export default function App() {
               totalBytes: update.totalBytes || item.totalBytes,
               progress: update.progress,
               speed: update.speed,
+              uploadSpeed: update.uploadSpeed || item.uploadSpeed || 0,
+              peers: update.peers || item.peers || 0,
+              seeds: update.seeds || item.seeds || 0,
               eta: update.eta,
               connections: update.connections || item.connections,
-              chunks: update.chunks || item.chunks
+              chunks: update.chunks || item.chunks,
+              files: update.files || item.files
             };
           }
           return item;
@@ -194,6 +217,17 @@ export default function App() {
       if (data?.defaultSavePath) {
         setDefaultSavePath(data.defaultSavePath);
       }
+      const rawUrl = data?.url ? String(data.url).trim() : '';
+      const isTorrent = Boolean(
+        data?.isTorrent ||
+        data?.torrentPath ||
+        data?.magnet ||
+        rawUrl.startsWith('magnet:') ||
+        rawUrl.endsWith('.torrent') ||
+        rawUrl.includes('.torrent?')
+      );
+      setAddModalTab(isTorrent ? 'torrent' : 'single');
+      setCurrentView('downloads');
       if (isAddModalOpenRef.current || isBatchModalOpenRef.current) {
         setPendingCapture(data);
       } else {
@@ -205,11 +239,19 @@ export default function App() {
     const unsubTrayAdd = window.electronAPI?.onTrayOpenAddModal?.(() => {
       setCurrentView('downloads');
       setCapturedData(null);
+      setAddModalTab('single');
       setIsAddModalOpen(true);
     });
 
     const unsubTraySettings = window.electronAPI?.onTrayOpenSettings?.(() => {
       setCurrentView('settings');
+    });
+
+    const unsubTorrentModal = window.electronAPI?.onTorrentOpenAddModal?.((data) => {
+      setCurrentView('downloads');
+      setCapturedData(data);
+      setAddModalTab('torrent');
+      setIsAddModalOpen(true);
     });
 
     const unsubSettings = window.electronAPI?.onSettingsUpdated?.((newSettings) => {
@@ -234,6 +276,7 @@ export default function App() {
       unsubCaptured?.();
       unsubTrayAdd?.();
       unsubTraySettings?.();
+      unsubTorrentModal?.();
       unsubSettings?.();
     };
   }, [loadInitialData]);
@@ -284,6 +327,16 @@ export default function App() {
 
   const handleOpenSeparatelyFromPrompt = () => {
     if (!pendingCapture) return;
+    const rawUrl = pendingCapture?.url ? String(pendingCapture.url).trim() : '';
+    const isTorrent = Boolean(
+      pendingCapture?.isTorrent ||
+      pendingCapture?.torrentPath ||
+      pendingCapture?.magnet ||
+      rawUrl.startsWith('magnet:') ||
+      rawUrl.endsWith('.torrent') ||
+      rawUrl.includes('.torrent?')
+    );
+    setAddModalTab(isTorrent ? 'torrent' : 'single');
     setCapturedData(pendingCapture);
     setIsAddModalOpen(true);
     setPendingCapture(null);
@@ -361,11 +414,15 @@ export default function App() {
   }, [downloads]);
 
   const typeCounts = useMemo(() => {
-    const acc = { compressed: 0, video: 0, audio: 0, documents: 0, programs: 0, others: 0 };
+    const acc = { torrents: 0, compressed: 0, video: 0, audio: 0, documents: 0, programs: 0, others: 0 };
     for (const d of downloads) {
-      const cat = getFileCategory(d.fileName, d.mimeType);
-      if (acc[cat] !== undefined) acc[cat]++;
-      else acc.others++;
+      if (d.isTorrent || getFileCategory(d.fileName, d.mimeType) === 'torrents') {
+        acc.torrents++;
+      } else {
+        const cat = getFileCategory(d.fileName, d.mimeType);
+        if (acc[cat] !== undefined) acc[cat]++;
+        else acc.others++;
+      }
     }
     return acc;
   }, [downloads]);
@@ -389,8 +446,13 @@ export default function App() {
 
       // Filter by file type
       if (selectedType !== 'all') {
-        const cat = getFileCategory(item.fileName, item.mimeType);
-        if (cat !== selectedType) return false;
+        if (selectedType === 'torrents') {
+          if (!item.isTorrent && getFileCategory(item.fileName, item.mimeType) !== 'torrents') return false;
+        } else {
+          if (item.isTorrent) return false;
+          const cat = getFileCategory(item.fileName, item.mimeType);
+          if (cat !== selectedType) return false;
+        }
       }
 
       // Filter by search query
@@ -411,6 +473,12 @@ export default function App() {
       <TopBar
         onAddClick={() => {
           setCapturedData(null);
+          setAddModalTab('single');
+          setIsAddModalOpen(true);
+        }}
+        onAddTorrentClick={() => {
+          setCapturedData(null);
+          setAddModalTab('torrent');
           setIsAddModalOpen(true);
         }}
         onAddBatchClick={() => {
@@ -429,6 +497,8 @@ export default function App() {
         onToggleSidebar={toggleSidebar}
         currentView={currentView}
         onViewChange={setCurrentView}
+        updateAvailable={availableUpdateInfo?.updateAvailable ? availableUpdateInfo : null}
+        onOpenUpdateModal={() => setIsUpdateModalOpen(true)}
       />
 
       {/* Main Body with Sidebar and Data Table / Settings */}
@@ -460,6 +530,7 @@ export default function App() {
               appVersion={appVersion}
               onOpenWhatsNew={() => setIsWhatsNewOpen(true)}
               onOpenSetupWizard={() => setIsSetupWizardOpen(true)}
+              onCheckUpdates={() => setIsUpdateModalOpen(true)}
               onSaveSuccess={(newSettings) => {
                 if (newSettings.defaultDownloadPath) setDefaultSavePath(newSettings.defaultDownloadPath);
                 if (newSettings.concurrency) setConcurrency(newSettings.concurrency);
@@ -483,10 +554,12 @@ export default function App() {
       {/* Add Download Modal Dialog */}
       <AddDownloadModal
         open={isAddModalOpen}
+        initialTab={addModalTab}
         onClose={() => {
           setIsAddModalOpen(false);
           setCapturedData(null);
           setCurrentSingleData(null);
+          setAddModalTab('single');
         }}
         onAddDownload={handleAddDownload}
         defaultSavePath={defaultSavePath}
@@ -516,6 +589,19 @@ export default function App() {
         initialUrls={batchInitialUrls}
         incomingAppendItem={incomingAppendItem}
         organizeByCategory={Boolean(settings?.organizeByCategory)}
+        onSwitchToSingle={(initialUrl) => {
+          setIsBatchModalOpen(false);
+          setAddModalTab('single');
+          if (initialUrl) {
+            setCapturedData({ url: initialUrl });
+          }
+          setIsAddModalOpen(true);
+        }}
+        onSwitchToTorrent={() => {
+          setIsBatchModalOpen(false);
+          setAddModalTab('torrent');
+          setIsAddModalOpen(true);
+        }}
       />
 
       {/* Capture Prompt when a download is captured while modal is already open */}
@@ -541,6 +627,15 @@ export default function App() {
         open={isSetupWizardOpen}
         onClose={handleCloseSetupWizard}
         onFinish={handleFinishSetupWizard}
+      />
+
+      {/* GitHub Releases Auto-Update Modal Dialog */}
+      <UpdateModal
+        open={isUpdateModalOpen}
+        onClose={() => setIsUpdateModalOpen(false)}
+        currentVersion={appVersion}
+        preloadedUpdateInfo={availableUpdateInfo}
+        autoCheckOnOpen={!availableUpdateInfo}
       />
     </div>
   );

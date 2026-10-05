@@ -6,12 +6,14 @@ const https = require('node:https');
 const { URL } = require('node:url');
 const { EventEmitter } = require('node:events');
 const { shell, Notification } = require('electron');
+const { TorrentEngine } = require('./torrentEngine');
 
 class DownloadEngine extends EventEmitter {
-  constructor(userDataPath, defaultDownloadPath) {
+  constructor(userDataPath, defaultDownloadPath, getSettings) {
     super();
     this.userDataPath = userDataPath;
     this.defaultDownloadPath = defaultDownloadPath;
+    this.getSettings = typeof getSettings === 'function' ? getSettings : () => ({});
     this.storagePath = path.join(userDataPath, 'downloads-state.json');
     this.maxConcurrent = 3;
     this.defaultConnections = 8;
@@ -20,6 +22,30 @@ class DownloadEngine extends EventEmitter {
     this.tasks = new Map(); // id -> Task object
     this.activeStreams = new Map(); // id -> active streaming record
     this.progressInterval = null;
+
+    // BitTorrent Engine subsystem
+    this.torrentEngine = new TorrentEngine({
+      userDataPath: this.userDataPath,
+      defaultDownloadPath: this.defaultDownloadPath,
+      getSettings: this.getSettings
+    });
+
+    this.torrentEngine.on('task-updated', (task) => {
+      this.saveState();
+      this.emit('task-updated', task);
+    });
+
+    this.torrentEngine.on('task-completed', (task) => {
+      this.saveState();
+      this.emit('task-completed', task);
+      this.scheduleQueue();
+    });
+
+    this.torrentEngine.on('task-error', (info) => {
+      this.saveState();
+      this.emit('task-error', info);
+      this.scheduleQueue();
+    });
 
     this.loadState();
     this.startProgressTicker();
@@ -32,6 +58,9 @@ class DownloadEngine extends EventEmitter {
 
     if (['zip', 'rar', '7z', 'tar', 'gz', 'bz2', 'xz', 'iso', '7zip', 'tgz', 'z', 'cab'].includes(ext)) {
       return 'compressed';
+    }
+    if (['torrent', 'magnet'].includes(ext)) {
+      return 'torrents';
     }
     if (['mp4', 'mkv', 'avi', 'mov', 'webm', 'flv', 'wmv', 'm4v', '3gp', 'ts'].includes(ext) || (mimeType && mimeType.startsWith('video/'))) {
       return 'video';
@@ -55,6 +84,7 @@ class DownloadEngine extends EventEmitter {
       audio: 'Audio',
       documents: 'Documents',
       programs: 'Programs',
+      torrents: 'Torrents',
       others: 'Others'
     };
     return map[category] || 'Others';
@@ -67,15 +97,43 @@ class DownloadEngine extends EventEmitter {
         return { online: false, error: 'Invalid URL provided' };
       }
 
+      const trimmed = rawUrl.trim();
+
+      // BitTorrent Magnet link & .torrent file interception
+      if (trimmed.startsWith('magnet:') || trimmed.endsWith('.torrent') || trimmed.includes('.torrent?')) {
+        try {
+          const probed = await this.torrentEngine.probe(trimmed);
+          return {
+            online: true,
+            isTorrent: true,
+            fileName: probed.name,
+            fileSize: probed.totalSize,
+            formattedSize: this.formatBytes(probed.totalSize),
+            resumable: true,
+            mimeType: 'application/x-bittorrent',
+            status: 200,
+            statusText: 'BitTorrent Swarm Ready',
+            finalUrl: trimmed,
+            infoHash: probed.infoHash,
+            magnetUri: probed.magnetUri,
+            files: probed.files,
+            piecesCount: probed.piecesCount,
+            pieceLength: probed.pieceLength
+          };
+        } catch (err) {
+          return { online: false, error: err.message, isTorrent: true };
+        }
+      }
+
       let parsedUrl;
       try {
-        parsedUrl = new URL(rawUrl.trim());
+        parsedUrl = new URL(trimmed);
       } catch {
         return { online: false, error: 'Malformed URL structure' };
       }
 
       if (!['http:', 'https:'].includes(parsedUrl.protocol)) {
-        return { online: false, error: 'Only HTTP and HTTPS protocols are supported' };
+        return { online: false, error: 'Only HTTP, HTTPS, and Magnet protocols are supported' };
       }
 
       // Try HEAD request first with timeout
@@ -176,6 +234,20 @@ class DownloadEngine extends EventEmitter {
   }
 
   extractFileName(urlStr, disposition, contentType = '') {
+    if (typeof urlStr === 'string' && urlStr.startsWith('magnet:')) {
+      const dnMatch = urlStr.match(/[?&]dn=([^&]+)/i);
+      if (dnMatch && dnMatch[1]) {
+        try {
+          const decoded = decodeURIComponent(dnMatch[1].replace(/\+/g, ' ')).replace(/[\\/:*?"<>|\r\n]/g, '_');
+          if (decoded) return decoded;
+        } catch {}
+      }
+      const xtMatch = urlStr.match(/xt=urn:btih:([a-fA-F0-9]{40}|[a-zA-Z2-7]{32})/i);
+      if (xtMatch && xtMatch[1]) {
+        return `torrent_${xtMatch[1].substring(0, 10)}`;
+      }
+    }
+
     if (disposition) {
       // Check for filename*=UTF-8''...
       const utf8Match = disposition.match(/filename\*=UTF-8''([^;\r\n]+)/i);
@@ -197,13 +269,13 @@ class DownloadEngine extends EventEmitter {
     try {
       const parsed = new URL(urlStr);
 
-      // Check query parameters commonly used for filenames (e.g., ?filename=xyz, ?name=xyz, ?file=xyz)
-      const queryParamNames = ['filename', 'file_name', 'name', 'file', 'title', 'fn', 'f'];
+      // Check query parameters commonly used for filenames (e.g., ?dn=xyz, ?filename=xyz, ?name=xyz, ?file=xyz)
+      const queryParamNames = ['dn', 'filename', 'file_name', 'name', 'file', 'title', 'fn', 'f'];
       for (const param of queryParamNames) {
         const val = parsed.searchParams.get(param);
         if (val && typeof val === 'string') {
-          const cleanVal = decodeURIComponent(val.trim()).replace(/[\\/:*?"<>|\r\n]/g, '_');
-          if (cleanVal && cleanVal.includes('.')) {
+          const cleanVal = decodeURIComponent(val.replace(/\+/g, ' ').trim()).replace(/[\\/:*?"<>|\r\n]/g, '_');
+          if (cleanVal && (cleanVal.includes('.') || param === 'dn')) {
             return cleanVal;
           }
         }
@@ -337,6 +409,103 @@ class DownloadEngine extends EventEmitter {
     }
   }
 
+  async addTorrentDownload({
+    url,
+    savePath,
+    fileName,
+    priority = 'NORMAL',
+    autoStart = true,
+    torrentFilePath = null,
+    selectedFileIndices = null,
+    customFolderSelected = false,
+    trackers = null,
+    downloadLimitKBps = 0,
+    uploadLimitKBps = 0
+  }) {
+    const torrentSource = torrentFilePath || url;
+    const probe = await this.torrentEngine.probe(torrentSource);
+
+    const finalFileName = this.sanitizeFileName(fileName || probe.name || `torrent_${Date.now()}`);
+    let resolvedSavePath = savePath || this.defaultDownloadPath;
+
+    if (this.organizeByCategory && !customFolderSelected) {
+      const categoryFolder = this.getCategoryFolder('torrents');
+      const normalizedSave = path.normalize(resolvedSavePath);
+      const normalizedDefault = path.normalize(this.defaultDownloadPath);
+      const currentFolderBase = path.basename(normalizedSave);
+
+      if (normalizedSave === normalizedDefault || !savePath) {
+        resolvedSavePath = path.join(this.defaultDownloadPath, categoryFolder);
+      } else if (currentFolderBase.toLowerCase() !== categoryFolder.toLowerCase()) {
+        resolvedSavePath = path.join(normalizedSave, categoryFolder);
+      }
+    }
+
+    try {
+      if (!fs.existsSync(resolvedSavePath)) {
+        fs.mkdirSync(resolvedSavePath, { recursive: true });
+      }
+    } catch (err) {
+      throw new Error(`Cannot access save directory: ${err.message}`);
+    }
+
+    const rawCustomTrackers = Array.isArray(trackers) ? trackers : (trackers ? [trackers] : []);
+    const mergedTrackers = Array.from(new Set([
+      ...(probe.trackers || []),
+      ...rawCustomTrackers
+    ].filter(Boolean)));
+
+    const taskId = `task_${Date.now()}_${Math.random().toString(36).substring(2, 8)}`;
+    const task = {
+      id: taskId,
+      url: url || probe.magnetUri || torrentFilePath,
+      isTorrent: true,
+      type: 'torrent',
+      fileName: finalFileName,
+      savePath: resolvedSavePath,
+      filePath: path.join(resolvedSavePath, finalFileName),
+      partPath: null,
+      totalBytes: probe.totalSize || 0,
+      downloadedBytes: 0,
+      progress: 0,
+      speed: 0,
+      uploadSpeed: 0,
+      eta: 0,
+      peers: 0,
+      seeds: 0,
+      status: autoStart ? 'QUEUED' : 'PAUSED',
+      priority: priority.toUpperCase(),
+      infoHash: probe.infoHash,
+      magnetUri: probe.magnetUri,
+      torrentFilePath: torrentFilePath || null,
+      files: probe.files || [],
+      selectedFileIndices: Array.isArray(selectedFileIndices) ? selectedFileIndices : null,
+      piecesCount: probe.piecesCount || 0,
+      pieceLength: probe.pieceLength || 0,
+      trackers: mergedTrackers,
+      downloadLimitKBps: Math.max(0, parseInt(downloadLimitKBps, 10) || 0),
+      uploadLimitKBps: Math.max(0, parseInt(uploadLimitKBps, 10) || 0),
+      mimeType: 'application/x-bittorrent',
+      chunks: [],
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+      completedAt: null,
+      error: null
+    };
+
+    task.chunks = this.torrentEngine.generatePieceChunks({ pieces: { length: task.piecesCount } }, task);
+
+    this.tasks.set(taskId, task);
+    this.saveState();
+    this.emit('task-added', task);
+
+    if (autoStart) {
+      this.scheduleQueue();
+    }
+
+    return task;
+  }
+
   async addDownload({
     url,
     savePath,
@@ -345,8 +514,34 @@ class DownloadEngine extends EventEmitter {
     autoStart = true,
     packageName = null,
     connections = null,
-    customFolderSelected = false
+    customFolderSelected = false,
+    isTorrent = false,
+    torrentFilePath = null,
+    selectedFileIndices = null,
+    trackers = null,
+    downloadLimitKBps = 0,
+    uploadLimitKBps = 0
   }) {
+    if (
+      isTorrent ||
+      torrentFilePath ||
+      (typeof url === 'string' && (url.startsWith('magnet:') || url.endsWith('.torrent') || url.includes('.torrent?')))
+    ) {
+      return await this.addTorrentDownload({
+        url,
+        savePath,
+        fileName,
+        priority,
+        autoStart,
+        torrentFilePath,
+        selectedFileIndices,
+        customFolderSelected,
+        trackers,
+        downloadLimitKBps,
+        uploadLimitKBps
+      });
+    }
+
     // Probe to ensure details
     const probe = await this.probeUrl(url);
     const finalFileName = this.sanitizeFileName(fileName || probe.fileName || `file_${Date.now()}`);
@@ -597,6 +792,15 @@ class DownloadEngine extends EventEmitter {
   async executeDownload(taskId) {
     const task = this.tasks.get(taskId);
     if (!task) return;
+
+    if (task.isTorrent) {
+      task.status = 'DOWNLOADING';
+      task.error = null;
+      task.updatedAt = new Date().toISOString();
+      this.emit('task-updated', task);
+      await this.torrentEngine.startTorrent(task);
+      return;
+    }
 
     const shouldUseSegments =
       this.enableMultiConnection &&
@@ -1023,6 +1227,19 @@ class DownloadEngine extends EventEmitter {
     const task = this.tasks.get(taskId);
     if (!task) return false;
 
+    if (task.isTorrent) {
+      task.status = 'PAUSED';
+      task.speed = 0;
+      task.uploadSpeed = 0;
+      task.eta = 0;
+      this.torrentEngine.pauseTorrent(taskId);
+      task.updatedAt = new Date().toISOString();
+      this.saveState();
+      this.emit('task-updated', task);
+      this.scheduleQueue();
+      return true;
+    }
+
     if (task.status === 'DOWNLOADING') {
       const active = this.activeStreams.get(taskId);
       if (active) {
@@ -1065,6 +1282,16 @@ class DownloadEngine extends EventEmitter {
     const task = this.tasks.get(taskId);
     if (!task || task.status === 'COMPLETED') return false;
 
+    if (task.isTorrent) {
+      task.status = 'QUEUED';
+      task.error = null;
+      task.updatedAt = new Date().toISOString();
+      this.saveState();
+      this.emit('task-updated', task);
+      this.scheduleQueue();
+      return true;
+    }
+
     task.status = 'QUEUED';
     task.error = null;
     if (task.chunks) {
@@ -1086,6 +1313,19 @@ class DownloadEngine extends EventEmitter {
   cancelDownload(taskId) {
     const task = this.tasks.get(taskId);
     if (!task) return false;
+
+    if (task.isTorrent) {
+      task.status = 'CANCELLED';
+      task.speed = 0;
+      task.uploadSpeed = 0;
+      task.eta = 0;
+      this.torrentEngine.cancelTorrent(taskId);
+      task.updatedAt = new Date().toISOString();
+      this.saveState();
+      this.emit('task-updated', task);
+      this.scheduleQueue();
+      return true;
+    }
 
     if (task.status === 'DOWNLOADING') {
       const active = this.activeStreams.get(taskId);
@@ -1133,6 +1373,15 @@ class DownloadEngine extends EventEmitter {
   deleteDownload(taskId, deleteFromDisk = false) {
     const task = this.tasks.get(taskId);
     if (!task) return false;
+
+    if (task.isTorrent) {
+      this.torrentEngine.deleteTorrent(taskId, task.infoHash, deleteFromDisk, task.savePath, task.fileName);
+      this.tasks.delete(taskId);
+      this.saveState();
+      this.emit('task-deleted', taskId);
+      this.scheduleQueue();
+      return true;
+    }
 
     this.cancelDownload(taskId);
 
@@ -1293,6 +1542,9 @@ class DownloadEngine extends EventEmitter {
           totalBytes: task.totalBytes,
           progress: task.progress,
           speed: task.speed,
+          uploadSpeed: 0,
+          peers: 0,
+          seeds: 0,
           eta: task.eta,
           connections: task.connections || 1,
           chunks: task.chunks
@@ -1309,6 +1561,32 @@ class DownloadEngine extends EventEmitter {
               }))
             : null
         });
+      }
+
+      // Collect BitTorrent telemetry
+      if (this.torrentEngine && this.torrentEngine.activeTorrents) {
+        for (const [taskId] of this.torrentEngine.activeTorrents.entries()) {
+          const task = this.tasks.get(taskId);
+          if (!task || task.status !== 'DOWNLOADING') continue;
+
+          hasActive = true;
+          this.torrentEngine.updateTaskStats(task);
+
+          progressPayload.push({
+            id: task.id,
+            downloadedBytes: task.downloadedBytes,
+            totalBytes: task.totalBytes,
+            progress: task.progress,
+            speed: task.speed,
+            uploadSpeed: task.uploadSpeed || 0,
+            peers: task.peers || 0,
+            seeds: task.seeds || 0,
+            eta: task.eta,
+            connections: task.peers || 1,
+            chunks: task.chunks,
+            files: task.files
+          });
+        }
       }
 
       if (hasActive && progressPayload.length > 0) {
@@ -1359,7 +1637,57 @@ class DownloadEngine extends EventEmitter {
     }
   }
 
+  async addTorrentTrackers(taskId, trackers) {
+    const task = this.tasks.get(taskId);
+    if (!task) throw new Error('Download task not found');
+    if (!task.isTorrent) throw new Error('Task is not a BitTorrent download');
+
+    const updated = await this.torrentEngine.addTorrentTrackers(task, trackers);
+    this.saveState();
+    this.emit('task-updated', task);
+    return updated;
+  }
+
+  setTorrentSpeedLimits(taskId, limits = {}) {
+    const task = this.tasks.get(taskId);
+    if (!task) throw new Error('Download task not found');
+    if (!task.isTorrent) throw new Error('Task is not a BitTorrent download');
+
+    this.torrentEngine.setTorrentSpeedLimits(task, limits);
+    this.saveState();
+    this.emit('task-updated', task);
+    return {
+      downloadLimitKBps: task.downloadLimitKBps,
+      uploadLimitKBps: task.uploadLimitKBps
+    };
+  }
+
+  getTorrentTrackers(taskId) {
+    const task = this.tasks.get(taskId);
+    if (!task || !task.isTorrent) return [];
+    return this.torrentEngine.getTorrentTrackers(task);
+  }
+
+  setTorrentFileSelection(taskId, selectedIndices) {
+    const task = this.tasks.get(taskId);
+    if (!task) throw new Error('Download task not found');
+    if (!task.isTorrent) throw new Error('Task is not a BitTorrent download');
+
+    this.torrentEngine.setTorrentFileSelection(task, selectedIndices);
+    this.saveState();
+    this.emit('task-updated', task);
+    return {
+      success: true,
+      selectedFileIndices: task.selectedFileIndices
+    };
+  }
+
   destroy() {
+    if (this.torrentEngine) {
+      try {
+        this.torrentEngine.destroy();
+      } catch {}
+    }
     if (this.progressInterval) {
       clearInterval(this.progressInterval);
       this.progressInterval = null;

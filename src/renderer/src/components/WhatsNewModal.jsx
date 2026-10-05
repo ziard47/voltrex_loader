@@ -15,12 +15,20 @@ import {
   ArrowRight,
   X,
   Zap,
-  FolderTree
+  FolderTree,
+  Magnet
 } from 'lucide-react';
 import Logo from './Logo';
 
-export default function WhatsNewModal({ open, onClose, version = '1.2.0' }) {
+export default function WhatsNewModal({ open, onClose, version = '1.3.0' }) {
   const highlights = [
+    {
+      icon: Magnet,
+      title: 'BitTorrent & Magnet Link P2P Engine',
+      description:
+        'Download directly from magnet links and .torrent files with full WebTorrent integration, multi-file inspection, live swarm telemetry (peers, download/upload speeds), and piece verification grid.',
+      badge: 'BitTorrent'
+    },
     {
       icon: Zap,
       title: 'Segmented Multi-Connection Engine & Live Visual Chunk Grid',
@@ -32,15 +40,8 @@ export default function WhatsNewModal({ open, onClose, version = '1.2.0' }) {
       icon: FolderTree,
       title: 'Automatic Category Folder Organization',
       description:
-        'Automatically sorts incoming downloads into designated subdirectories (Videos, Audio, Documents, Compressed, Programs, Others) with live category path preview and custom folder locking.',
+        'Automatically sorts incoming downloads into designated subdirectories (Videos, Audio, Documents, Compressed, Programs, Torrents, Others) with live category path preview and custom folder locking.',
       badge: 'Organization'
-    },
-    {
-      icon: Palette,
-      title: 'Windows 10 Theme Default (Light & Dark)',
-      description:
-        'Native Windows 10 desktop application interface featuring signature #0078D7 blue accents, crisp desktop controls, and full Light & Dark mode support throughout all modals and tables.',
-      badge: 'Themes'
     }
   ];
 
