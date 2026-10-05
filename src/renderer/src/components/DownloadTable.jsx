@@ -40,10 +40,16 @@ import {
   Check,
   ChevronDown,
   ChevronRight,
-  Zap
+  Zap,
+  Magnet,
+  Users,
+  Radio,
+  Gauge
 } from 'lucide-react';
 import ChunkMatrix from './ChunkMatrix';
+import TorrentContextMenu from './TorrentContextMenu';
 import { formatBytes, formatSpeed, formatEta, getFileCategory } from '../utils/formatters';
+import { useTheme } from '../context/ThemeContext';
 
 export default function DownloadTable({
   downloads,
@@ -58,8 +64,11 @@ export default function DownloadTable({
   const [deleteModal, setDeleteModal] = useState({ open: false, task: null, deleteDisk: false });
   const [contextMenu, setContextMenu] = useState(null);
   const [selectedId, setSelectedId] = useState(null);
+  const { effectiveMode } = useTheme();
+  const isDark = effectiveMode === 'dark';
   const [toast, setToast] = useState({ open: false, message: '' });
   const [expandedRows, setExpandedRows] = useState(new Set());
+  const [expandedRowSection, setExpandedRowSection] = useState({});
   const [sortConfig, setSortConfig] = useState({ column: 'createdAt', direction: 'desc' });
 
   const handleSort = (column) => {
@@ -159,8 +168,19 @@ export default function DownloadTable({
     return list;
   }, [downloads, sortConfig]);
 
-  const toggleRowExpanded = (taskId, e) => {
-    if (e) e.stopPropagation();
+  const toggleRowExpanded = (taskId, section = 'matrix', e) => {
+    if (section && typeof section === 'object' && section.stopPropagation) {
+      e = section;
+      section = 'matrix';
+    }
+    if (e && e.stopPropagation) e.stopPropagation();
+
+    if (section && section !== 'matrix') {
+      setExpandedRowSection((prev) => ({ ...prev, [taskId]: section }));
+      setExpandedRows((prev) => new Set([...prev, taskId]));
+      return;
+    }
+
     setExpandedRows((prev) => {
       const next = new Set(prev);
       if (next.has(taskId)) {
@@ -270,6 +290,9 @@ export default function DownloadTable({
 
   const renderFileIcon = (fileName, mimeType) => {
     const cat = getFileCategory(fileName, mimeType);
+    if (cat === 'torrents') {
+      return <Magnet className="w-4 h-4 text-purple-400" />;
+    }
     switch (cat) {
       case 'compressed':
         return <FileArchive className="w-4 h-4 text-amber-400" />;
@@ -416,7 +439,23 @@ export default function DownloadTable({
                             >
                               {task.fileName}
                             </span>
-                            {connCount > 1 && (
+                            {task.isTorrent && (
+                              <Tooltip title={`BitTorrent Swarm (${task.peers || 0} peers active)`} arrow>
+                                <span
+                                  onClick={(e) => toggleRowExpanded(task.id, e)}
+                                  className={`inline-flex items-center gap-1 px-1.5 py-0.2 rounded text-[9px] font-bold border shrink-0 cursor-pointer transition-colors ${
+                                    isDark
+                                      ? 'bg-purple-950/60 text-purple-300 border-purple-500/40 hover:border-purple-400'
+                                      : 'bg-purple-100 text-purple-800 border-purple-300 hover:border-purple-500'
+                                  }`}
+                                >
+                                  <Magnet className={`w-2.5 h-2.5 ${isDark ? 'text-purple-400' : 'text-purple-700'}`} />
+                                  <span>TORRENT</span>
+                                  {task.peers > 0 && <span className="text-[8px] opacity-80">({task.peers}p)</span>}
+                                </span>
+                              </Tooltip>
+                            )}
+                            {connCount > 1 && !task.isTorrent && (
                               <Tooltip title={`Multi-Connection Range Acceleration (${connCount} threads)`} arrow>
                                 <span
                                   onClick={(e) => toggleRowExpanded(task.id, e)}
@@ -493,11 +532,34 @@ export default function DownloadTable({
                     </TableCell>
 
                     {/* Speed */}
-                    <TableCell className="!border-b !border-[#8E1616]/25 !py-3 font-mono-stat text-xs text-[#EEEEEE] whitespace-nowrap w-[90px] min-w-[85px]">
+                    <TableCell className="!border-b !border-[#8E1616]/25 !py-3 font-mono-stat text-xs text-[#EEEEEE] whitespace-nowrap w-[110px] min-w-[100px]">
                       {isDownloading ? (
-                        <span className="text-[#D84040] font-semibold">{formatSpeed(task.speed)}</span>
+                        <div>
+                          <div className="text-[#D84040] font-semibold flex items-center gap-1">
+                            {task.isTorrent && <ArrowDown className="w-2.5 h-2.5 text-emerald-400" />}
+                            <span>{formatSpeed(task.speed)}</span>
+                          </div>
+                          {task.isTorrent && task.uploadSpeed > 0 && (
+                            <div className={`text-[10px] flex items-center gap-0.5 mt-0.5 ${isDark ? 'text-purple-400' : 'text-purple-700 font-medium'}`}>
+                              <ArrowUp className="w-2.5 h-2.5" />
+                              <span>{formatSpeed(task.uploadSpeed)}</span>
+                            </div>
+                          )}
+                          {task.isTorrent && ((task.downloadLimitKBps || 0) > 0 || (task.uploadLimitKBps || 0) > 0) && (
+                            <div className={`text-[9px] font-mono mt-0.5 ${isDark ? 'text-amber-400/90' : 'text-amber-700 font-semibold'}`} title="Per-torrent speed limit active">
+                              Limit: {task.downloadLimitKBps > 0 ? `${task.downloadLimitKBps}K` : '∞'} / {task.uploadLimitKBps > 0 ? `${task.uploadLimitKBps}K` : '∞'}
+                            </div>
+                          )}
+                        </div>
                       ) : (
-                        <span className="text-[#8E1616]">--</span>
+                        <div>
+                          <span className="text-[#8E1616]">--</span>
+                          {task.isTorrent && ((task.downloadLimitKBps || 0) > 0 || (task.uploadLimitKBps || 0) > 0) && (
+                            <div className={`text-[9px] font-mono mt-0.5 ${isDark ? 'text-amber-400/70' : 'text-amber-700 font-semibold'}`}>
+                              Limit: {task.downloadLimitKBps > 0 ? `${task.downloadLimitKBps}K` : '∞'} / {task.uploadLimitKBps > 0 ? `${task.uploadLimitKBps}K` : '∞'}
+                            </div>
+                          )}
+                        </div>
                       )}
                     </TableCell>
 
@@ -510,8 +572,8 @@ export default function DownloadTable({
                   {/* Expandable Visual Chunk Matrix Row */}
                   {isExpanded && (
                     <TableRow className="!bg-[var(--theme-bg-surface)]/70">
-                      <TableCell colSpan={6} className="!p-0 !border-b !border-[#8E1616]/30">
-                        <ChunkMatrix task={task} />
+                      <TableCell colSpan={6} className="!p-0 !border-b !border-[var(--theme-border-accent)] max-w-0 w-full overflow-hidden">
+                        <ChunkMatrix task={task} initialSection={expandedRowSection[task.id] || null} />
                       </TableCell>
                     </TableRow>
                   )}
@@ -522,13 +584,13 @@ export default function DownloadTable({
         </Table>
       </TableContainer>
 
-      {/* Right-Click File Context Menu */}
+      {/* Right-Click File Context Menu (Standard / Direct Downloads) */}
       <Menu
-        open={contextMenu !== null}
+        open={contextMenu !== null && !contextMenu.task?.isTorrent}
         onClose={handleCloseContextMenu}
         anchorReference="anchorPosition"
         anchorPosition={
-          contextMenu !== null
+          contextMenu !== null && !contextMenu.task?.isTorrent
             ? { top: contextMenu.mouseY, left: contextMenu.mouseX }
             : undefined
         }
@@ -539,7 +601,7 @@ export default function DownloadTable({
           className: '!py-0 !bg-transparent'
         }}
       >
-        {contextMenu?.task && (
+        {contextMenu?.task && !contextMenu.task.isTorrent && (
           <>
             {/* Context Menu Header */}
             <div className="px-3 py-2.5 border-b border-[var(--theme-border-accent)] bg-[var(--theme-bg-surface)] rounded-t-xl">
@@ -738,6 +800,36 @@ export default function DownloadTable({
           </>
         )}
       </Menu>
+
+      {/* Dedicated Torrent Right-Click Context Menu */}
+      {contextMenu?.task && contextMenu.task.isTorrent && (
+        <TorrentContextMenu
+          task={contextMenu.task}
+          open={contextMenu !== null && Boolean(contextMenu.task.isTorrent)}
+          onClose={handleCloseContextMenu}
+          anchorPosition={
+            contextMenu !== null && contextMenu.task.isTorrent
+              ? { top: contextMenu.mouseY, left: contextMenu.mouseX }
+              : undefined
+          }
+          onPause={onPause}
+          onResume={onResume}
+          onCancel={onCancel}
+          onDelete={(taskId, deleteDisk) => {
+            if (deleteDisk) {
+              setDeleteModal({ open: true, task: contextMenu.task, deleteDisk: true });
+            } else {
+              onDelete(taskId, false);
+            }
+          }}
+          onOpenFile={onOpenFile}
+          onShowInFolder={onShowInFolder}
+          onSetPriority={onSetPriority}
+          isExpanded={expandedRows.has(contextMenu.task.id)}
+          onToggleExpanded={(section) => toggleRowExpanded(contextMenu.task.id, section)}
+          onCopy={(text, msg) => copyToClipboard(text, msg)}
+        />
+      )}
 
       {/* Delete Confirmation Modal */}
       <Dialog

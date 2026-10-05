@@ -41,6 +41,7 @@ export const CATEGORY_FOLDERS = {
   audio: 'Audio',
   documents: 'Documents',
   programs: 'Programs',
+  torrents: 'Torrents',
   others: 'Others'
 };
 
@@ -50,6 +51,7 @@ export const CATEGORY_LABELS = {
   audio: 'Audio',
   documents: 'Documents',
   programs: 'Programs',
+  torrents: 'Torrents',
   others: 'Others'
 };
 
@@ -57,6 +59,9 @@ export function getFileCategory(fileName = '', mimeType = '') {
   const name = fileName.toLowerCase();
   const ext = name.split('.').pop() || '';
 
+  if (['torrent', 'magnet'].includes(ext) || mimeType === 'application/x-bittorrent') {
+    return 'torrents';
+  }
   if (['zip', 'rar', '7z', 'tar', 'gz', 'bz2', 'xz', 'iso', '7zip', 'tgz', 'z', 'cab'].includes(ext)) {
     return 'compressed';
   }

@@ -32,9 +32,12 @@ import {
   Info,
   Check,
   Zap,
-  FolderTree
+  FolderTree,
+  Globe,
+  Magnet
 } from 'lucide-react';
 import { formatBytes, getFileCategory, CATEGORY_FOLDERS, CATEGORY_LABELS } from '../utils/formatters';
+import { useTheme } from '../context/ThemeContext';
 
 // Extract valid HTTP/HTTPS URLs from multi-line or delimited text
 export function extractUrlsFromText(text) {
@@ -126,8 +129,12 @@ export default function BatchDownloadModal({
   defaultSavePath,
   initialUrls = '',
   incomingAppendItem = null,
-  organizeByCategory = false
+  organizeByCategory = false,
+  onSwitchToSingle,
+  onSwitchToTorrent
 }) {
+  const { effectiveMode } = useTheme();
+  const isDark = effectiveMode === 'dark';
   const [rawText, setRawText] = useState('');
   const [items, setItems] = useState([]); // Array of { id, url, fileName, fileSize, formattedSize, online, statusCode, error, resumable, mimeType, isChecking }
   const [packageName, setPackageName] = useState('');
@@ -464,34 +471,84 @@ export default function BatchDownloadModal({
       }}
     >
       {/* Modal Header */}
-      <DialogTitle className="!px-5 !py-3.5 flex items-center justify-between border-b border-[#8E1616]/35 bg-[#140e0e] shrink-0">
-        <div className="flex items-center gap-2.5">
-          <div className="w-8 h-8 rounded-lg bg-[#8E1616]/30 border border-[#D84040]/30 text-[#D84040] flex items-center justify-center">
+      <DialogTitle className="!px-5 !py-3 flex items-center justify-between border-b border-[var(--theme-border)]/40 bg-[var(--theme-bg-surface)] shrink-0 gap-3">
+        <div className="flex items-center gap-2.5 min-w-0">
+          <div className="w-8 h-8 rounded-lg bg-[var(--theme-secondary-subtle)] border border-[var(--theme-border-accent)] text-[var(--theme-primary)] flex items-center justify-center shrink-0">
             <Layers className="w-4 h-4" />
           </div>
-          <div>
+          <div className="min-w-0">
             <div className="flex items-center gap-2">
-              <h3 className="text-sm font-bold text-[#EEEEEE] leading-tight">Batch Download Package</h3>
+              <h3 className="text-sm font-bold text-[var(--theme-text-primary)] leading-tight truncate">Batch Download Package</h3>
               <Chip
                 label="Multi-Part"
                 size="small"
-                className="!bg-[#8E1616]/40 !text-[#D84040] !border !border-[#D84040]/40 font-semibold !text-[10px] !h-4"
+                className="!bg-[var(--theme-secondary-subtle)] !text-[var(--theme-primary)] !border !border-[var(--theme-border-accent)] font-semibold !text-[10px] !h-4"
               />
             </div>
-            <p className="text-[11px] text-[#b8a5a5] mt-0.5">
+            <p className="text-[11px] text-[var(--theme-text-muted)] mt-0.5 truncate hidden sm:block">
               Add multiple URLs at once. Voltrex will probe files, create a dedicated folder, and queue them.
             </p>
           </div>
         </div>
-        <Tooltip title="Close" arrow>
-          <IconButton
-            size="small"
-            onClick={onClose}
-            className="!text-[#b8a5a5] hover:!text-[#EEEEEE] hover:!bg-[#2e1d1d] !p-1.5"
+
+        <div className="flex items-center gap-2.5 shrink-0">
+          {/* Mode Switcher Tabs */}
+          <div
+            className={`flex items-center p-1 rounded-xl border shadow-inner gap-1 transition-all ${
+              isDark
+                ? 'bg-black/40 border-white/10'
+                : 'bg-slate-200/70 border-slate-300/80'
+            }`}
           >
-            <X className="w-4 h-4" />
-          </IconButton>
-        </Tooltip>
+            {onSwitchToSingle && (
+              <button
+                type="button"
+                onClick={() => onSwitchToSingle(items[0]?.url || '')}
+                className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all duration-150 cursor-pointer select-none ${
+                  isDark
+                    ? 'text-zinc-400 hover:text-zinc-100 hover:bg-white/5'
+                    : 'text-slate-600 hover:text-slate-900 hover:bg-white/70'
+                }`}
+              >
+                <Globe className="w-3.5 h-3.5 shrink-0" />
+                <span>Single URL</span>
+              </button>
+            )}
+
+            <button
+              type="button"
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold bg-gradient-to-r from-[var(--theme-primary)] to-[var(--theme-secondary)] text-white shadow-md shadow-[var(--theme-primary)]/25 cursor-default select-none"
+            >
+              <Layers className="w-3.5 h-3.5 shrink-0" />
+              <span>Batch</span>
+            </button>
+
+            {onSwitchToTorrent && (
+              <button
+                type="button"
+                onClick={() => onSwitchToTorrent()}
+                className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all duration-150 cursor-pointer select-none ${
+                  isDark
+                    ? 'text-purple-300/80 hover:text-purple-100 hover:bg-purple-950/30'
+                    : 'text-purple-700/80 hover:text-purple-950 hover:bg-purple-100/70'
+                }`}
+              >
+                <Magnet className="w-3.5 h-3.5 shrink-0" />
+                <span>Torrent</span>
+              </button>
+            )}
+          </div>
+
+          <Tooltip title="Close" arrow>
+            <IconButton
+              size="small"
+              onClick={onClose}
+              className="!text-[var(--theme-text-muted)] hover:!text-[var(--theme-text-primary)] hover:!bg-[var(--theme-bg-hover)] !p-1.5"
+            >
+              <X className="w-4 h-4" />
+            </IconButton>
+          </Tooltip>
+        </div>
       </DialogTitle>
 
       {/* Modal Content */}

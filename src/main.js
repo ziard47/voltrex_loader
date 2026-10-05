@@ -3,21 +3,65 @@ const path = require('node:path');
 const fs = require('node:fs');
 const { DownloadEngine } = require('./main/downloadEngine');
 const { BridgeServer } = require('./main/bridgeServer');
+const {
+  checkForGitHubUpdate,
+  downloadUpdateAsset,
+  cancelUpdateDownload,
+  installUpdate
+} = require('./main/updater');
 
 let mainWindow = null;
 let downloadEngine = null;
 let bridgeServer = null;
 let tray = null;
 let isQuitting = false;
+let pendingMagnetToOpen = null;
+
+// Register as OS default protocol client for magnet: URIs
+try {
+  if (process.platform === 'linux' && process.defaultApp) {
+    // In unpackaged development on Linux, xdg-mime requires a installed .desktop file
+  } else if (process.defaultApp) {
+    if (process.argv.length >= 2) {
+      app.setAsDefaultProtocolClient('magnet', process.execPath, [path.resolve(process.argv[1])]);
+    }
+  } else {
+    app.setAsDefaultProtocolClient('magnet');
+  }
+} catch (err) {
+  // Gracefully ignore
+}
 
 const gotTheLock = app.requestSingleInstanceLock();
 if (!gotTheLock) {
   app.quit();
 } else {
-  app.on('second-instance', () => {
+  app.on('second-instance', (_event, argv) => {
     showAndFocusMainWindow();
+    if (Array.isArray(argv)) {
+      const magnetLink = argv.find((arg) => typeof arg === 'string' && arg.startsWith('magnet:'));
+      const torrentPath = argv.find((arg) => typeof arg === 'string' && arg.endsWith('.torrent') && fs.existsSync(arg));
+      if (magnetLink && mainWindow && mainWindow.webContents) {
+        mainWindow.webContents.send('torrent:open-add-modal', { magnet: magnetLink, url: magnetLink, isTorrent: true });
+      } else if (torrentPath && mainWindow && mainWindow.webContents) {
+        mainWindow.webContents.send('torrent:open-add-modal', { torrentPath, url: torrentPath, isTorrent: true });
+      }
+    }
   });
 }
+
+// macOS / Linux protocol event
+app.on('open-url', (event, url) => {
+  event.preventDefault();
+  showAndFocusMainWindow();
+  if (typeof url === 'string' && url.startsWith('magnet:')) {
+    if (mainWindow && mainWindow.webContents && !mainWindow.webContents.isLoading()) {
+      mainWindow.webContents.send('torrent:open-add-modal', { magnet: url, url, isTorrent: true });
+    } else {
+      pendingMagnetToOpen = { magnet: url, url, isTorrent: true };
+    }
+  }
+});
 
 function showAndFocusMainWindow() {
   if (!mainWindow || mainWindow.isDestroyed()) {
@@ -88,6 +132,20 @@ function createWindow() {
     if (workHeight <= 768 || workWidth <= 1366 || (workHeight <= 820 && scaleFactor > 1)) {
       const defaultZoom = scaleFactor >= 1.25 ? 0.85 : 0.9;
       mainWindow.webContents.setZoomFactor(defaultZoom);
+    }
+
+    // Flush any pending magnet link from cold-start open-url or argv
+    if (pendingMagnetToOpen && mainWindow && mainWindow.webContents) {
+      mainWindow.webContents.send('torrent:open-add-modal', pendingMagnetToOpen);
+      pendingMagnetToOpen = null;
+    } else if (Array.isArray(process.argv)) {
+      const magnetArg = process.argv.find((arg) => typeof arg === 'string' && arg.startsWith('magnet:'));
+      const torrentArg = process.argv.find((arg) => typeof arg === 'string' && arg.endsWith('.torrent') && fs.existsSync(arg));
+      if (magnetArg && mainWindow && mainWindow.webContents) {
+        mainWindow.webContents.send('torrent:open-add-modal', { magnet: magnetArg, url: magnetArg, isTorrent: true });
+      } else if (torrentArg && mainWindow && mainWindow.webContents) {
+        mainWindow.webContents.send('torrent:open-add-modal', { torrentPath: torrentArg, url: torrentArg, isTorrent: true });
+      }
     }
   });
 
@@ -346,6 +404,63 @@ function setupIpcHandlers() {
     return null;
   });
 
+  // Native .torrent file picker
+  ipcMain.handle('dialog:browse-torrent', async () => {
+    if (!mainWindow) return null;
+    const result = await dialog.showOpenDialog(mainWindow, {
+      title: 'Select .torrent File',
+      filters: [{ name: 'BitTorrent Files (*.torrent)', extensions: ['torrent'] }],
+      properties: ['openFile']
+    });
+
+    if (!result.canceled && result.filePaths.length > 0) {
+      const filePath = result.filePaths[0];
+      const fileName = path.basename(filePath);
+      return { filePath, fileName };
+    }
+    return null;
+  });
+
+  // Probe torrent source
+  ipcMain.handle('torrent:probe', async (_event, source) => {
+    if (downloadEngine && downloadEngine.torrentEngine) {
+      return await downloadEngine.torrentEngine.probe(source);
+    }
+    throw new Error('Torrent engine not initialized');
+  });
+
+  // Add trackers to a torrent download
+  ipcMain.handle('torrent:add-trackers', async (_event, { taskId, trackers }) => {
+    if (downloadEngine) {
+      return await downloadEngine.addTorrentTrackers(taskId, trackers);
+    }
+    throw new Error('Download engine not initialized');
+  });
+
+  // Set per-torrent download & upload speed limits
+  ipcMain.handle('torrent:set-speed-limits', async (_event, { taskId, limits }) => {
+    if (downloadEngine) {
+      return downloadEngine.setTorrentSpeedLimits(taskId, limits);
+    }
+    throw new Error('Download engine not initialized');
+  });
+
+  // Get trackers list for a torrent download
+  ipcMain.handle('torrent:get-trackers', async (_event, taskId) => {
+    if (downloadEngine) {
+      return downloadEngine.getTorrentTrackers(taskId);
+    }
+    return [];
+  });
+
+  // Set file selection for a torrent download
+  ipcMain.handle('torrent:set-file-selection', async (_event, { taskId, selectedIndices }) => {
+    if (downloadEngine) {
+      return downloadEngine.setTorrentFileSelection(taskId, selectedIndices);
+    }
+    throw new Error('Download engine not initialized');
+  });
+
   // Open directory directly in OS file manager
   ipcMain.handle('shell:open-path', async (_event, folderPath) => {
     if (typeof folderPath === 'string' && fs.existsSync(folderPath)) {
@@ -367,6 +482,27 @@ function setupIpcHandlers() {
   // App Version IPC
   ipcMain.handle('app:get-version', () => {
     return app.getVersion();
+  });
+
+  // GitHub Auto-Updater IPC
+  ipcMain.handle('updater:check', async () => {
+    return await checkForGitHubUpdate(app.getVersion());
+  });
+
+  ipcMain.handle('updater:download', async (_event, asset) => {
+    return await downloadUpdateAsset(asset, (progressData) => {
+      if (mainWindow && !mainWindow.isDestroyed() && mainWindow.webContents) {
+        mainWindow.webContents.send('updater:progress', progressData);
+      }
+    });
+  });
+
+  ipcMain.handle('updater:cancel', async () => {
+    return cancelUpdateDownload();
+  });
+
+  ipcMain.handle('updater:install', async (_event, filePath) => {
+    return await installUpdate(filePath);
   });
 
   // Settings Management IPC
@@ -490,6 +626,12 @@ function getDefaultSettings() {
     themeMode: 'system', // 'system' | 'dark' | 'light'
     themePreset: 'crimson', // 'crimson' | 'cyber' | 'violet' | 'emerald' | 'amber' | 'sapphire' | 'rose' | 'slate' | 'custom'
     windowsLegacy: true,
+    // BitTorrent Engine Settings
+    torrentMaxConns: 55,
+    torrentDht: true,
+    torrentUploadLimitKBps: 0,
+    torrentDownloadLimitKBps: 0,
+    torrentStopSeedingOnDone: false,
     customTheme: {
       primary: '#D84040',
       secondary: '#8E1616',
@@ -648,6 +790,9 @@ function saveSettings(newSettings) {
       if (typeof merged.organizeByCategory === 'boolean') {
         downloadEngine.organizeByCategory = merged.organizeByCategory;
       }
+      if (downloadEngine.torrentEngine) {
+        downloadEngine.torrentEngine.applySettings(merged);
+      }
     }
     applyProxySettings(merged);
     if (typeof merged.startWithSystem === 'boolean') {
@@ -790,7 +935,7 @@ app.whenReady().then(() => {
   const initialSettings = loadSettings();
   const defaultDownloadPath = initialSettings.defaultDownloadPath || app.getPath('downloads');
 
-  downloadEngine = new DownloadEngine(userDataPath, defaultDownloadPath);
+  downloadEngine = new DownloadEngine(userDataPath, defaultDownloadPath, loadSettings);
   if (initialSettings.concurrency) {
     downloadEngine.setConcurrency(initialSettings.concurrency);
   }

@@ -27,11 +27,23 @@ contextBridge.exposeInMainWorld('electronAPI', {
 
   // Native Dialogs & Shell
   browseDirectory: (currentPath) => ipcRenderer.invoke('dialog:browse-directory', currentPath),
+  browseTorrentFile: () => ipcRenderer.invoke('dialog:browse-torrent'),
+  probeTorrent: (source) => ipcRenderer.invoke('torrent:probe', source),
+  addTorrentTrackers: (taskId, trackers) => ipcRenderer.invoke('torrent:add-trackers', { taskId, trackers }),
+  setTorrentSpeedLimits: (taskId, limits) => ipcRenderer.invoke('torrent:set-speed-limits', { taskId, limits }),
+  getTorrentTrackers: (taskId) => ipcRenderer.invoke('torrent:get-trackers', taskId),
+  setTorrentFileSelection: (taskId, selectedIndices) => ipcRenderer.invoke('torrent:set-file-selection', { taskId, selectedIndices }),
   openPath: (folderPath) => ipcRenderer.invoke('shell:open-path', folderPath),
   openExternal: (url) => ipcRenderer.invoke('shell:open-external', url),
   getZoomFactor: () => ipcRenderer.invoke('window:get-zoom'),
   setZoomFactor: (zoom) => ipcRenderer.invoke('window:set-zoom', zoom),
   getAppVersion: () => ipcRenderer.invoke('app:get-version'),
+
+  // Auto-Updater API
+  checkForUpdates: () => ipcRenderer.invoke('updater:check'),
+  downloadUpdate: (asset) => ipcRenderer.invoke('updater:download', asset),
+  cancelUpdateDownload: () => ipcRenderer.invoke('updater:cancel'),
+  installUpdate: (filePath) => ipcRenderer.invoke('updater:install', filePath),
 
   // Settings API
   getSettings: () => ipcRenderer.invoke('settings:get'),
@@ -91,9 +103,19 @@ contextBridge.exposeInMainWorld('electronAPI', {
     ipcRenderer.on('tray:open-settings', handler);
     return () => ipcRenderer.removeListener('tray:open-settings', handler);
   },
+  onTorrentOpenAddModal: (callback) => {
+    const handler = (_event, data) => callback(data);
+    ipcRenderer.on('torrent:open-add-modal', handler);
+    return () => ipcRenderer.removeListener('torrent:open-add-modal', handler);
+  },
   onSettingsUpdated: (callback) => {
     const handler = (_event, settings) => callback(settings);
     ipcRenderer.on('settings:updated', handler);
     return () => ipcRenderer.removeListener('settings:updated', handler);
+  },
+  onUpdateProgress: (callback) => {
+    const handler = (_event, progress) => callback(progress);
+    ipcRenderer.on('updater:progress', handler);
+    return () => ipcRenderer.removeListener('updater:progress', handler);
   }
 });

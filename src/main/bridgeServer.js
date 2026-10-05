@@ -8,6 +8,7 @@ class BridgeServer {
     this.getSettings = getSettings;
     this.focusWindow = focusWindow;
     this.server = null;
+    this.recentCaptures = new Map();
   }
 
   start() {
@@ -64,6 +65,27 @@ class BridgeServer {
               return;
             }
 
+            // Deduplicate rapid identical captures within 3000ms
+            const now = Date.now();
+            const lastCaptured = this.recentCaptures.get(downloadUrl);
+            if (lastCaptured && now - lastCaptured < 3000) {
+              res.writeHead(200, { 'Content-Type': 'application/json' });
+              res.end(JSON.stringify({ success: true, duplicate: true }));
+              return;
+            }
+            this.recentCaptures.set(downloadUrl, now);
+            if (this.recentCaptures.size > 100) {
+              for (const [u, t] of this.recentCaptures.entries()) {
+                if (now - t > 10000) this.recentCaptures.delete(u);
+              }
+            }
+
+            const isTorrent = typeof downloadUrl === 'string' && (
+              downloadUrl.startsWith('magnet:') ||
+              downloadUrl.endsWith('.torrent') ||
+              downloadUrl.includes('.torrent?')
+            );
+
             // Ensure filename is populated (fallback to URL extraction if browser omitted it)
             let resolvedFileName = (data.fileName && typeof data.fileName === 'string' && data.fileName.trim()) || '';
             if (!resolvedFileName && this.downloadEngine?.extractFileName) {
@@ -78,7 +100,8 @@ class BridgeServer {
               const task = await this.downloadEngine.addDownload({
                 url: downloadUrl,
                 fileName: resolvedFileName,
-                referrer: data.referrer
+                referrer: data.referrer,
+                isTorrent
               });
               res.writeHead(200, { 'Content-Type': 'application/json' });
               res.end(JSON.stringify({ success: true, autoAdded: true, taskId: task.id, fileName: task.fileName }));
@@ -107,6 +130,7 @@ class BridgeServer {
                   url: downloadUrl,
                   fileName: resolvedFileName,
                   referrer: data.referrer,
+                  isTorrent,
                   defaultSavePath: effectiveDefaultPath,
                   organizeByCategory: Boolean(this.downloadEngine?.organizeByCategory || (settings && settings.organizeByCategory))
                 });

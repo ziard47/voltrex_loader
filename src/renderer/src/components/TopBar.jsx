@@ -16,7 +16,9 @@ import {
   Layers,
   X,
   Sun,
-  Moon
+  Moon,
+  Magnet,
+  ArrowUpCircle
 } from 'lucide-react';
 import Logo from './Logo';
 import { formatSpeed } from '../utils/formatters';
@@ -25,6 +27,7 @@ import { useTheme } from '../context/ThemeContext';
 export default function TopBar({
   onAddClick,
   onAddBatchClick,
+  onAddTorrentClick,
   onPauseAll,
   onResumeAll,
   onStopAll,
@@ -36,7 +39,9 @@ export default function TopBar({
   isSidebarCollapsed,
   onToggleSidebar,
   currentView,
-  onViewChange
+  onViewChange,
+  updateAvailable,
+  onOpenUpdateModal
 }) {
   const { effectiveMode, toggleMode, themeMode } = useTheme();
 
@@ -101,6 +106,20 @@ export default function TopBar({
           >
             <span className="hidden lg:inline">Batch Download</span>
             <span className="lg:hidden">Batch</span>
+          </Button>
+        </Tooltip>
+
+        {/* BitTorrent Action: Add Torrent */}
+        <Tooltip title="Download from .torrent file or Magnet link" arrow>
+          <Button
+            variant="outlined"
+            size="small"
+            startIcon={<Magnet className="w-3.5 h-3.5" style={{ color: '#c084fc' }} />}
+            onClick={onAddTorrentClick}
+            className="!border-purple-500/40 hover:!border-purple-400 !text-purple-300 hover:!bg-purple-950/30 !text-xs !py-1 !px-2 sm:!py-1.5 sm:!px-3 font-medium whitespace-nowrap rounded-lg"
+          >
+            <span className="hidden lg:inline">Add Torrent</span>
+            <span className="lg:hidden">Torrent</span>
           </Button>
         </Tooltip>
 
@@ -204,6 +223,21 @@ export default function TopBar({
             </button>
           )}
         </div>
+
+        {/* Available Update Notification Pill */}
+        {updateAvailable && (
+          <Tooltip title={`Update Available: v${updateAvailable.latestVersion} (Click to inspect & install)`} arrow>
+            <Button
+              size="small"
+              variant="outlined"
+              onClick={onOpenUpdateModal}
+              startIcon={<ArrowUpCircle className="w-3.5 h-3.5 text-emerald-500 animate-pulse" />}
+              className="!text-xs !py-1 !px-2.5 rounded-lg border !border-emerald-500/40 !bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 font-bold whitespace-nowrap shadow-sm hover:!bg-emerald-500/20"
+            >
+              <span className="hidden md:inline">Update</span> v{updateAvailable.latestVersion}
+            </Button>
+          </Tooltip>
+        )}
 
         {/* Quick Theme Mode Toggle */}
         <Tooltip

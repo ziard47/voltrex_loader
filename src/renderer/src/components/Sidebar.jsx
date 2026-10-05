@@ -14,7 +14,8 @@ import {
   FolderOpen,
   Settings,
   ChevronLeft,
-  ChevronRight
+  ChevronRight,
+  Magnet
 } from 'lucide-react';
 import Tooltip from '@mui/material/Tooltip';
 import IconButton from '@mui/material/IconButton';
@@ -41,6 +42,7 @@ export default function Sidebar({
 
   const typeFilters = [
     { id: 'all', label: 'All Files', icon: DownloadCloud, count: counts.all },
+    { id: 'torrents', label: 'Torrents', icon: Magnet, count: typeCounts.torrents || 0, color: 'text-purple-400' },
     { id: 'compressed', label: 'Compressed', icon: FileArchive, count: typeCounts.compressed },
     { id: 'video', label: 'Video', icon: Film, count: typeCounts.video },
     { id: 'audio', label: 'Audio', icon: Music, count: typeCounts.audio },

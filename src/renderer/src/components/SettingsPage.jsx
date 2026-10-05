@@ -37,12 +37,14 @@ import {
   Monitor,
   Rocket,
   Zap,
-  AppWindow
+  AppWindow,
+  Magnet,
+  RotateCw
 } from 'lucide-react';
 import Logo from './Logo';
 import { useTheme } from '../context/ThemeContext';
 
-export default function SettingsPage({ onBack, defaultSavePath, onSaveSuccess, appVersion = '1.2.0', onOpenWhatsNew, onOpenSetupWizard }) {
+export default function SettingsPage({ onBack, defaultSavePath, onSaveSuccess, appVersion = '1.3.0', onOpenWhatsNew, onOpenSetupWizard, onCheckUpdates }) {
   const [activeTab, setActiveTab] = useState('general');
   const [toast, setToast] = useState({ open: false, message: '' });
   const [isSaving, setIsSaving] = useState(false);
@@ -1081,6 +1083,108 @@ export default function SettingsPage({ onBack, defaultSavePath, onSaveSuccess, a
                     </div>
                   </div>
                 </div>
+
+                {/* BitTorrent Engine Preferences Card */}
+                <div className="p-4 rounded-xl bg-[var(--theme-bg-card)] border border-[var(--theme-border-accent)] space-y-4">
+                  <div className="flex items-start justify-between gap-4">
+                    <div className="flex items-start gap-3">
+                      <div className="w-8 h-8 rounded-lg bg-purple-950/40 border border-purple-500/40 flex items-center justify-center text-purple-400 shrink-0 mt-0.5">
+                        <Magnet className="w-4 h-4" />
+                      </div>
+                      <div>
+                        <div className="flex items-center gap-2">
+                          <h3 className="text-xs font-bold text-[var(--theme-text-primary)]">
+                            BitTorrent P2P Swarm Engine
+                          </h3>
+                          <span className="text-[10px] font-bold text-purple-300 bg-purple-950/50 px-1.5 py-0.2 rounded border border-purple-500/40">
+                            WebTorrent Hybrid
+                          </span>
+                        </div>
+                        <p className="text-[11px] text-[var(--theme-text-muted)] mt-0.5 leading-relaxed">
+                          Configure DHT decentralized discovery, peer limits, and upload bandwidth limits for Magnet links and .torrent files.
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-3 border-t border-[var(--theme-border-accent)]">
+                    {/* Max Torrent Peer Connections */}
+                    <div>
+                      <label className="text-xs font-semibold text-[var(--theme-text-primary)] block mb-1">
+                        Max Torrent Connections (Peers)
+                      </label>
+                      <TextField
+                        size="small"
+                        type="number"
+                        fullWidth
+                        value={settings.torrentMaxConns ?? 55}
+                        onChange={(e) => setSettings({ ...settings, torrentMaxConns: Math.max(5, Math.min(200, Number(e.target.value) || 55)) })}
+                        InputProps={{
+                          className: '!bg-[#140e0e] !text-xs !text-[#EEEEEE] border border-[#8E1616]/30 rounded-lg'
+                        }}
+                      />
+                      <span className="text-[10px] text-[var(--theme-text-muted)] mt-1 block">
+                        Default: 55 connections across active torrent swarms.
+                      </span>
+                    </div>
+
+                    {/* Torrent Upload Speed Limit */}
+                    <div>
+                      <label className="text-xs font-semibold text-[var(--theme-text-primary)] block mb-1">
+                        Torrent Upload Limit (KB/s)
+                      </label>
+                      <TextField
+                        size="small"
+                        type="number"
+                        fullWidth
+                        placeholder="0 (Unlimited)"
+                        value={settings.torrentUploadLimitKBps ?? 0}
+                        onChange={(e) => setSettings({ ...settings, torrentUploadLimitKBps: Math.max(0, Number(e.target.value) || 0) })}
+                        InputProps={{
+                          className: '!bg-[#140e0e] !text-xs !text-[#EEEEEE] border border-[#8E1616]/30 rounded-lg'
+                        }}
+                      />
+                      <span className="text-[10px] text-[var(--theme-text-muted)] mt-1 block">
+                        Set to 0 for unthrottled upload speed.
+                      </span>
+                    </div>
+                  </div>
+
+                  {/* DHT & Seeding Toggles */}
+                  <div className="space-y-3 pt-2 border-t border-[var(--theme-border-accent)]">
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <div className="text-xs font-semibold text-[var(--theme-text-primary)]">
+                          Enable DHT (Distributed Hash Table)
+                        </div>
+                        <div className="text-[10px] text-[var(--theme-text-muted)]">
+                          Allows finding peers and resolving trackerless Magnet links automatically.
+                        </div>
+                      </div>
+                      <Switch
+                        checked={settings.torrentDht !== false}
+                        onChange={(e) => setSettings({ ...settings, torrentDht: e.target.checked })}
+                        color="primary"
+                      />
+                    </div>
+
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <div className="text-xs font-semibold text-[var(--theme-text-primary)]">
+                          Stop Seeding when Download Completes
+                        </div>
+                        <div className="text-[10px] text-[var(--theme-text-muted)]">
+                          Automatically stops uploading piece data to the swarm once 100% finished.
+                        </div>
+                      </div>
+                      <Switch
+                        checked={Boolean(settings.torrentStopSeedingOnDone)}
+                        onChange={(e) => setSettings({ ...settings, torrentStopSeedingOnDone: e.target.checked })}
+                        color="primary"
+                      />
+                    </div>
+                  </div>
+                </div>
               </div>
             )}
 
@@ -1359,29 +1463,40 @@ export default function SettingsPage({ onBack, defaultSavePath, onSaveSuccess, a
             {activeTab === 'about' && (
               <div className="space-y-6">
                 <div>
-                  <h2 className="text-base font-bold text-[#EEEEEE]">About Voltrex Loader</h2>
-                  <p className="text-xs text-[#b8a5a5] mt-0.5">
+                  <h2 className="text-base font-bold text-slate-800 dark:text-[#EEEEEE]">About Voltrex Loader</h2>
+                  <p className="text-xs text-slate-500 dark:text-[#b8a5a5] mt-0.5">
                     High-performance, modern cross-platform download accelerator.
                   </p>
                 </div>
 
-                <div className="p-6 rounded-xl bg-[#1D1616] border border-[#8E1616]/30 text-center space-y-4">
+                <div className="p-6 rounded-xl bg-white dark:bg-[#1D1616] border border-slate-200 dark:border-[#8E1616]/30 text-center space-y-4 shadow-sm">
                   <div className="flex justify-center">
                     <Logo size={64} />
                   </div>
                   <div>
-                    <h3 className="text-lg font-bold text-[#EEEEEE]">
+                    <h3 className="text-lg font-bold text-slate-800 dark:text-[#EEEEEE]">
                       VOLTREX <span className="text-[var(--theme-primary)]">LOADER</span>
                     </h3>
-                    <p className="text-xs text-[#b8a5a5] mt-1">Version {appVersion} (Production Release)</p>
-                    <div className="pt-2 flex items-center justify-center gap-2 flex-wrap">
+                    <p className="text-xs text-slate-500 dark:text-[#b8a5a5] mt-1">Version {appVersion} (Production Release)</p>
+                    <div className="pt-3 flex items-center justify-center gap-2 flex-wrap">
+                      {onCheckUpdates && (
+                        <Button
+                          size="small"
+                          variant="contained"
+                          onClick={onCheckUpdates}
+                          startIcon={<RotateCw className="w-3.5 h-3.5 text-white" />}
+                          className="btn-theme-primary !text-white !text-xs !py-1 !px-3.5 rounded-lg font-semibold shadow-sm"
+                        >
+                          Check for Updates
+                        </Button>
+                      )}
                       {onOpenWhatsNew && (
                         <Button
                           size="small"
                           variant="outlined"
                           onClick={onOpenWhatsNew}
                           startIcon={<Sparkles className="w-3.5 h-3.5 text-[var(--theme-primary)]" />}
-                          className="border border-[var(--theme-border-accent)] hover:!border-[var(--theme-primary)] hover:!text-[var(--theme-primary)] hover:!bg-[var(--theme-secondary-subtle)] text-[#EEEEEE] !text-xs !py-1 !px-3 rounded-lg"
+                          className="border !border-slate-300 dark:!border-[var(--theme-border-accent)] hover:!border-[var(--theme-primary)] hover:!text-[var(--theme-primary)] hover:!bg-[var(--theme-secondary-subtle)] text-slate-700 dark:text-[#EEEEEE] !text-xs !py-1 !px-3 rounded-lg"
                         >
                           What's New in v{appVersion}
                         </Button>
@@ -1392,7 +1507,7 @@ export default function SettingsPage({ onBack, defaultSavePath, onSaveSuccess, a
                           variant="outlined"
                           onClick={onOpenSetupWizard}
                           startIcon={<Rocket className="w-3.5 h-3.5 text-[var(--theme-primary)]" />}
-                          className="border border-[var(--theme-border-accent)] hover:!border-[var(--theme-primary)] hover:!text-[var(--theme-primary)] hover:!bg-[var(--theme-secondary-subtle)] text-[#EEEEEE] !text-xs !py-1 !px-3 rounded-lg"
+                          className="border !border-slate-300 dark:!border-[var(--theme-border-accent)] hover:!border-[var(--theme-primary)] hover:!text-[var(--theme-primary)] hover:!bg-[var(--theme-secondary-subtle)] text-slate-700 dark:text-[#EEEEEE] !text-xs !py-1 !px-3 rounded-lg"
                         >
                           Run Setup Wizard
                         </Button>
@@ -1400,12 +1515,12 @@ export default function SettingsPage({ onBack, defaultSavePath, onSaveSuccess, a
                     </div>
                   </div>
 
-                  <p className="text-xs text-[#b8a5a5] max-w-md mx-auto leading-relaxed">
+                  <p className="text-xs text-slate-500 dark:text-[#b8a5a5] max-w-md mx-auto leading-relaxed">
                     Engineered with HTTP Range byte streaming, automatic resume recovery, multi-task priority scheduling, and full Chromium browser integration.
                   </p>
 
-                  <div className="pt-2 border-t border-[#8E1616]/20 flex items-center justify-center gap-2 text-[11px] text-[#b8a5a5]">
-                    <span>Crafted by <strong className="text-[#EEEEEE]">Mohomed Ziard</strong></span>
+                  <div className="pt-2 border-t border-slate-100 dark:border-[#8E1616]/20 flex items-center justify-center gap-2 text-[11px] text-slate-400 dark:text-[#b8a5a5]">
+                    <span>Crafted by <strong className="text-slate-700 dark:text-[#EEEEEE]">Mohomed Ziard</strong></span>
                     <span className="text-[var(--theme-primary)]">•</span>
                     <span className="text-[var(--theme-primary)] font-semibold">Voltrex Digital</span>
                   </div>
