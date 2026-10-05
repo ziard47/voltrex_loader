@@ -2,7 +2,7 @@
   "manifest_version": 3,
   "name": "Voltrex Loader - Browser Integration",
   "version": "1.0.2",
-  "description": "Capture downloads from Google Chrome and Chromium browsers directly into Voltrex Loader.",
+  "description": "Seamlessly capture downloads and send links directly into the Voltrex Loader download accelerator.",
   "permissions": [
     "downloads",
     "contextMenus",
