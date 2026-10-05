@@ -1007,6 +1007,35 @@ html.windows-legacy:not(.dark) .MuiMenuItem-root:hover * {
   color: #000000 !important;
 }
 
+/* Light Menu Selected Item */
+html.windows-legacy:not(.dark) .MuiMenuItem-root.Mui-selected {
+  background-color: #cde8ff !important;
+  color: #0078D7 !important;
+  font-weight: 600 !important;
+}
+
+html.windows-legacy:not(.dark) .MuiMenuItem-root.Mui-selected:hover {
+  background-color: #b8dcfe !important;
+  color: #0078D7 !important;
+}
+
+/* Light Media Downloader */
+html.windows-legacy:not(.dark) .media-downloader-card {
+  background-color: #ffffff !important;
+  border: 1px solid #d1d1d1 !important;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08) !important;
+}
+
+html.windows-legacy:not(.dark) .media-downloader-card-header {
+  background-color: #f7f7f7 !important;
+  border-bottom: 1px solid #d1d1d1 !important;
+}
+
+html.windows-legacy:not(.dark) .media-downloader-section {
+  background-color: #f9f9f9 !important;
+  border: 1px solid #e0e0e0 !important;
+}
+
 /* Light Scrollbars */
 html.windows-legacy:not(.dark) ::-webkit-scrollbar {
   background-color: #f0f0f0;
@@ -1357,6 +1386,35 @@ html.windows-legacy.dark .MuiMenuItem-root:hover * {
   color: #ffffff !important;
 }
 
+/* Dark Menu Selected Item */
+html.windows-legacy.dark .MuiMenuItem-root.Mui-selected {
+  background-color: #1a3b5c !important;
+  color: #60cdff !important;
+  font-weight: 600 !important;
+}
+
+html.windows-legacy.dark .MuiMenuItem-root.Mui-selected:hover {
+  background-color: #234b73 !important;
+  color: #60cdff !important;
+}
+
+/* Dark Media Downloader */
+html.windows-legacy.dark .media-downloader-card {
+  background-color: #202020 !important;
+  border: 1px solid #383838 !important;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.4) !important;
+}
+
+html.windows-legacy.dark .media-downloader-card-header {
+  background-color: #252525 !important;
+  border-bottom: 1px solid #383838 !important;
+}
+
+html.windows-legacy.dark .media-downloader-section {
+  background-color: #262626 !important;
+  border: 1px solid #383838 !important;
+}
+
 /* Dark Scrollbars */
 html.windows-legacy.dark ::-webkit-scrollbar {
   background-color: #1f1f1f;
@@ -1512,6 +1570,23 @@ html.windows-legacy button.btn-theme-primary *,
 html.windows-legacy .MuiButton-contained *,
 html.windows-legacy .MuiButton-containedPrimary * {
   color: #ffffff !important;
+}
+
+/* Windows 10 Icon Buttons Structure */
+html.windows-legacy .MuiIconButton-root:not(.btn-theme-primary) {
+  background-color: transparent !important;
+  border-radius: 2px !important;
+  box-shadow: none !important;
+}
+
+html.windows-legacy:not(.dark) .MuiIconButton-root:not(.btn-theme-primary):hover {
+  background-color: #e5f1fb !important;
+  color: #0078D7 !important;
+}
+
+html.windows-legacy.dark .MuiIconButton-root:not(.btn-theme-primary):hover {
+  background-color: #333333 !important;
+  color: #60cdff !important;
 }
 
 /* Ensure inner inputs inside MUI components NEVER have internal borders or nested outlines */

@@ -7,6 +7,7 @@ const { URL } = require('node:url');
 const { EventEmitter } = require('node:events');
 const { shell, Notification } = require('electron');
 const { TorrentEngine } = require('./torrentEngine');
+const { MediaEngine } = require('./mediaEngine');
 
 class DownloadEngine extends EventEmitter {
   constructor(userDataPath, defaultDownloadPath, getSettings) {
@@ -42,6 +43,30 @@ class DownloadEngine extends EventEmitter {
     });
 
     this.torrentEngine.on('task-error', (info) => {
+      this.saveState();
+      this.emit('task-error', info);
+      this.scheduleQueue();
+    });
+
+    // Universal Media Downloader subsystem (YouTube, TikTok, Facebook, Reddit, etc.)
+    this.mediaEngine = new MediaEngine({
+      userDataPath: this.userDataPath,
+      defaultDownloadPath: this.defaultDownloadPath,
+      getSettings: this.getSettings
+    });
+
+    this.mediaEngine.on('task-updated', (task) => {
+      this.saveState();
+      this.emit('task-updated', task);
+    });
+
+    this.mediaEngine.on('task-completed', (task) => {
+      this.saveState();
+      this.emit('task-completed', task);
+      this.scheduleQueue();
+    });
+
+    this.mediaEngine.on('task-error', (info) => {
       this.saveState();
       this.emit('task-error', info);
       this.scheduleQueue();
@@ -506,22 +531,29 @@ class DownloadEngine extends EventEmitter {
     return task;
   }
 
-  async addDownload({
-    url,
-    savePath,
-    fileName,
-    priority = 'NORMAL',
-    autoStart = true,
-    packageName = null,
-    connections = null,
-    customFolderSelected = false,
-    isTorrent = false,
-    torrentFilePath = null,
-    selectedFileIndices = null,
-    trackers = null,
-    downloadLimitKBps = 0,
-    uploadLimitKBps = 0
-  }) {
+  async addDownload(payload = {}) {
+    const {
+      url,
+      savePath,
+      fileName,
+      priority = 'NORMAL',
+      autoStart = true,
+      packageName = null,
+      connections = null,
+      customFolderSelected = false,
+      isTorrent = false,
+      torrentFilePath = null,
+      selectedFileIndices = null,
+      trackers = null,
+      downloadLimitKBps = 0,
+      uploadLimitKBps = 0,
+      isMedia = false
+    } = payload;
+
+    if (isMedia || payload.isMedia) {
+      return await this.addMediaDownload(payload);
+    }
+
     if (
       isTorrent ||
       torrentFilePath ||
@@ -608,6 +640,98 @@ class DownloadEngine extends EventEmitter {
     };
 
     this.initializeTaskChunks(task);
+
+    this.tasks.set(taskId, task);
+    this.saveState();
+    this.emit('task-added', task);
+
+    if (autoStart) {
+      this.scheduleQueue();
+    }
+
+    return task;
+  }
+
+  // Add Universal Media Download Task (YouTube, TikTok, Facebook, Reddit, etc.)
+  async addMediaDownload({
+    url,
+    savePath,
+    fileName,
+    title,
+    thumbnail,
+    formatId,
+    formatSelector,
+    formatLabel,
+    audioOnly = false,
+    audioFormat = 'mp3',
+    ext = 'mp4',
+    estimatedSize = 0,
+    priority = 'NORMAL',
+    autoStart = true,
+    customFolderSelected = false
+  }) {
+    let resolvedSavePath = savePath || this.defaultDownloadPath;
+
+    if (this.organizeByCategory && !customFolderSelected) {
+      const category = audioOnly ? 'audio' : 'video';
+      const categoryFolder = this.getCategoryFolder(category);
+      const normalizedSave = path.normalize(resolvedSavePath);
+      const normalizedDefault = path.normalize(this.defaultDownloadPath);
+      const currentFolderBase = path.basename(normalizedSave);
+
+      if (normalizedSave === normalizedDefault || !savePath) {
+        resolvedSavePath = path.join(this.defaultDownloadPath, categoryFolder);
+      } else if (currentFolderBase.toLowerCase() !== categoryFolder.toLowerCase()) {
+        resolvedSavePath = path.join(normalizedSave, categoryFolder);
+      }
+    }
+
+    try {
+      if (!fs.existsSync(resolvedSavePath)) {
+        fs.mkdirSync(resolvedSavePath, { recursive: true });
+      }
+    } catch (err) {
+      throw new Error(`Cannot access save directory: ${err.message}`);
+    }
+
+    const rawExt = audioOnly ? audioFormat : ext;
+    const finalFileName = this.sanitizeFileName(fileName || `${title || 'media'}.${rawExt}`);
+    const finalFilePath = path.join(resolvedSavePath, finalFileName);
+
+    const taskId = `task_media_${Date.now()}_${Math.random().toString(36).substring(2, 8)}`;
+    const task = {
+      id: taskId,
+      url,
+      isMedia: true,
+      type: 'media',
+      title: title || finalFileName,
+      fileName: finalFileName,
+      filePath: finalFilePath,
+      savePath: resolvedSavePath,
+      partPath: null,
+      totalBytes: estimatedSize || 0,
+      downloadedBytes: 0,
+      progress: 0,
+      speed: 0,
+      eta: 0,
+      status: autoStart ? 'QUEUED' : 'PAUSED',
+      priority: priority.toUpperCase(),
+      thumbnail: thumbnail || null,
+      formatId: formatId || null,
+      formatSelector: formatSelector || null,
+      formatLabel: formatLabel || null,
+      audioOnly: Boolean(audioOnly),
+      audioFormat: audioFormat || 'mp3',
+      ext: rawExt || 'mp4',
+      resumable: true,
+      connections: 1,
+      chunks: [],
+      mimeType: audioOnly ? 'audio/mpeg' : 'video/mp4',
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+      completedAt: null,
+      error: null
+    };
 
     this.tasks.set(taskId, task);
     this.saveState();
@@ -799,6 +923,15 @@ class DownloadEngine extends EventEmitter {
       task.updatedAt = new Date().toISOString();
       this.emit('task-updated', task);
       await this.torrentEngine.startTorrent(task);
+      return;
+    }
+
+    if (task.isMedia) {
+      task.status = 'DOWNLOADING';
+      task.error = null;
+      task.updatedAt = new Date().toISOString();
+      this.emit('task-updated', task);
+      await this.mediaEngine.startMediaDownload(task);
       return;
     }
 
@@ -1240,6 +1373,18 @@ class DownloadEngine extends EventEmitter {
       return true;
     }
 
+    if (task.isMedia) {
+      task.status = 'PAUSED';
+      task.speed = 0;
+      task.eta = 0;
+      this.mediaEngine.pauseMedia(taskId);
+      task.updatedAt = new Date().toISOString();
+      this.saveState();
+      this.emit('task-updated', task);
+      this.scheduleQueue();
+      return true;
+    }
+
     if (task.status === 'DOWNLOADING') {
       const active = this.activeStreams.get(taskId);
       if (active) {
@@ -1327,6 +1472,18 @@ class DownloadEngine extends EventEmitter {
       return true;
     }
 
+    if (task.isMedia) {
+      task.status = 'CANCELLED';
+      task.speed = 0;
+      task.eta = 0;
+      this.mediaEngine.cancelMedia(taskId);
+      task.updatedAt = new Date().toISOString();
+      this.saveState();
+      this.emit('task-updated', task);
+      this.scheduleQueue();
+      return true;
+    }
+
     if (task.status === 'DOWNLOADING') {
       const active = this.activeStreams.get(taskId);
       if (active) {
@@ -1376,6 +1533,15 @@ class DownloadEngine extends EventEmitter {
 
     if (task.isTorrent) {
       this.torrentEngine.deleteTorrent(taskId, task.infoHash, deleteFromDisk, task.savePath, task.fileName);
+      this.tasks.delete(taskId);
+      this.saveState();
+      this.emit('task-deleted', taskId);
+      this.scheduleQueue();
+      return true;
+    }
+
+    if (task.isMedia) {
+      this.mediaEngine.deleteMedia(taskId, deleteFromDisk, task.savePath, task.filePath);
       this.tasks.delete(taskId);
       this.saveState();
       this.emit('task-deleted', taskId);
@@ -1686,6 +1852,11 @@ class DownloadEngine extends EventEmitter {
     if (this.torrentEngine) {
       try {
         this.torrentEngine.destroy();
+      } catch {}
+    }
+    if (this.mediaEngine) {
+      try {
+        this.mediaEngine.destroy();
       } catch {}
     }
     if (this.progressInterval) {

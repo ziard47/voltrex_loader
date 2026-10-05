@@ -1,6 +1,6 @@
 {
   "name": "voltrex-downloader",
-  "version": "1.3.0",
+  "version": "1.4.0",
   "description": "High-performance cross-platform Download Manager using Electron, React, MUI, and Tailwind",
   "main": "src/main.js",
   "scripts": {
@@ -15,7 +15,7 @@
     "install:desktop": "bash scripts/install-steamos-desktop.sh",
     "uninstall:desktop": "bash scripts/uninstall-steamos-desktop.sh",
     "start": "electron .",
-    "test": "node -c src/main.js && node -c src/main/downloadEngine.js && node -c src/main/torrentEngine.js && node -c src/main/bridgeServer.js && node -c src/main/updater.js && node -c src/preload.js"
+    "test": "node -c src/main.js && node -c src/main/downloadEngine.js && node -c src/main/torrentEngine.js && node -c src/main/mediaEngine.js && node -c src/main/bridgeServer.js && node -c src/main/updater.js && node -c src/preload.js"
   },
   "build": {
     "appId": "com.voltrex.loader",

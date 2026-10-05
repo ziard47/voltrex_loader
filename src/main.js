@@ -309,6 +309,21 @@ function setupIpcHandlers() {
     return await downloadEngine.probeUrl(url);
   });
 
+  // Universal Media Downloader handlers (YouTube, TikTok, Facebook, Reddit, etc.)
+  ipcMain.handle('media:probe', async (_event, url) => {
+    if (downloadEngine && downloadEngine.mediaEngine) {
+      return await downloadEngine.mediaEngine.probeMedia(url);
+    }
+    throw new Error('Media engine not initialized');
+  });
+
+  ipcMain.handle('media:download', async (_event, payload) => {
+    if (downloadEngine) {
+      return await downloadEngine.addMediaDownload(payload);
+    }
+    throw new Error('Download engine not initialized');
+  });
+
   // Batch Probe URLs
   ipcMain.handle('download:batch-probe', async (_event, urls) => {
     return await downloadEngine.batchProbeUrls(urls);
