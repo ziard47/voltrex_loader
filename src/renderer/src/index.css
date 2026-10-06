@@ -185,8 +185,13 @@
 .MuiButton-containedSecondary,
 button.bg-\[\#D84040\]:not([class*="/"]):not([class*="hover"]),
 button.\!bg-\[\#D84040\]:not([class*="/"]):not([class*="hover"]),
-[role="button"].bg-\[\#D84040\]:not([class*="/"]):not([class*="hover"]) {
+[role="button"].bg-\[\#D84040\]:not([class*="/"]):not([class*="hover"]),
+.MuiInputBase-root .btn-theme-primary,
+.MuiInputAdornment-root .btn-theme-primary,
+.MuiInputBase-root .MuiButton-contained,
+.MuiInputAdornment-root .MuiButton-contained {
   color: #ffffff !important;
+  -webkit-text-fill-color: #ffffff !important;
 }
 
 .btn-theme-primary *,
@@ -194,14 +199,33 @@ button.\!bg-\[\#D84040\]:not([class*="/"]):not([class*="hover"]),
 .MuiButton-containedPrimary *,
 .MuiButton-containedSecondary *,
 button.bg-\[\#D84040\]:not([class*="/"]):not([class*="hover"]) *,
-button.\!bg-\[\#D84040\]:not([class*="/"]):not([class*="hover"]) * {
+button.\!bg-\[\#D84040\]:not([class*="/"]):not([class*="hover"]) *,
+.MuiInputBase-root .btn-theme-primary *,
+.MuiInputAdornment-root .btn-theme-primary *,
+.MuiInputBase-root .MuiButton-contained *,
+.MuiInputAdornment-root .MuiButton-contained * {
   color: #ffffff !important;
+  -webkit-text-fill-color: #ffffff !important;
+}
+
+/* Ensure Lucide stroke-based icons and CircularProgress spinners never get corrupted by solid fills */
+svg.lucide,
+svg[fill="none"],
+.lucide,
+circle.MuiCircularProgress-circle {
+  fill: none !important;
+  stroke: currentColor !important;
+}
+
+.MuiSvgIcon-root {
+  fill: currentColor !important;
 }
 
 /* Dynamic Theme Action Buttons */
 .btn-theme-primary {
   background-color: var(--theme-primary) !important;
   color: #ffffff !important;
+  -webkit-text-fill-color: #ffffff !important;
   box-shadow: none !important;
   border: 1px solid transparent !important;
   transition: all 0.15s ease-in-out !important;
@@ -212,11 +236,13 @@ button.btn-theme-primary:hover {
   background-color: var(--theme-primary-hover) !important;
   box-shadow: none !important;
   color: #ffffff !important;
+  -webkit-text-fill-color: #ffffff !important;
 }
 
 .btn-theme-primary *,
 .btn-theme-primary:hover * {
   color: #ffffff !important;
+  -webkit-text-fill-color: #ffffff !important;
 }
 
 .btn-theme-outlined {
@@ -417,12 +443,34 @@ html.light .MuiDialogActions-root {
 html.light input,
 html.light textarea,
 html.light select,
-html.light .MuiInputBase-root,
 html.light .MuiInputBase-input,
 html.light .MuiSelect-select {
   background-color: #ffffff !important;
   color: var(--theme-text-primary) !important;
   -webkit-text-fill-color: var(--theme-text-primary) !important;
+}
+
+html.light .MuiInputBase-root:not(.MuiButtonBase-root) {
+  background-color: #ffffff !important;
+}
+
+/* Ensure buttons and icons inside input adornments in light mode stay crisp white */
+html.light .btn-theme-primary,
+html.light .btn-theme-primary *,
+html.light .btn-theme-primary svg,
+html.light .MuiButton-contained,
+html.light .MuiButton-contained *,
+html.light .MuiButton-contained svg,
+html.light .MuiInputBase-root .btn-theme-primary,
+html.light .MuiInputBase-root .btn-theme-primary *,
+html.light .MuiInputAdornment-root .btn-theme-primary,
+html.light .MuiInputAdornment-root .btn-theme-primary *,
+html.light .MuiInputBase-root .MuiButton-contained,
+html.light .MuiInputBase-root .MuiButton-contained *,
+html.light .MuiInputAdornment-root .MuiButton-contained,
+html.light .MuiInputAdornment-root .MuiButton-contained * {
+  color: #ffffff !important;
+  -webkit-text-fill-color: #ffffff !important;
 }
 
 html.light input::placeholder,
@@ -977,8 +1025,16 @@ html.windows-legacy:not(.dark) .MuiDialogContent-root {
   color: #000000 !important;
 }
 
-html.windows-legacy:not(.dark) .MuiDialogContent-root * {
+html.windows-legacy:not(.dark) .MuiDialogContent-root *:not(.btn-theme-primary):not(.btn-theme-primary *):not(.MuiButton-contained):not(.MuiButton-contained *) {
   color: #000000 !important;
+}
+
+html.windows-legacy:not(.dark) .MuiDialogContent-root .btn-theme-primary,
+html.windows-legacy:not(.dark) .MuiDialogContent-root .btn-theme-primary *,
+html.windows-legacy:not(.dark) .MuiDialogContent-root .MuiButton-contained,
+html.windows-legacy:not(.dark) .MuiDialogContent-root .MuiButton-contained * {
+  color: #ffffff !important;
+  -webkit-text-fill-color: #ffffff !important;
 }
 
 html.windows-legacy:not(.dark) .MuiDialogActions-root {
@@ -1005,6 +1061,35 @@ html.windows-legacy:not(.dark) .MuiMenuItem-root:hover {
 
 html.windows-legacy:not(.dark) .MuiMenuItem-root:hover * {
   color: #000000 !important;
+}
+
+/* Light Menu Selected Item */
+html.windows-legacy:not(.dark) .MuiMenuItem-root.Mui-selected {
+  background-color: #cde8ff !important;
+  color: #0078D7 !important;
+  font-weight: 600 !important;
+}
+
+html.windows-legacy:not(.dark) .MuiMenuItem-root.Mui-selected:hover {
+  background-color: #b8dcfe !important;
+  color: #0078D7 !important;
+}
+
+/* Light Media Downloader */
+html.windows-legacy:not(.dark) .media-downloader-card {
+  background-color: #ffffff !important;
+  border: 1px solid #d1d1d1 !important;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08) !important;
+}
+
+html.windows-legacy:not(.dark) .media-downloader-card-header {
+  background-color: #f7f7f7 !important;
+  border-bottom: 1px solid #d1d1d1 !important;
+}
+
+html.windows-legacy:not(.dark) .media-downloader-section {
+  background-color: #f9f9f9 !important;
+  border: 1px solid #e0e0e0 !important;
 }
 
 /* Light Scrollbars */
@@ -1357,6 +1442,35 @@ html.windows-legacy.dark .MuiMenuItem-root:hover * {
   color: #ffffff !important;
 }
 
+/* Dark Menu Selected Item */
+html.windows-legacy.dark .MuiMenuItem-root.Mui-selected {
+  background-color: #1a3b5c !important;
+  color: #60cdff !important;
+  font-weight: 600 !important;
+}
+
+html.windows-legacy.dark .MuiMenuItem-root.Mui-selected:hover {
+  background-color: #234b73 !important;
+  color: #60cdff !important;
+}
+
+/* Dark Media Downloader */
+html.windows-legacy.dark .media-downloader-card {
+  background-color: #202020 !important;
+  border: 1px solid #383838 !important;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.4) !important;
+}
+
+html.windows-legacy.dark .media-downloader-card-header {
+  background-color: #252525 !important;
+  border-bottom: 1px solid #383838 !important;
+}
+
+html.windows-legacy.dark .media-downloader-section {
+  background-color: #262626 !important;
+  border: 1px solid #383838 !important;
+}
+
 /* Dark Scrollbars */
 html.windows-legacy.dark ::-webkit-scrollbar {
   background-color: #1f1f1f;
@@ -1512,6 +1626,23 @@ html.windows-legacy button.btn-theme-primary *,
 html.windows-legacy .MuiButton-contained *,
 html.windows-legacy .MuiButton-containedPrimary * {
   color: #ffffff !important;
+}
+
+/* Windows 10 Icon Buttons Structure */
+html.windows-legacy .MuiIconButton-root:not(.btn-theme-primary) {
+  background-color: transparent !important;
+  border-radius: 2px !important;
+  box-shadow: none !important;
+}
+
+html.windows-legacy:not(.dark) .MuiIconButton-root:not(.btn-theme-primary):hover {
+  background-color: #e5f1fb !important;
+  color: #0078D7 !important;
+}
+
+html.windows-legacy.dark .MuiIconButton-root:not(.btn-theme-primary):hover {
+  background-color: #333333 !important;
+  color: #60cdff !important;
 }
 
 /* Ensure inner inputs inside MUI components NEVER have internal borders or nested outlines */

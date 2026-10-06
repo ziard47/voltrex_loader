@@ -432,7 +432,8 @@ function initScrollTour() {
     '32-Stream Chunk Matrix',
     'URL Probing & Setup',
     'Batch Queue & Sniffer',
-    'Settings & Windows 10 Theme'
+    'Settings & Windows 10 Theme',
+    'Universal Media Downloader'
   ];
 
   const totalSteps = stepItems.length;

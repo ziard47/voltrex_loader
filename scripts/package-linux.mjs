@@ -1,4 +1,5 @@
 import fs from 'node:fs';
+import os from 'node:os';
 import path from 'node:path';
 import readline from 'node:readline';
 import { fileURLToPath } from 'node:url';
@@ -54,43 +55,48 @@ async function main() {
   console.log('\n--- Step 1: Building Frontend Assets ---');
   execSync('npm run build', { cwd: rootDir, stdio: 'inherit' });
 
-  // 2. Run electron-builder for Linux targets (AppImage + unpacked dir)
+  // 2. Run electron-builder for Linux targets in an isolated temp directory to prevent FUSE ENOTEMPTY errors
   console.log('\n--- Step 2: Packaging Electron AppImage & Linux Unpacked ---');
-  execSync('npx electron-builder --linux', { cwd: rootDir, stdio: 'inherit' });
-
-  // 3. Prepare target release structure: release/linux/<version>/
-  console.log('\n--- Step 3: Assembling Release Directory ---');
+  const tempOutputDir = fs.mkdtempSync(path.join(os.tmpdir(), 'voltrex-linux-build-'));
   const targetDir = path.join(rootDir, 'release', 'linux', chosenVersion);
-  fs.mkdirSync(targetDir, { recursive: true });
 
-  // Find generated AppImage in release/
-  const releaseRoot = path.join(rootDir, 'release');
-  const releaseFiles = fs.readdirSync(releaseRoot);
-  const appImageFile = releaseFiles.find(
-    (f) => f.endsWith('.AppImage') && (f.includes(chosenVersion) || f.includes('Voltrex'))
-  );
+  try {
+    execSync(`npx electron-builder --linux -c.directories.output="${tempOutputDir}"`, {
+      cwd: rootDir,
+      stdio: 'inherit'
+    });
 
-  if (!appImageFile) {
-    throw new Error(`Could not find built AppImage in ${releaseRoot}`);
-  }
+    // 3. Prepare target release structure: release/linux/<version>/
+    console.log('\n--- Step 3: Assembling Release Directory ---');
+    fs.mkdirSync(targetDir, { recursive: true });
 
-  const sourceAppImagePath = path.join(releaseRoot, appImageFile);
-  const targetAppImageName = `Voltrex Loader-${chosenVersion}.AppImage`;
-  const targetAppImagePath = path.join(targetDir, targetAppImageName);
+    // Find generated AppImage in tempOutputDir
+    const releaseFiles = fs.readdirSync(tempOutputDir);
+    const appImageFile = releaseFiles.find(
+      (f) => f.endsWith('.AppImage') && (f.includes(chosenVersion) || f.includes('Voltrex'))
+    );
 
-  // Copy AppImage to release/linux/<version>/
-  fs.copyFileSync(sourceAppImagePath, targetAppImagePath);
-  fs.chmodSync(targetAppImagePath, 0o755);
-  console.log(`✓ Placed AppImage at: ${path.relative(rootDir, targetAppImagePath)}`);
+    if (!appImageFile) {
+      throw new Error(`Could not find built AppImage in ${tempOutputDir}`);
+    }
 
-  // Ensure linux-unpacked exists
-  const linuxUnpackedSrc = path.join(releaseRoot, 'linux-unpacked');
-  if (!fs.existsSync(linuxUnpackedSrc)) {
-    throw new Error(`Could not find linux-unpacked directory at ${linuxUnpackedSrc}`);
-  }
+    const sourceAppImagePath = path.join(tempOutputDir, appImageFile);
+    const targetAppImageName = `Voltrex Loader-${chosenVersion}.AppImage`;
+    const targetAppImagePath = path.join(targetDir, targetAppImageName);
 
-  // 4. Create staging folder for tar.gz archive
-  const stagingDir = path.join(targetDir, `voltrex-loader-${chosenVersion}-linux`);
+    // Copy AppImage to release/linux/<version>/
+    fs.copyFileSync(sourceAppImagePath, targetAppImagePath);
+    fs.chmodSync(targetAppImagePath, 0o755);
+    console.log(`✓ Placed AppImage at: ${path.relative(rootDir, targetAppImagePath)}`);
+
+    // Ensure linux-unpacked exists
+    const linuxUnpackedSrc = path.join(tempOutputDir, 'linux-unpacked');
+    if (!fs.existsSync(linuxUnpackedSrc)) {
+      throw new Error(`Could not find linux-unpacked directory at ${linuxUnpackedSrc}`);
+    }
+
+  // 4. Create staging folder for tar.gz archive inside tempOutputDir
+  const stagingDir = path.join(tempOutputDir, `voltrex-loader-${chosenVersion}-linux`);
   if (fs.existsSync(stagingDir)) {
     fs.rmSync(stagingDir, { recursive: true, force: true });
   }
@@ -162,6 +168,14 @@ cp -r "\$UNPACKED_DIR/"* "\$INSTALL_DIR/"
 chmod +x "\$INSTALL_DIR/voltrex-loader"
 if [ -f "\$INSTALL_DIR/chrome-sandbox" ]; then
   chmod 4755 "\$INSTALL_DIR/chrome-sandbox" 2>/dev/null || chmod +x "\$INSTALL_DIR/chrome-sandbox"
+fi
+
+# Ensure helper binaries in resources are executable
+if [ -d "\$INSTALL_DIR/resources/bin" ]; then
+  chmod +x "\$INSTALL_DIR/resources/bin"/* 2>/dev/null || true
+fi
+if [ -d "\$INSTALL_DIR/resources/app.asar.unpacked" ]; then
+  find "\$INSTALL_DIR/resources/app.asar.unpacked" -type f -exec chmod +x {} + 2>/dev/null || true
 fi
 
 # Symlink CLI command directly to the unpacked executable
@@ -306,18 +320,13 @@ STANDALONE RUN (AppImage):
   const tarName = `voltrex-loader-${chosenVersion}-linux.tar.gz`;
   const tarPath = path.join(targetDir, tarName);
 
-  execSync(`tar -czf "${tarPath}" -C "${targetDir}" "voltrex-loader-${chosenVersion}-linux"`, {
+  execSync(`tar -czf "${tarPath}" -C "${tempOutputDir}" "voltrex-loader-${chosenVersion}-linux"`, {
     cwd: rootDir,
     stdio: 'inherit'
   });
 
-  // Clean staging folder and intermediate root AppImage
+  // Clean staging folder
   fs.rmSync(stagingDir, { recursive: true, force: true });
-  if (fs.existsSync(sourceAppImagePath) && sourceAppImagePath !== targetAppImagePath) {
-    try {
-      fs.unlinkSync(sourceAppImagePath);
-    } catch {}
-  }
 
   console.log('\n=============================================');
   console.log('           Packaging Complete!               ');
@@ -327,6 +336,13 @@ STANDALONE RUN (AppImage):
   console.log(`   ${path.relative(rootDir, targetAppImagePath)}`);
   console.log(`2. Installer Archive (contains linux-unpacked files, install.sh, uninstall.sh):`);
   console.log(`   ${path.relative(rootDir, tarPath)}\n`);
+  } finally {
+    try {
+      fs.rmSync(tempOutputDir, { recursive: true, force: true });
+    } catch {
+      // ignore
+    }
+  }
 }
 
 main().catch((err) => {

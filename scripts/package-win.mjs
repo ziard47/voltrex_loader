@@ -1,4 +1,5 @@
 import fs from 'node:fs';
+import os from 'node:os';
 import path from 'node:path';
 import readline from 'node:readline';
 import { fileURLToPath } from 'node:url';
@@ -54,58 +55,80 @@ async function main() {
   console.log('\n--- Step 1: Building Frontend Assets ---');
   execSync('npm run build', { cwd: rootDir, stdio: 'inherit' });
 
-  // 2. Package win-unpacked application directory using electron-builder
+  // 2. Package win-unpacked application directory using electron-builder in an isolated temp directory
   console.log('\n--- Step 2: Packaging Windows Application Binaries (win-unpacked) ---');
-  execSync('CSC_IDENTITY_AUTO_DISCOVERY=false npx electron-builder --win --dir', {
-    cwd: rootDir,
-    stdio: 'inherit',
-    env: {
-      ...process.env,
-      CSC_IDENTITY_AUTO_DISCOVERY: 'false'
-    }
-  });
-
-  const releaseRoot = path.join(rootDir, 'release');
-  const winUnpackedDir = path.join(releaseRoot, 'win-unpacked');
-  if (!fs.existsSync(winUnpackedDir) || !fs.existsSync(path.join(winUnpackedDir, 'voltrex-loader.exe'))) {
-    throw new Error(`win-unpacked directory not found or missing voltrex-loader.exe in ${winUnpackedDir}`);
-  }
-
-  // 3. Prepare target release structure: release/windows/<version>/
-  console.log('\n--- Step 3: Preparing Release Directory ---');
+  const tempOutputDir = fs.mkdtempSync(path.join(os.tmpdir(), 'voltrex-win-build-'));
   const targetDir = path.join(rootDir, 'release', 'windows', chosenVersion);
-  fs.mkdirSync(targetDir, { recursive: true });
+  const zipName = `voltrex-loader-${chosenVersion}-win.zip`;
 
-  // Remove legacy setup.exe / app.bin / nsi files if they exist from prior runs
-  for (const legacy of ['setup.exe', 'app.bin', 'installer.nsi']) {
-    const legacyPath = path.join(targetDir, legacy);
-    if (fs.existsSync(legacyPath)) {
-      fs.unlinkSync(legacyPath);
+  try {
+    execSync(`CSC_IDENTITY_AUTO_DISCOVERY=false npx electron-builder --win --dir -c.directories.output="${tempOutputDir}"`, {
+      cwd: rootDir,
+      stdio: 'inherit',
+      env: {
+        ...process.env,
+        CSC_IDENTITY_AUTO_DISCOVERY: 'false'
+      }
+    });
+
+    const winUnpackedDir = path.join(tempOutputDir, 'win-unpacked');
+    if (!fs.existsSync(winUnpackedDir) || !fs.existsSync(path.join(winUnpackedDir, 'voltrex-loader.exe'))) {
+      throw new Error(`win-unpacked directory not found or missing voltrex-loader.exe in ${winUnpackedDir}`);
+    }
+
+    // 3. Prepare target release structure: release/windows/<version>/
+    console.log('\n--- Step 3: Preparing Release Directory ---');
+    fs.mkdirSync(targetDir, { recursive: true });
+
+    // Remove legacy setup.exe / app.bin / nsi files if they exist from prior runs
+    for (const legacy of ['setup.exe', 'app.bin', 'installer.nsi']) {
+      const legacyPath = path.join(targetDir, legacy);
+      if (fs.existsSync(legacyPath)) {
+        fs.unlinkSync(legacyPath);
+      }
+    }
+
+    // 4. Create voltrex-loader-${chosenVersion}-win.zip archive directly from tempOutputDir
+    console.log(`\n--- Step 4: Creating ${zipName} Archive ---`);
+    const zipPath = path.join(targetDir, zipName);
+    if (fs.existsSync(zipPath)) {
+      fs.unlinkSync(zipPath);
+    }
+
+    execSync(`zip -r -q "${zipPath}" win-unpacked`, {
+      cwd: tempOutputDir,
+      stdio: 'inherit'
+    });
+    console.log(`✓ Created portable Windows zip package: ${path.relative(rootDir, zipPath)}`);
+
+    // 5. Copy win-unpacked folder into release/windows/<version>/win-unpacked
+    console.log('\n--- Step 5: Staging win-unpacked Application Files ---');
+    const destWinUnpacked = path.join(targetDir, 'win-unpacked');
+    if (fs.existsSync(destWinUnpacked)) {
+      try {
+        fs.rmSync(destWinUnpacked, { recursive: true, force: true });
+      } catch {
+        try {
+          const staleDir = path.join(rootDir, 'release', '.stale_fuse_dirs');
+          fs.mkdirSync(staleDir, { recursive: true });
+          fs.renameSync(destWinUnpacked, path.join(staleDir, `win_unpacked_${Date.now()}`));
+        } catch {}
+      }
+    }
+    fs.cpSync(winUnpackedDir, destWinUnpacked, { recursive: true });
+    console.log(`✓ Staged win-unpacked directory into: ${path.relative(rootDir, destWinUnpacked)}`);
+
+    const helperBin = path.join(destWinUnpacked, 'resources', 'bin', 'yt-dlp.exe');
+    if (fs.existsSync(helperBin)) {
+      console.log('✓ Verified bundled helper binary: resources/bin/yt-dlp.exe');
+    }
+  } finally {
+    try {
+      fs.rmSync(tempOutputDir, { recursive: true, force: true });
+    } catch {
+      // ignore
     }
   }
-
-  // 4. Copy win-unpacked folder into release/windows/<version>/win-unpacked
-  console.log('\n--- Step 4: Staging win-unpacked Application Files ---');
-  const destWinUnpacked = path.join(targetDir, 'win-unpacked');
-  if (fs.existsSync(destWinUnpacked)) {
-    fs.rmSync(destWinUnpacked, { recursive: true, force: true });
-  }
-  fs.cpSync(winUnpackedDir, destWinUnpacked, { recursive: true });
-  console.log(`✓ Staged win-unpacked directory into: ${path.relative(rootDir, destWinUnpacked)}`);
-
-  // 5. Create voltrex-loader-${chosenVersion}-win.zip containing the win-unpacked directory
-  console.log(`\n--- Step 5: Creating voltrex-loader-${chosenVersion}-win.zip Archive ---`);
-  const zipName = `voltrex-loader-${chosenVersion}-win.zip`;
-  const zipPath = path.join(targetDir, zipName);
-  if (fs.existsSync(zipPath)) {
-    fs.unlinkSync(zipPath);
-  }
-
-  execSync(`zip -r -q "${zipName}" win-unpacked`, {
-    cwd: targetDir,
-    stdio: 'inherit'
-  });
-  console.log(`✓ Created portable Windows zip package: ${path.relative(rootDir, zipPath)}`);
 
   console.log('\n=============================================');
   console.log('        Windows Packaging Complete!          ');

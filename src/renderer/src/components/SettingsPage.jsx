@@ -20,6 +20,7 @@ import {
   Check,
   RotateCcw,
   ArrowLeft,
+  X,
   Copy,
   ExternalLink,
   ShieldCheck,
@@ -241,22 +242,12 @@ export default function SettingsPage({ onBack, defaultSavePath, onSaveSuccess, a
   return (
     <div className="flex-1 w-full h-full flex flex-col overflow-hidden bg-[#140e0e] select-none text-[#EEEEEE]">
       {/* Top Header Bar */}
-      <div className="px-6 py-4 border-b border-[#8E1616]/30 flex items-center justify-between bg-[#1D1616] shrink-0">
-        <div className="flex items-center gap-3">
-          <Button
-            variant="outlined"
-            size="small"
-            startIcon={<ArrowLeft className="w-4 h-4" />}
-            onClick={onBack}
-            className="!border-[#8E1616]/40 !text-[#b8a5a5] hover:!text-white hover:!bg-[#8E1616]/20 !text-xs !py-1 !px-3"
-          >
-            Back to Downloads
-          </Button>
-          <div className="h-4 w-[1px] bg-[#8E1616]/30" />
-          <div className="flex items-center gap-2">
-            <Settings className="w-4 h-4 text-[var(--theme-primary)]" />
-            <h1 className="text-sm font-bold text-slate-800 dark:text-[#EEEEEE] tracking-wide">Preferences & Settings</h1>
-          </div>
+      <div className="px-4 sm:px-6 py-3.5 border-b border-[#8E1616]/30 flex items-center justify-between bg-white dark:bg-[#1D1616] shrink-0">
+        <div className="flex items-center gap-2.5">
+          <Settings className="w-4 h-4 text-[var(--theme-primary)]" />
+          <h1 className="text-sm font-bold text-slate-800 dark:text-[#EEEEEE] tracking-wide">
+            Preferences & Settings
+          </h1>
         </div>
 
         <div className="flex items-center gap-2">
@@ -265,7 +256,7 @@ export default function SettingsPage({ onBack, defaultSavePath, onSaveSuccess, a
             variant="text"
             startIcon={<RotateCcw className="w-3.5 h-3.5" />}
             onClick={handleReset}
-            className="!text-[#b8a5a5] hover:!text-rose-400 !text-xs !py-1 !px-3"
+            className="!text-slate-600 dark:!text-[#b8a5a5] hover:!text-rose-500 !text-xs !py-1 !px-3"
           >
             Reset Defaults
           </Button>
@@ -279,6 +270,16 @@ export default function SettingsPage({ onBack, defaultSavePath, onSaveSuccess, a
           >
             {isSaving ? 'Saving...' : 'Save Settings'}
           </Button>
+          <div className="h-4 w-[1px] bg-slate-300 dark:bg-[#8E1616]/30 mx-0.5" />
+          <Tooltip title="Close" arrow>
+            <IconButton
+              size="small"
+              onClick={onBack}
+              className="!p-1.5 rounded-lg border border-slate-300 dark:border-[#8E1616]/40 text-slate-600 dark:text-[#b8a5a5] hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-[#8E1616]/20 transition-colors"
+            >
+              <X className="w-4 h-4" />
+            </IconButton>
+          </Tooltip>
         </div>
       </div>
 

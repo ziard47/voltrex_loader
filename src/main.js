@@ -309,6 +309,49 @@ function setupIpcHandlers() {
     return await downloadEngine.probeUrl(url);
   });
 
+  // Universal Media Downloader handlers (YouTube, TikTok, Facebook, Reddit, etc.)
+  ipcMain.handle('media:probe', async (_event, url) => {
+    if (downloadEngine && downloadEngine.mediaEngine) {
+      return await downloadEngine.mediaEngine.probeMedia(url);
+    }
+    throw new Error('Media engine not initialized');
+  });
+
+  ipcMain.handle('media:download', async (_event, payload) => {
+    if (downloadEngine) {
+      return await downloadEngine.addMediaDownload(payload);
+    }
+    throw new Error('Download engine not initialized');
+  });
+
+  ipcMain.handle('media:probe-playlist', async (_event, url) => {
+    if (downloadEngine && downloadEngine.mediaEngine) {
+      return await downloadEngine.mediaEngine.probePlaylist(url);
+    }
+    throw new Error('Media engine not initialized');
+  });
+
+  ipcMain.handle('media:probe-batch', async (_event, urls) => {
+    if (downloadEngine && downloadEngine.mediaEngine) {
+      return await downloadEngine.mediaEngine.probeBatchMedia(urls);
+    }
+    throw new Error('Media engine not initialized');
+  });
+
+  ipcMain.handle('media:download-batch', async (_event, payload) => {
+    if (downloadEngine) {
+      return await downloadEngine.addBatchMediaDownloads(payload);
+    }
+    throw new Error('Download engine not initialized');
+  });
+
+  ipcMain.handle('media:search', async (_event, query, limit) => {
+    if (downloadEngine && downloadEngine.mediaEngine) {
+      return await downloadEngine.mediaEngine.searchMedia(query, limit);
+    }
+    throw new Error('Media engine not initialized');
+  });
+
   // Batch Probe URLs
   ipcMain.handle('download:batch-probe', async (_event, urls) => {
     return await downloadEngine.batchProbeUrls(urls);

@@ -44,7 +44,8 @@ import {
   Magnet,
   Users,
   Radio,
-  Gauge
+  Gauge,
+  Video
 } from 'lucide-react';
 import ChunkMatrix from './ChunkMatrix';
 import TorrentContextMenu from './TorrentContextMenu';
@@ -427,8 +428,14 @@ export default function DownloadTable({
                           </IconButton>
                         </Tooltip>
 
-                        <div className="w-8 h-8 rounded-lg bg-[#241717] border border-[#8E1616]/40 flex items-center justify-center shrink-0">
-                          {renderFileIcon(task.fileName, task.mimeType)}
+                        <div className="w-8 h-8 rounded-lg bg-[#241717] border border-[#8E1616]/40 flex items-center justify-center shrink-0 overflow-hidden">
+                          {task.isMedia && task.thumbnail ? (
+                            <img src={task.thumbnail} alt="" className="w-full h-full object-cover" />
+                          ) : task.isMedia ? (
+                            <Video className="w-4 h-4 text-[#D84040]" />
+                          ) : (
+                            renderFileIcon(task.fileName, task.mimeType)
+                          )}
                         </div>
                         <div className="min-w-0 flex-1 overflow-hidden">
                           <div className="flex items-center gap-1.5 flex-wrap">
@@ -452,6 +459,17 @@ export default function DownloadTable({
                                   <Magnet className={`w-2.5 h-2.5 ${isDark ? 'text-purple-400' : 'text-purple-700'}`} />
                                   <span>TORRENT</span>
                                   {task.peers > 0 && <span className="text-[8px] opacity-80">({task.peers}p)</span>}
+                                </span>
+                              </Tooltip>
+                            )}
+                            {task.isMedia && (
+                              <Tooltip title={`Media Stream (${task.formatLabel || 'Universal'})`} arrow>
+                                <span
+                                  className="inline-flex items-center gap-1 px-1.5 py-0.2 rounded text-[9px] font-bold bg-[#D84040]/20 text-[#D84040] border border-[#D84040]/40 shrink-0"
+                                >
+                                  <Video className="w-2.5 h-2.5 text-[#D84040]" />
+                                  <span>{task.audioOnly ? 'AUDIO' : 'MEDIA'}</span>
+                                  {task.formatLabel && <span className="text-[8px] opacity-90 truncate max-w-[80px]">({task.formatLabel})</span>}
                                 </span>
                               </Tooltip>
                             )}

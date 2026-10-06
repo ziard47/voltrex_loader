@@ -9,11 +9,12 @@ import WhatsNewModal from './components/WhatsNewModal';
 import SetupWizardModal from './components/SetupWizardModal';
 import UpdateModal from './components/UpdateModal';
 import SettingsPage from './components/SettingsPage';
+import MediaDownloader from './components/MediaDownloader';
 import { getFileCategory } from './utils/formatters';
 
 export default function App() {
   const [downloads, setDownloads] = useState([]);
-  const [currentView, setCurrentView] = useState('downloads'); // 'downloads' | 'settings'
+  const [currentView, setCurrentView] = useState('downloads'); // 'downloads' | 'settings' | 'media-downloader'
   const [selectedCategory, setSelectedCategory] = useState('all');
   const [selectedType, setSelectedType] = useState('all');
   const [searchQuery, setSearchQuery] = useState('');
@@ -27,7 +28,7 @@ export default function App() {
   const [capturedData, setCapturedData] = useState(null);
   const [pendingCapture, setPendingCapture] = useState(null);
   const [currentSingleData, setCurrentSingleData] = useState(null);
-  const [appVersion, setAppVersion] = useState('1.3.0');
+  const [appVersion, setAppVersion] = useState('1.4.0');
   const [isWhatsNewOpen, setIsWhatsNewOpen] = useState(false);
   const [isSetupWizardOpen, setIsSetupWizardOpen] = useState(false);
   const [isUpdateModalOpen, setIsUpdateModalOpen] = useState(false);
@@ -535,6 +536,12 @@ export default function App() {
                 if (newSettings.defaultDownloadPath) setDefaultSavePath(newSettings.defaultDownloadPath);
                 if (newSettings.concurrency) setConcurrency(newSettings.concurrency);
               }}
+            />
+          ) : currentView === 'media-downloader' ? (
+            <MediaDownloader
+              defaultSavePath={defaultSavePath}
+              onNavigateToDownloads={() => setCurrentView('downloads')}
+              activeCount={counts.active}
             />
           ) : (
             <DownloadTable

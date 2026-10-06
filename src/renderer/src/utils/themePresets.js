@@ -452,8 +452,10 @@ export function buildMuiTheme(tokens, mode, isWindowsLegacy = false) {
               boxShadow: 'none !important'
             },
             color: '#ffffff !important',
+            WebkitTextFillColor: '#ffffff !important',
             '& *': {
-              color: '#ffffff !important'
+              color: '#ffffff !important',
+              WebkitTextFillColor: '#ffffff !important'
             }
           },
           containedPrimary: {
@@ -462,8 +464,10 @@ export function buildMuiTheme(tokens, mode, isWindowsLegacy = false) {
               boxShadow: 'none !important'
             },
             color: '#ffffff !important',
+            WebkitTextFillColor: '#ffffff !important',
             '& *': {
-              color: '#ffffff !important'
+              color: '#ffffff !important',
+              WebkitTextFillColor: '#ffffff !important'
             }
           },
           outlined: {

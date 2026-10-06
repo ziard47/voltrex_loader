@@ -14,34 +14,25 @@ import {
   CheckCircle2,
   ArrowRight,
   X,
-  Zap,
-  FolderTree,
-  Magnet
+  Video
 } from 'lucide-react';
 import Logo from './Logo';
 
-export default function WhatsNewModal({ open, onClose, version = '1.3.0' }) {
+export default function WhatsNewModal({ open, onClose, version = '1.4.0' }) {
   const highlights = [
     {
-      icon: Magnet,
-      title: 'BitTorrent & Magnet Link P2P Engine',
+      icon: Video,
+      title: 'Universal Media Downloader',
       description:
-        'Download directly from magnet links and .torrent files with full WebTorrent integration, multi-file inspection, live swarm telemetry (peers, download/upload speeds), and piece verification grid.',
-      badge: 'BitTorrent'
+        'Download high-definition videos and extract MP3 audio directly from YouTube, TikTok, Facebook, Reddit, Instagram, and hundreds of sites with automatic quality probing, stream resolution selection, and queue integration.',
+      badge: 'Media Engine'
     },
     {
-      icon: Zap,
-      title: 'Segmented Multi-Connection Engine & Live Visual Chunk Grid',
+      icon: Sparkles,
+      title: 'UI Enhancements & Material UI Modernization',
       description:
-        'Download resumable files up to 10x faster with 2 to 32 parallel HTTP range streams written in-place concurrently, featuring an IDM/FDM-inspired live segment visualizer and thread telemetry matrix.',
-      badge: 'Acceleration'
-    },
-    {
-      icon: FolderTree,
-      title: 'Automatic Category Folder Organization',
-      description:
-        'Automatically sorts incoming downloads into designated subdirectories (Videos, Audio, Documents, Compressed, Programs, Torrents, Others) with live category path preview and custom folder locking.',
-      badge: 'Organization'
+        'Refined user interface with sleek Material UI form controls, themed format dropdowns, minimal unified search inputs, optimized dark & light mode contrast, and streamlined popup modals.',
+      badge: 'UI / UX'
     }
   ];
 
@@ -78,7 +69,7 @@ export default function WhatsNewModal({ open, onClose, version = '1.3.0' }) {
               />
             </div>
             <p className="text-xs text-[var(--theme-text-muted)] mt-0.5">
-              Exciting improvements, setup wizard, and dynamic theming in this release.
+              Exciting new features and user interface enhancements in this release.
             </p>
           </div>
         </div>
@@ -99,7 +90,7 @@ export default function WhatsNewModal({ open, onClose, version = '1.3.0' }) {
         <div className="flex items-center gap-2 px-3 py-2 rounded-xl bg-[var(--theme-secondary-subtle)] border border-[var(--theme-border-accent)] text-xs text-[var(--theme-text-primary)]">
           <Sparkles className="w-4 h-4 text-[var(--theme-primary)] shrink-0" />
           <span>
-            Voltrex Loader has been upgraded to <strong>v{version}</strong> with Windows 10 Light & Dark themes, improved table responsiveness, and Segmented Acceleration!
+            Voltrex Loader has been upgraded to <strong>v{version}</strong> with the new Universal Media Downloader and sleek UI enhancements!
           </span>
         </div>
 
