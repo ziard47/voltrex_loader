@@ -293,6 +293,183 @@ class MediaEngine extends EventEmitter {
   }
 
   /**
+   * Probe a playlist URL (YouTube playlist, channel, album, etc.)
+   */
+  async probePlaylist(url) {
+    if (!url || typeof url !== 'string' || !url.trim()) {
+      throw new Error('Please enter a valid playlist URL.');
+    }
+
+    const trimmedUrl = url.trim();
+    const ytDlp = await this.findYtDlp();
+
+    return new Promise((resolve, reject) => {
+      const args = [
+        '--dump-single-json',
+        '--flat-playlist',
+        '--no-warnings',
+        '--no-check-certificates',
+        '--js-runtimes', 'node',
+        trimmedUrl
+      ];
+
+      const proc = spawn(ytDlp, args, { stdio: ['ignore', 'pipe', 'pipe'] });
+      let stdoutData = '';
+      let stderrData = '';
+
+      proc.stdout.on('data', (chunk) => {
+        stdoutData += chunk.toString();
+      });
+
+      proc.stderr.on('data', (chunk) => {
+        stderrData += chunk.toString();
+      });
+
+      proc.on('close', (code) => {
+        if (code !== 0) {
+          const errSnippet = (stderrData || stdoutData).trim().split('\n').filter(l => l.includes('ERROR:') || l.includes('Error')).join(' ') || stderrData || `Failed to probe playlist (Exit code ${code})`;
+          return reject(new Error(errSnippet));
+        }
+
+        try {
+          const info = JSON.parse(stdoutData);
+          if (info._type === 'playlist' && Array.isArray(info.entries)) {
+            const playlistTitle = info.title || 'Playlist';
+            const entries = info.entries.filter(Boolean).map((item, idx) => {
+              const videoId = item.id;
+              let videoUrl = item.url;
+              if (!videoUrl || !videoUrl.startsWith('http')) {
+                videoUrl = videoId ? `https://www.youtube.com/watch?v=${videoId}` : trimmedUrl;
+              }
+
+              let thumb = item.thumbnail;
+              if (Array.isArray(item.thumbnails) && item.thumbnails.length > 0) {
+                thumb = item.thumbnails[item.thumbnails.length - 1].url || thumb;
+              }
+              if (!thumb && videoId) {
+                thumb = `https://i.ytimg.com/vi/${videoId}/hqdefault.jpg`;
+              }
+
+              const dur = typeof item.duration === 'number' ? item.duration : 0;
+
+              return {
+                id: videoId || `item_${idx}_${Date.now()}`,
+                title: item.title || `Video ${idx + 1}`,
+                url: videoUrl,
+                duration: dur,
+                durationFormatted: this.formatDuration(dur),
+                uploader: item.uploader || item.channel || playlistTitle,
+                thumbnail: thumb || null,
+                platform: info.extractor_key || 'YouTube'
+              };
+            });
+
+            return resolve({
+              isPlaylist: true,
+              title: playlistTitle,
+              uploader: info.uploader || info.channel || 'Unknown',
+              itemCount: entries.length,
+              entries
+            });
+          } else {
+            // Single video returned
+            const single = this.parseMediaInfo(info, trimmedUrl);
+            return resolve({
+              isPlaylist: false,
+              title: single.title,
+              itemCount: 1,
+              entries: [{
+                id: single.id,
+                title: single.title,
+                url: single.url,
+                duration: single.duration,
+                durationFormatted: single.durationFormatted,
+                uploader: single.uploader,
+                thumbnail: single.thumbnail,
+                platform: single.platform
+              }]
+            });
+          }
+        } catch (parseErr) {
+          reject(new Error(`Could not parse playlist: ${parseErr.message}`));
+        }
+      });
+
+      proc.on('error', (err) => {
+        reject(new Error(`Could not run media engine: ${err.message}`));
+      });
+    });
+  }
+
+  /**
+   * Probe multiple media URLs and expand any playlists found
+   * @param {string[]|string} inputUrls
+   */
+  async probeBatchMedia(inputUrls) {
+    let urls = [];
+    if (Array.isArray(inputUrls)) {
+      urls = inputUrls;
+    } else if (typeof inputUrls === 'string') {
+      urls = inputUrls.split(/\r?\n/).map(u => u.trim()).filter(Boolean);
+    }
+
+    if (urls.length === 0) {
+      throw new Error('Please provide at least one valid media or playlist URL.');
+    }
+
+    const allEntries = [];
+    const errors = [];
+
+    for (let i = 0; i < urls.length; i++) {
+      const u = urls[i].trim();
+      if (!u) continue;
+
+      try {
+        const res = await this.probePlaylist(u);
+        if (res && Array.isArray(res.entries)) {
+          for (const item of res.entries) {
+            if (!allEntries.some(e => e.url === item.url && e.id === item.id)) {
+              allEntries.push({
+                ...item,
+                sourceUrl: u,
+                sourcePlaylist: res.isPlaylist ? res.title : null
+              });
+            }
+          }
+        }
+      } catch (err) {
+        // Fallback to probeMedia
+        try {
+          const single = await this.probeMedia(u);
+          if (single) {
+            allEntries.push({
+              id: single.id,
+              title: single.title,
+              url: single.url,
+              duration: single.duration,
+              durationFormatted: single.durationFormatted,
+              uploader: single.uploader,
+              thumbnail: single.thumbnail,
+              platform: single.platform,
+              sourceUrl: u,
+              sourcePlaylist: null
+            });
+          }
+        } catch (singleErr) {
+          errors.push({ url: u, error: singleErr.message || err.message });
+        }
+      }
+    }
+
+    return {
+      success: true,
+      totalFound: allEntries.length,
+      entries: allEntries,
+      errors
+    };
+  }
+
+  /**
    * Parse raw yt-dlp metadata JSON into clean, UI-ready format
    */
   parseMediaInfo(info, originalUrl) {

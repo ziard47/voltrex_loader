@@ -324,6 +324,27 @@ function setupIpcHandlers() {
     throw new Error('Download engine not initialized');
   });
 
+  ipcMain.handle('media:probe-playlist', async (_event, url) => {
+    if (downloadEngine && downloadEngine.mediaEngine) {
+      return await downloadEngine.mediaEngine.probePlaylist(url);
+    }
+    throw new Error('Media engine not initialized');
+  });
+
+  ipcMain.handle('media:probe-batch', async (_event, urls) => {
+    if (downloadEngine && downloadEngine.mediaEngine) {
+      return await downloadEngine.mediaEngine.probeBatchMedia(urls);
+    }
+    throw new Error('Media engine not initialized');
+  });
+
+  ipcMain.handle('media:download-batch', async (_event, payload) => {
+    if (downloadEngine) {
+      return await downloadEngine.addBatchMediaDownloads(payload);
+    }
+    throw new Error('Download engine not initialized');
+  });
+
   // Batch Probe URLs
   ipcMain.handle('download:batch-probe', async (_event, urls) => {
     return await downloadEngine.batchProbeUrls(urls);

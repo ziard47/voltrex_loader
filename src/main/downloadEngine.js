@@ -744,6 +744,25 @@ class DownloadEngine extends EventEmitter {
     return task;
   }
 
+  // Add multiple media downloads in batch (e.g. YouTube playlist or multi-link batch)
+  async addBatchMediaDownloads(tasks = []) {
+    if (!Array.isArray(tasks) || tasks.length === 0) {
+      return { added: 0, tasks: [] };
+    }
+
+    const addedTasks = [];
+    for (const taskPayload of tasks) {
+      try {
+        const added = await this.addMediaDownload(taskPayload);
+        if (added) addedTasks.push(added);
+      } catch (err) {
+        console.error('Failed to add media task in batch:', err.message);
+      }
+    }
+
+    return { added: addedTasks.length, tasks: addedTasks };
+  }
+
   // Add multiple downloads in batch (e.g. multi-part archives)
   async addBatchDownloads({
     items = [],

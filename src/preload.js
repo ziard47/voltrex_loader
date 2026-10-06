@@ -5,11 +5,14 @@ contextBridge.exposeInMainWorld('electronAPI', {
   probeUrl: (url) => ipcRenderer.invoke('download:probe-url', url),
   batchProbeUrls: (urls) => ipcRenderer.invoke('download:batch-probe', urls),
   probeMedia: (url) => ipcRenderer.invoke('media:probe', url),
+  probePlaylist: (url) => ipcRenderer.invoke('media:probe-playlist', url),
+  probeBatchMedia: (urls) => ipcRenderer.invoke('media:probe-batch', urls),
 
   // Download operations
   addDownload: (payload) => ipcRenderer.invoke('download:add', payload),
   addMediaDownload: (payload) => ipcRenderer.invoke('media:download', payload),
   startMediaDownload: (payload) => ipcRenderer.invoke('media:download', payload),
+  addBatchMediaDownloads: (payload) => ipcRenderer.invoke('media:download-batch', payload),
   addBatchDownloads: (payload) => ipcRenderer.invoke('download:add-batch', payload),
   pauseDownload: (taskId) => ipcRenderer.invoke('download:pause', taskId),
   resumeDownload: (taskId) => ipcRenderer.invoke('download:resume', taskId),
