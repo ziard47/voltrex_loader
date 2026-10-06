@@ -52,6 +52,9 @@ import CheckBoxOutlineBlankRounded from '@mui/icons-material/CheckBoxOutlineBlan
 import CheckBoxRounded from '@mui/icons-material/CheckBoxRounded';
 import IndeterminateCheckBoxRounded from '@mui/icons-material/IndeterminateCheckBoxRounded';
 import CreateNewFolderRounded from '@mui/icons-material/CreateNewFolderRounded';
+import ExploreRounded from '@mui/icons-material/ExploreRounded';
+import AddRounded from '@mui/icons-material/AddRounded';
+import CheckRounded from '@mui/icons-material/CheckRounded';
 
 import { formatBytes } from '../utils/formatters';
 
@@ -131,11 +134,22 @@ export default function MediaDownloader({
   onNavigateToDownloads,
   activeCount = 0
 }) {
-  // Navigation Tabs: 'single' | 'batch'
-  const [activeTab, setActiveTab] = useState('single');
+  // Navigation Tabs: 'browse' | 'single' | 'batch'
+  const [activeTab, setActiveTab] = useState('browse');
 
-  // Shared Global Save Path across both single & batch mode
+  // Shared Global Save Path across single & batch mode
   const [savePath, setSavePath] = useState(defaultSavePath || '');
+
+  // ----------------------------------------------------
+  // BROWSE / SEARCH MODE STATE
+  // ----------------------------------------------------
+  const [browseQuery, setBrowseQuery] = useState('');
+  const [isSearchingBrowse, setIsSearchingBrowse] = useState(false);
+  const [browseResults, setBrowseResults] = useState([]);
+  const [browseError, setBrowseError] = useState(null);
+  const [lastSearchedTerm, setLastSearchedTerm] = useState('');
+  const [addedToBatchMap, setAddedToBatchMap] = useState({});
+  const browseInputRef = useRef(null);
 
   // ----------------------------------------------------
   // SINGLE MODE STATE
@@ -201,6 +215,74 @@ export default function MediaDownloader({
     } catch (e) {
       console.error('Directory browse failed:', e);
     }
+  };
+
+  // ----------------------------------------------------
+  // BROWSE / SEARCH MODE LOGIC
+  // ----------------------------------------------------
+  const handleBrowseSearch = async (overrideTerm) => {
+    const term = (overrideTerm !== undefined ? overrideTerm : browseQuery).trim();
+    if (!term) return;
+
+    if (overrideTerm !== undefined) {
+      setBrowseQuery(overrideTerm);
+    }
+
+    setIsSearchingBrowse(true);
+    setBrowseError(null);
+
+    try {
+      if (!window.electronAPI?.searchMedia) {
+        throw new Error('Search API is not available.');
+      }
+      const data = await window.electronAPI.searchMedia(term, 24);
+      setBrowseResults(data?.results || []);
+      setLastSearchedTerm(term);
+    } catch (err) {
+      console.error('Browse search failed:', err);
+      setBrowseError(err.message || 'Failed to search YouTube videos.');
+    } finally {
+      setIsSearchingBrowse(false);
+    }
+  };
+
+  const handleSelectVideoForSingle = (video) => {
+    if (!video || !video.url) return;
+    setUrlInput(video.url);
+    setActiveTab('single');
+    handleSingleSearch(video.url);
+  };
+
+  const handleAddToBatch = (video, e) => {
+    if (e && e.stopPropagation) {
+      e.stopPropagation();
+    }
+    if (!video || !video.url) return;
+
+    const newItem = {
+      id: video.id || `batch_item_${Date.now()}`,
+      url: video.url,
+      title: video.title || 'Untitled Video',
+      duration: video.duration || 0,
+      durationFormatted: video.durationFormatted || '00:00',
+      uploader: video.uploader || 'Creator',
+      thumbnail: video.thumbnail || null,
+      platform: video.platform || 'YouTube',
+      sourcePlaylist: null,
+      selected: true,
+      selectedFormatId: 'video_1080p'
+    };
+
+    setBatchItems((prev) => {
+      const exists = prev.some((i) => i.url === video.url || i.id === video.id);
+      if (exists) return prev;
+      return [...prev, newItem];
+    });
+
+    setAddedToBatchMap((prev) => ({
+      ...prev,
+      [video.id]: true
+    }));
   };
 
   // ----------------------------------------------------
@@ -621,6 +703,12 @@ export default function MediaDownloader({
             }}
           >
             <Tab
+              value="browse"
+              label="Browse"
+              icon={<ExploreRounded className="!text-base" />}
+              iconPosition="start"
+            />
+            <Tab
               value="single"
               label="Single Video"
               icon={<OndemandVideoRounded className="!text-base" />}
@@ -671,6 +759,276 @@ export default function MediaDownloader({
       {/* Main Content Area */}
       <div className={`flex-1 w-full ${activeTab === 'batch' && batchItems.length > 0 ? 'overflow-hidden flex flex-col min-h-0 p-3 sm:p-4 lg:p-5' : 'overflow-y-auto p-3 sm:p-5 lg:p-6'}`}>
         <div className={`w-full max-w-6xl mx-auto ${activeTab === 'batch' && batchItems.length > 0 ? 'flex-1 min-h-0 flex flex-col gap-3' : 'space-y-4 sm:space-y-6'}`}>
+
+        {/* ============================================================== */}
+        {/* BROWSE & SEARCH MODE VIEW                                      */}
+        {/* ============================================================== */}
+        {activeTab === 'browse' && (
+          <div className="space-y-5">
+            {/* Minimal Unified Search Bar with Material UI TextField */}
+            <TextField
+              fullWidth
+              inputRef={browseInputRef}
+              value={browseQuery}
+              onChange={(e) => {
+                setBrowseQuery(e.target.value);
+                setBrowseError(null);
+              }}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter') handleBrowseSearch();
+              }}
+              placeholder="Search YouTube videos (e.g. avengers, lo-fi beats, gaming, trailers)..."
+              InputProps={{
+                startAdornment: (
+                  <InputAdornment position="start" sx={{ mr: 1, ml: 0.5 }}>
+                    <SearchRounded className="!text-xl text-[var(--theme-text-muted)]" />
+                  </InputAdornment>
+                ),
+                endAdornment: (
+                  <InputAdornment position="end" sx={{ ml: 1, gap: 0.75 }}>
+                    {browseQuery && (
+                      <Tooltip title="Clear" arrow>
+                        <IconButton
+                          size="small"
+                          onClick={() => {
+                            setBrowseQuery('');
+                            setBrowseError(null);
+                          }}
+                          className="!text-[var(--theme-text-muted)] hover:!text-[var(--theme-text-primary)] !p-1.5"
+                        >
+                          <ClearRounded className="!text-base" />
+                        </IconButton>
+                      </Tooltip>
+                    )}
+
+                    <Button
+                      variant="contained"
+                      size="small"
+                      onClick={() => handleBrowseSearch()}
+                      disabled={isSearchingBrowse || !browseQuery.trim()}
+                      startIcon={
+                        isSearchingBrowse ? (
+                          <CircularProgress size={13} color="inherit" />
+                        ) : (
+                          <SearchRounded className="!text-sm text-white" />
+                        )
+                      }
+                      className="btn-theme-primary !text-white !font-bold !text-xs !py-2 !px-4 !rounded-lg !normal-case shadow-sm whitespace-nowrap shrink-0"
+                    >
+                      {isSearchingBrowse ? 'Searching...' : 'Search'}
+                    </Button>
+                  </InputAdornment>
+                ),
+                className: '!bg-[var(--theme-bg-input)] !text-xs sm:!text-sm !text-[var(--theme-text-primary)] !rounded-xl'
+              }}
+              sx={{
+                '& .MuiOutlinedInput-root': {
+                  borderRadius: '0.75rem',
+                  backgroundColor: 'var(--theme-bg-input)',
+                  pl: '14px',
+                  pr: '6px',
+                  py: '4px',
+                  minHeight: '48px',
+                  '& fieldset': {
+                    borderColor: 'var(--theme-border)'
+                  },
+                  '&:hover fieldset': {
+                    borderColor: 'var(--theme-border-accent)'
+                  },
+                  '&.Mui-focused fieldset': {
+                    borderColor: 'var(--theme-primary)',
+                    boxShadow: '0 0 0 2px var(--theme-secondary-subtle)'
+                  },
+                  '& .MuiOutlinedInput-input': {
+                    py: '8px',
+                    px: '4px',
+                    fontSize: '0.85rem',
+                    color: 'var(--theme-text-primary)'
+                  }
+                }
+              }}
+            />
+
+            {/* Quick Keyword Pills */}
+            <div className="flex items-center gap-1.5 flex-wrap px-1">
+              <span className="text-[11px] font-semibold text-[var(--theme-text-muted)] mr-1">
+                Popular:
+              </span>
+              {['Avengers', 'Lo-Fi Chill', '4K Nature HDR', 'Movie Trailers', 'Gaming Highlights', 'Podcast', 'Cyberpunk Music'].map((tag) => (
+                <button
+                  key={tag}
+                  type="button"
+                  onClick={() => handleBrowseSearch(tag)}
+                  className="text-xs px-2.5 py-1 rounded-lg bg-[var(--theme-bg-surface)] hover:bg-[var(--theme-bg-hover)] text-[var(--theme-text-secondary)] hover:text-[var(--theme-primary)] border border-[var(--theme-border)] hover:border-[var(--theme-border-accent)] transition-all cursor-pointer font-medium"
+                >
+                  {tag}
+                </button>
+              ))}
+            </div>
+
+            {/* Search Error Alert */}
+            {browseError && (
+              <Alert
+                severity="error"
+                icon={<WarningAmberRounded className="!text-lg" />}
+                action={
+                  <IconButton
+                    size="small"
+                    color="inherit"
+                    onClick={() => setBrowseError(null)}
+                    className="!p-1"
+                  >
+                    <CloseRounded className="!text-base" />
+                  </IconButton>
+                }
+                className="!rounded-xl !border !border-rose-400/50 !bg-rose-500/10 !text-rose-600 dark:!text-rose-200 shadow-sm"
+              >
+                <AlertTitle className="!font-bold !text-xs !mb-0.5">Search Notice</AlertTitle>
+                <div className="!text-xs leading-relaxed">{browseError}</div>
+              </Alert>
+            )}
+
+            {/* Searching Progress Indicator */}
+            {isSearchingBrowse && (
+              <div className="p-8 rounded-2xl border border-[var(--theme-border)] bg-[var(--theme-bg-surface)] text-center space-y-3 animate-pulse shadow-sm">
+                <div className="w-12 h-12 rounded-full bg-[var(--theme-secondary-subtle)] border border-[var(--theme-border-accent)] flex items-center justify-center mx-auto text-[var(--theme-primary)]">
+                  <SearchRounded className="!text-2xl animate-spin" />
+                </div>
+                <div className="space-y-1">
+                  <h3 className="text-sm font-bold text-[var(--theme-text-primary)]">
+                    Searching YouTube Videos...
+                  </h3>
+                  <p className="text-xs text-[var(--theme-text-muted)]">
+                    Querying live video streams, thumbnails, and creator details for "{browseQuery}"...
+                  </p>
+                </div>
+              </div>
+            )}
+
+            {/* Results Counter & Actions Bar */}
+            {!isSearchingBrowse && browseResults.length > 0 && (
+              <div className="flex items-center justify-between px-1">
+                <div className="flex items-center gap-2">
+                  <span className="text-xs font-bold text-[var(--theme-text-primary)]">
+                    Found {browseResults.length} videos
+                  </span>
+                  {lastSearchedTerm && (
+                    <span className="text-xs text-[var(--theme-text-muted)]">
+                      for <span className="text-[var(--theme-primary)] font-semibold">"{lastSearchedTerm}"</span>
+                    </span>
+                  )}
+                </div>
+                <span className="text-[11px] text-[var(--theme-text-muted)] hidden sm:inline">
+                  Click card to download single • Click <span className="font-bold text-[var(--theme-primary)]">+</span> on thumbnail to queue in batch
+                </span>
+              </div>
+            )}
+
+            {/* Results Grid */}
+            {!isSearchingBrowse && browseResults.length > 0 && (
+              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+                {browseResults.map((video) => {
+                  const isAdded = Boolean(addedToBatchMap[video.id]) || batchItems.some((i) => i.url === video.url);
+
+                  return (
+                    <div
+                      key={video.id}
+                      onClick={() => handleSelectVideoForSingle(video)}
+                      className="group relative flex flex-col rounded-xl overflow-hidden border border-[var(--theme-border)] bg-[var(--theme-bg-card)] hover:border-[var(--theme-border-accent)] hover:shadow-xl transition-all duration-200 cursor-pointer"
+                    >
+                      {/* Video Thumbnail */}
+                      <div className="aspect-video relative overflow-hidden bg-black/60 shrink-0">
+                        {video.thumbnail ? (
+                          <img
+                            src={video.thumbnail}
+                            alt={video.title}
+                            className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                            loading="lazy"
+                          />
+                        ) : (
+                          <div className="w-full h-full flex items-center justify-center text-[var(--theme-text-muted)]">
+                            <OndemandVideoRounded className="!text-3xl" />
+                          </div>
+                        )}
+
+                        {/* Duration Badge */}
+                        {video.duration > 0 && (
+                          <span className="absolute bottom-1.5 right-1.5 px-1.5 py-0.5 rounded bg-black/85 text-[10px] font-mono font-bold text-white tracking-tighter backdrop-blur-sm shadow-sm pointer-events-none">
+                            {video.durationFormatted}
+                          </span>
+                        )}
+
+                        {/* Top-Right: Quick "+" Add to Batch Button */}
+                        <div className="absolute top-1.5 right-1.5 z-10">
+                          <Tooltip
+                            title={isAdded ? 'Added to Batch queue!' : 'Add to Batch queue'}
+                            arrow
+                          >
+                            <IconButton
+                              size="small"
+                              onClick={(e) => handleAddToBatch(video, e)}
+                              className={`!p-1.5 !rounded-lg !backdrop-blur-md !shadow-md transition-all ${
+                                isAdded
+                                  ? '!bg-emerald-600 !text-white hover:!bg-emerald-700'
+                                  : '!bg-black/75 hover:!bg-[var(--theme-primary)] !text-white hover:scale-110'
+                              }`}
+                            >
+                              {isAdded ? (
+                                <CheckRounded className="!text-sm" />
+                              ) : (
+                                <AddRounded className="!text-sm" />
+                              )}
+                            </IconButton>
+                          </Tooltip>
+                        </div>
+                      </div>
+
+                      {/* Video Details */}
+                      <div className="p-3 flex-1 flex flex-col justify-between gap-2">
+                        <div className="space-y-1">
+                          <h4
+                            className="text-xs font-bold text-[var(--theme-text-primary)] line-clamp-2 leading-snug group-hover:text-[var(--theme-primary)] transition-colors"
+                            title={video.title}
+                          >
+                            {video.title}
+                          </h4>
+                          <div className="flex items-center gap-1.5 text-[11px] text-[var(--theme-text-muted)]">
+                            <PersonRounded className="!text-xs shrink-0 opacity-70" />
+                            <span className="truncate">{video.uploader || 'YouTube Creator'}</span>
+                          </div>
+                        </div>
+
+                        <div className="flex items-center justify-between pt-1 border-t border-[var(--theme-border)] text-[10px] text-[var(--theme-text-muted)]">
+                          <span>{video.viewsFormatted || 'YouTube Video'}</span>
+                          <span className="text-[var(--theme-primary)] font-semibold group-hover:underline">
+                            Inspect & Download →
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+
+            {/* Empty State before any search */}
+            {!isSearchingBrowse && browseResults.length === 0 && (
+              <div className="p-8 sm:p-12 rounded-2xl border border-[var(--theme-border)] bg-[var(--theme-bg-surface)] text-center space-y-4 max-w-2xl mx-auto my-6">
+                <div className="w-16 h-16 rounded-2xl bg-[var(--theme-secondary-subtle)] border border-[var(--theme-border-accent)] flex items-center justify-center mx-auto text-[var(--theme-primary)] shadow-sm">
+                  <ExploreRounded className="!text-3xl" />
+                </div>
+                <div className="space-y-1.5">
+                  <h3 className="text-base font-bold text-[var(--theme-text-primary)]">
+                    Explore & Search YouTube Videos
+                  </h3>
+                  <p className="text-xs text-[var(--theme-text-muted)] max-w-md mx-auto leading-relaxed">
+                    Search for any movie trailer, musician, topic, or keyword. Click any video to inspect available resolutions or click the <strong>+</strong> button on any thumbnail to build a Batch download queue.
+                  </p>
+                </div>
+              </div>
+            )}
+          </div>
+        )}
 
         {/* ============================================================== */}
         {/* SINGLE MODE VIEW                                               */}

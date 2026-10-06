@@ -345,6 +345,13 @@ function setupIpcHandlers() {
     throw new Error('Download engine not initialized');
   });
 
+  ipcMain.handle('media:search', async (_event, query, limit) => {
+    if (downloadEngine && downloadEngine.mediaEngine) {
+      return await downloadEngine.mediaEngine.searchMedia(query, limit);
+    }
+    throw new Error('Media engine not initialized');
+  });
+
   // Batch Probe URLs
   ipcMain.handle('download:batch-probe', async (_event, urls) => {
     return await downloadEngine.batchProbeUrls(urls);

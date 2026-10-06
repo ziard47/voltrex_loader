@@ -1,7 +1,7 @@
 const { EventEmitter } = require('node:events');
 const path = require('node:path');
 const fs = require('node:fs');
-const { spawn, execSync } = require('node:child_process');
+const { spawn, execSync, execFile } = require('node:child_process');
 const https = require('node:https');
 const http = require('node:http');
 
@@ -467,6 +467,85 @@ class MediaEngine extends EventEmitter {
       entries: allEntries,
       errors
     };
+  }
+
+  /**
+   * Helper to format view counts (e.g. 1.2M views, 450K views)
+   */
+  formatViewCount(views) {
+    if (!views || typeof views !== 'number') return null;
+    if (views >= 1000000000) return `${(views / 1000000000).toFixed(1)}B views`;
+    if (views >= 1000000) return `${(views / 1000000).toFixed(1)}M views`;
+    if (views >= 1000) return `${(views / 1000).toFixed(1)}K views`;
+    return `${views} views`;
+  }
+
+  /**
+   * Search YouTube for videos by keyword or term
+   * @param {string} query
+   * @param {number} limit
+   */
+  async searchMedia(query, limit = 24) {
+    if (!query || typeof query !== 'string' || !query.trim()) {
+      throw new Error('Please enter a search term.');
+    }
+
+    const trimmed = query.trim();
+    const ytDlp = await this.findYtDlp();
+    const maxResults = Math.min(Math.max(Number(limit) || 24, 1), 50);
+
+    return new Promise((resolve, reject) => {
+      const args = [
+        '--dump-single-json',
+        '--flat-playlist',
+        '--no-warnings',
+        '--no-check-certificates',
+        '--js-runtimes', 'node',
+        `ytsearch${maxResults}:${trimmed}`
+      ];
+
+      execFile(ytDlp, args, { maxBuffer: 20 * 1024 * 1024 }, (err, stdout, stderr) => {
+        if (err) {
+          return reject(new Error(`YouTube search failed: ${stderr || err.message}`));
+        }
+
+        try {
+          const data = JSON.parse(stdout);
+          const rawEntries = Array.isArray(data.entries) ? data.entries : [];
+
+          const results = rawEntries.map((e, idx) => {
+            const id = e.id || '';
+            const url = e.url || (id ? `https://www.youtube.com/watch?v=${id}` : '');
+            const dur = typeof e.duration === 'number' ? e.duration : 0;
+            const thumb = (e.thumbnails && e.thumbnails.length > 0)
+              ? e.thumbnails[e.thumbnails.length - 1].url
+              : (id ? `https://i.ytimg.com/vi/${id}/hqdefault.jpg` : null);
+            const viewCount = typeof e.view_count === 'number' ? e.view_count : null;
+
+            return {
+              id: id || `yt_search_${Date.now()}_${idx}`,
+              url,
+              title: e.title || 'Untitled Video',
+              duration: dur,
+              durationFormatted: this.formatDuration(dur),
+              uploader: e.uploader || e.channel || 'YouTube Creator',
+              thumbnail: thumb,
+              viewCount,
+              viewsFormatted: this.formatViewCount(viewCount),
+              platform: 'YouTube'
+            };
+          });
+
+          resolve({
+            query: trimmed,
+            total: results.length,
+            results
+          });
+        } catch (parseErr) {
+          reject(new Error(`Failed to parse search results: ${parseErr.message}`));
+        }
+      });
+    });
   }
 
   /**

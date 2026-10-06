@@ -7,6 +7,7 @@ contextBridge.exposeInMainWorld('electronAPI', {
   probeMedia: (url) => ipcRenderer.invoke('media:probe', url),
   probePlaylist: (url) => ipcRenderer.invoke('media:probe-playlist', url),
   probeBatchMedia: (urls) => ipcRenderer.invoke('media:probe-batch', urls),
+  searchMedia: (query, limit) => ipcRenderer.invoke('media:search', query, limit),
 
   // Download operations
   addDownload: (payload) => ipcRenderer.invoke('download:add', payload),
