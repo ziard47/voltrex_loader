@@ -49,10 +49,77 @@ class MediaEngine extends EventEmitter {
   }
 
   /**
+   * Safely resolves an executable path ensuring it is not executed directly inside an app.asar archive.
+   * If candidate is inside app.asar, checks app.asar.unpacked, or extracts the binary to userDataPath/bin/.
+   */
+  resolveExecutable(candidatePath, targetExeName) {
+    if (!candidatePath || typeof candidatePath !== 'string') return null;
+
+    const isWin = process.platform === 'win32';
+
+    // 1. If candidate is NOT inside app.asar, verify it exists on disk
+    if (!candidatePath.includes('app.asar')) {
+      if (fs.existsSync(candidatePath)) {
+        try {
+          if (!isWin) fs.chmodSync(candidatePath, 0o755);
+        } catch {}
+        return candidatePath;
+      }
+      return null;
+    }
+
+    // 2. Candidate contains 'app.asar'. Check corresponding 'app.asar.unpacked' location
+    const unpackedPath = candidatePath.replace('app.asar', 'app.asar.unpacked');
+    if (fs.existsSync(unpackedPath)) {
+      try {
+        if (!isWin) fs.chmodSync(unpackedPath, 0o755);
+      } catch {}
+      return unpackedPath;
+    }
+
+    // 3. If candidate exists virtually inside app.asar, extract it to userDataPath/bin/
+    try {
+      if (fs.existsSync(candidatePath)) {
+        const targetDir = path.join(this.userDataPath, 'bin');
+        if (!fs.existsSync(targetDir)) {
+          fs.mkdirSync(targetDir, { recursive: true });
+        }
+        const extractedPath = path.join(targetDir, targetExeName);
+
+        let needsExtract = true;
+        if (fs.existsSync(extractedPath)) {
+          try {
+            const asarStat = fs.statSync(candidatePath);
+            const diskStat = fs.statSync(extractedPath);
+            if (asarStat.size === diskStat.size && diskStat.size > 0) {
+              needsExtract = false;
+            }
+          } catch {}
+        }
+
+        if (needsExtract) {
+          console.log(`[MediaEngine] Extracting ${targetExeName} from asar to ${extractedPath}...`);
+          const buf = fs.readFileSync(candidatePath);
+          fs.writeFileSync(extractedPath, buf, { mode: 0o755 });
+        }
+
+        if (!isWin) {
+          fs.chmodSync(extractedPath, 0o755);
+        }
+        return extractedPath;
+      }
+    } catch (err) {
+      console.warn(`[MediaEngine] Failed to extract ${targetExeName} from asar:`, err.message);
+    }
+
+    return null;
+  }
+
+  /**
    * Locate system or bundled ffmpeg executable
    */
   findFfmpeg() {
-    if (this.cachedFfmpegPath && fs.existsSync(this.cachedFfmpegPath)) {
+    if (this.cachedFfmpegPath && fs.existsSync(this.cachedFfmpegPath) && !this.cachedFfmpegPath.includes('app.asar')) {
       return this.cachedFfmpegPath;
     }
 
@@ -76,18 +143,36 @@ class MediaEngine extends EventEmitter {
       return '/usr/bin/ffmpeg';
     }
 
-    // 3. Check assets or resources
-    const possiblePaths = [
-      path.join(__dirname, '..', 'assets', 'bin', exeName),
-      path.join(process.resourcesPath || '', 'assets', 'bin', exeName),
-      path.join(this.userDataPath, 'bin', exeName)
-    ];
+    // 3. Check userDataPath/bin
+    const userDataBin = path.join(this.userDataPath, 'bin', exeName);
+    if (fs.existsSync(userDataBin)) {
+      this.cachedFfmpegPath = userDataBin;
+      return userDataBin;
+    }
 
-    for (const p of possiblePaths) {
-      if (fs.existsSync(p)) {
-        this.cachedFfmpegPath = p;
-        return p;
+    // 4. Check packaged resources
+    if (process.resourcesPath) {
+      const resourceCandidates = [
+        path.join(process.resourcesPath, 'bin', exeName),
+        path.join(process.resourcesPath, 'app.asar.unpacked', 'src', 'assets', 'bin', exeName),
+        path.join(process.resourcesPath, 'app.asar.unpacked', 'assets', 'bin', exeName),
+        path.join(process.resourcesPath, 'assets', 'bin', exeName)
+      ];
+      for (const p of resourceCandidates) {
+        const resolved = this.resolveExecutable(p, exeName);
+        if (resolved) {
+          this.cachedFfmpegPath = resolved;
+          return resolved;
+        }
       }
+    }
+
+    // 5. Check local asset directory
+    const assetBin = path.join(__dirname, '..', 'assets', 'bin', exeName);
+    const resolvedAssetBin = this.resolveExecutable(assetBin, exeName);
+    if (resolvedAssetBin) {
+      this.cachedFfmpegPath = resolvedAssetBin;
+      return resolvedAssetBin;
     }
 
     return null;
@@ -97,43 +182,46 @@ class MediaEngine extends EventEmitter {
    * Locate yt-dlp binary or auto-download if missing
    */
   async findYtDlp() {
-    if (this.cachedYtDlpPath && fs.existsSync(this.cachedYtDlpPath)) {
+    if (this.cachedYtDlpPath && fs.existsSync(this.cachedYtDlpPath) && !this.cachedYtDlpPath.includes('app.asar')) {
       return this.cachedYtDlpPath;
     }
 
     const isWin = process.platform === 'win32';
     const exeName = isWin ? 'yt-dlp.exe' : 'yt-dlp';
 
-    // 1. Check local assets/bin in source or app directory
-    const assetBin = path.join(__dirname, '..', 'assets', 'bin', exeName);
-    if (fs.existsSync(assetBin)) {
-      try {
-        if (!isWin) fs.chmodSync(assetBin, 0o755);
-      } catch {}
-      this.cachedYtDlpPath = assetBin;
-      return assetBin;
-    }
-
-    // 2. Check packaged process.resourcesPath
-    if (process.resourcesPath) {
-      const packagedBin = path.join(process.resourcesPath, 'assets', 'bin', exeName);
-      if (fs.existsSync(packagedBin)) {
-        try {
-          if (!isWin) fs.chmodSync(packagedBin, 0o755);
-        } catch {}
-        this.cachedYtDlpPath = packagedBin;
-        return packagedBin;
-      }
-    }
-
-    // 3. Check user data bin folder
+    // 1. Check user data bin folder (e.g. extracted or downloaded earlier)
     const userDataBin = path.join(this.userDataPath, 'bin', exeName);
     if (fs.existsSync(userDataBin)) {
       try {
         if (!isWin) fs.chmodSync(userDataBin, 0o755);
+        this.cachedYtDlpPath = userDataBin;
+        return userDataBin;
       } catch {}
-      this.cachedYtDlpPath = userDataBin;
-      return userDataBin;
+    }
+
+    // 2. Check packaged process.resourcesPath (extraResources / asarUnpack)
+    if (process.resourcesPath) {
+      const resourceCandidates = [
+        path.join(process.resourcesPath, 'bin', exeName),
+        path.join(process.resourcesPath, 'app.asar.unpacked', 'src', 'assets', 'bin', exeName),
+        path.join(process.resourcesPath, 'app.asar.unpacked', 'assets', 'bin', exeName),
+        path.join(process.resourcesPath, 'assets', 'bin', exeName)
+      ];
+      for (const candidate of resourceCandidates) {
+        const resolved = this.resolveExecutable(candidate, exeName);
+        if (resolved) {
+          this.cachedYtDlpPath = resolved;
+          return resolved;
+        }
+      }
+    }
+
+    // 3. Check bundled assets/bin relative to current file (__dirname)
+    const assetBin = path.join(__dirname, '..', 'assets', 'bin', exeName);
+    const resolvedAssetBin = this.resolveExecutable(assetBin, exeName);
+    if (resolvedAssetBin) {
+      this.cachedYtDlpPath = resolvedAssetBin;
+      return resolvedAssetBin;
     }
 
     // 4. Check system PATH
