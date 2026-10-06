@@ -39,7 +39,7 @@
           <img src="assets/icon.png" alt="Voltrex Loader Logo" />
         </div>
         <span class="brand-title">VOLTREX LOADER</span>
-        <span class="brand-version-badge">v1.3.0</span>
+        <span class="brand-version-badge">v1.4.0</span>
       </a>
 
       <ul class="nav-links">
@@ -77,7 +77,7 @@
       </h1>
 
       <p class="hero-subtitle">
-        A high-performance, open-source download accelerator built with Electron, React, and modern web standards. Featuring 2 to 32 parallel HTTP Range streams, native BitTorrent &amp; Magnet link swarm acceleration, automated category sorting, range resume recovery, and instant browser extension capture for Linux, SteamOS, and Windows.
+        A high-performance, open-source download accelerator built with Electron, React, and modern web standards. Featuring 2 to 32 parallel HTTP Range streams, Universal Media Downloader (YouTube search &amp; 4K playlists), native BitTorrent &amp; Magnet link swarm acceleration, automated category sorting, range resume recovery, and instant browser extension capture for Linux, SteamOS, and Windows.
       </p>
 
       <div class="hero-actions">
@@ -92,6 +92,10 @@
       </div>
 
       <div class="hero-platform-chips">
+        <span class="platform-chip">
+          <i class="fa-solid fa-play"></i>
+          <span>Universal Media Downloader</span>
+        </span>
         <span class="platform-chip">
           <i class="fa-solid fa-magnet"></i>
           <span>BitTorrent & Magnet Swarms</span>
@@ -157,7 +161,7 @@
               </div>
               <div class="window-app-name">
                 <img src="assets/icon.png" alt="Icon" style="width: 15px; height: 15px; border-radius: 2px;" />
-                <span>Voltrex Loader v1.3.0</span>
+                <span>Voltrex Loader v1.4.0</span>
               </div>
               <div class="window-status-pill" id="simStatusBadge">
                 <i class="fa-solid fa-circle"></i>
@@ -410,13 +414,23 @@
                     Signature Windows 10 blue (Light &amp; Dark), SteamOS mode, and customizable concurrency limits.
                   </p>
                 </div>
+
+                <div class="scroll-step-item" data-step="5">
+                  <div class="scroll-step-meta">
+                    <span class="scroll-step-num">06</span>
+                    <span class="scroll-step-title">Universal Media Downloader</span>
+                  </div>
+                  <p class="scroll-step-desc">
+                    Search YouTube directly, analyze video stream resolutions up to 4K, extract MP3 audio, and download entire playlists into custom subfolders.
+                  </p>
+                </div>
               </div>
 
               <!-- Visual Tour Progress Bar -->
               <div>
                 <div style="display: flex; justify-content: space-between; font-size: 0.72rem; color: var(--text-muted); font-family: var(--font-mono); margin-bottom: 4px;">
                   <span>Scroll Progress</span>
-                  <span id="tourProgressText">Step 1 of 5</span>
+                  <span id="tourProgressText">Step 1 of 6</span>
                 </div>
                 <div class="scroll-tour-progress-bar">
                   <div class="scroll-tour-progress-fill" id="tourProgressFill"></div>
@@ -438,7 +452,7 @@
                     <span>Voltrex Loader — Dashboard &amp; Telemetry</span>
                   </div>
                   <div style="font-size: 0.7rem; font-family: var(--font-mono); color: var(--text-muted);" id="tourWindowBadge">
-                    01 / 05
+                    01 / 06
                   </div>
                 </div>
 
@@ -462,6 +476,10 @@
                   <!-- Screen 4 -->
                   <div class="tour-screen-slide" data-index="4">
                     <img src="assets/screenshots/screenshot-5.png" onerror="this.onerror=null; this.src='assets/screenshots/screenshot-5.svg';" alt="Settings Screenshot" class="tour-screen-img" />
+                  </div>
+                  <!-- Screen 5 -->
+                  <div class="tour-screen-slide" data-index="5">
+                    <img src="assets/screenshots/screenshot-6.png" onerror="this.onerror=null; this.src='assets/screenshots/media-downloader.png';" alt="Universal Media Downloader Screenshot" class="tour-screen-img" />
                   </div>
                 </div>
               </div>
@@ -673,6 +691,23 @@
             <span class="feature-pill">Clipboard Sniffer</span>
           </div>
         </div>
+
+        <!-- Feature 6: Universal Media Downloader -->
+        <div class="feature-card red">
+          <div>
+            <div class="feature-icon-wrapper">
+              <i class="fa-solid fa-play"></i>
+            </div>
+            <h3 class="feature-card-title">Universal Media Downloader</h3>
+            <p class="feature-card-desc">
+              Search YouTube directly inside the app without API keys, inspect resolutions up to 4K/1080p, extract pristine MP3 audio, and convert entire playlists into configurable batch tables with custom folder naming.
+            </p>
+          </div>
+          <div class="feature-badge-row">
+            <span class="feature-pill">YouTube &amp; Streams</span>
+            <span class="feature-pill">Playlist Batch Queue</span>
+          </div>
+        </div>
       </div>
     </div>
   </section>
@@ -706,7 +741,7 @@
               <i class="fa-brands fa-edge"></i>
               <span>Get on Edge Add-ons Store</span>
             </a>
-            <a href="https://github.com/ziard47/voltrex_loader/releases/download/v1.3.0/voltrex-loader-browser-extension.zip" target="_blank" class="btn-secondary-action">
+            <a href="https://github.com/ziard47/voltrex_loader/releases/download/v1.4.0/voltrex-loader-browser-extension.zip" target="_blank" class="btn-secondary-action">
               <i class="fa-solid fa-download"></i>
               <span>Download ZIP (Chrome / Brave)</span>
             </a>
@@ -839,7 +874,7 @@
     <div class="container">
       <div class="section-header">
         <span class="section-tag red">Official Releases</span>
-        <h2 class="section-title">Get Voltrex Loader v1.3.0</h2>
+        <h2 class="section-title">Get Voltrex Loader v1.4.0</h2>
         <p class="section-description">
           Choose your operating system. Free, secure, portable, and ready to run immediately.
         </p>
@@ -860,7 +895,7 @@
             <div class="os-specs">
               <div class="os-spec-row">
                 <span>Primary Package:</span>
-                <span class="os-spec-val">Voltrex Loader-1.3.0.AppImage</span>
+                <span class="os-spec-val">Voltrex Loader-1.4.0.AppImage</span>
               </div>
               <div class="os-spec-row">
                 <span>Architecture:</span>
@@ -874,11 +909,11 @@
           </div>
 
           <div>
-            <a href="https://github.com/ziard47/voltrex_loader/releases/download/v1.3.0/Voltrex.Loader-1.3.0.AppImage" target="_blank" class="btn-card-download red">
+            <a href="https://github.com/ziard47/voltrex_loader/releases/download/v1.4.0/Voltrex.Loader-1.4.0.AppImage" target="_blank" class="btn-card-download red">
               <i class="fa-solid fa-download"></i>
               <span>Download AppImage</span>
             </a>
-            <a href="https://github.com/ziard47/voltrex_loader/releases/download/v1.3.0/voltrex-loader-1.3.0-linux.tar.gz" target="_blank" class="card-alt-link">
+            <a href="https://github.com/ziard47/voltrex_loader/releases/download/v1.4.0/voltrex-loader-1.4.0-linux.tar.gz" target="_blank" class="card-alt-link">
               Or download SteamOS installer archive (.tar.gz)
             </a>
           </div>
@@ -898,7 +933,7 @@
             <div class="os-specs">
               <div class="os-spec-row">
                 <span>Package:</span>
-                <span class="os-spec-val">voltrex-loader-1.3.0-win.zip</span>
+                <span class="os-spec-val">voltrex-loader-1.4.0-win.zip</span>
               </div>
               <div class="os-spec-row">
                 <span>Compatibility:</span>
@@ -912,7 +947,7 @@
           </div>
 
           <div>
-            <a href="https://github.com/ziard47/voltrex_loader/releases/download/v1.3.0/voltrex-loader-1.3.0-win.zip" target="_blank" class="btn-card-download blue">
+            <a href="https://github.com/ziard47/voltrex_loader/releases/download/v1.4.0/voltrex-loader-1.4.0-win.zip" target="_blank" class="btn-card-download blue">
               <i class="fa-solid fa-download"></i>
               <span>Download Portable (.ZIP)</span>
             </a>
@@ -952,7 +987,7 @@
               <i class="fa-brands fa-edge"></i>
               <span>Get on Edge Add-ons</span>
             </a>
-            <a href="https://github.com/ziard47/voltrex_loader/releases/download/v1.3.0/voltrex-loader-browser-extension.zip" target="_blank" class="btn-card-download cyan">
+            <a href="https://github.com/ziard47/voltrex_loader/releases/download/v1.4.0/voltrex-loader-browser-extension.zip" target="_blank" class="btn-card-download cyan">
               <i class="fa-solid fa-download"></i>
               <span>Download ZIP (Chrome / Brave)</span>
             </a>
@@ -973,16 +1008,16 @@
 
         <div style="display: flex; flex-direction: column; gap: 10px;">
           <div class="terminal-code-row">
-            <code>chmod +x "Voltrex Loader-1.3.0.AppImage" &amp;&amp; ./"Voltrex Loader-1.3.0.AppImage"</code>
-            <button class="btn-copy" data-copy="chmod +x &quot;Voltrex Loader-1.3.0.AppImage&quot; &amp;&amp; ./&quot;Voltrex Loader-1.3.0.AppImage&quot;">
+            <code>chmod +x "Voltrex Loader-1.4.0.AppImage" &amp;&amp; ./"Voltrex Loader-1.4.0.AppImage"</code>
+            <button class="btn-copy" data-copy="chmod +x &quot;Voltrex Loader-1.4.0.AppImage&quot; &amp;&amp; ./&quot;Voltrex Loader-1.4.0.AppImage&quot;">
               <i class="fa-regular fa-copy"></i>
               <span>Copy</span>
             </button>
           </div>
 
           <div class="terminal-code-row">
-            <code>tar -xzf voltrex-loader-1.3.0-linux.tar.gz &amp;&amp; cd voltrex-loader-1.3.0-linux &amp;&amp; bash install.sh</code>
-            <button class="btn-copy" data-copy="tar -xzf voltrex-loader-1.3.0-linux.tar.gz &amp;&amp; cd voltrex-loader-1.3.0-linux &amp;&amp; bash install.sh">
+            <code>tar -xzf voltrex-loader-1.4.0-linux.tar.gz &amp;&amp; cd voltrex-loader-1.4.0-linux &amp;&amp; bash install.sh</code>
+            <button class="btn-copy" data-copy="tar -xzf voltrex-loader-1.4.0-linux.tar.gz &amp;&amp; cd voltrex-loader-1.4.0-linux &amp;&amp; bash install.sh">
               <i class="fa-regular fa-copy"></i>
               <span>Copy</span>
             </button>
@@ -993,7 +1028,7 @@
   </section>
 
   <!-- ==========================================================================
-       What's New in v1.3.0 Box
+       What's New in v1.4.0 Box
        ========================================================================== -->
   <section class="section section-alt">
     <div class="container">
@@ -1001,12 +1036,18 @@
         <div class="changelog-header-row">
           <div class="changelog-ver-title">
             <i class="fa-solid fa-code-branch" style="color: var(--accent-primary);"></i>
-            <span>What's New in Release v1.3.0</span>
+            <span>What's New in Release v1.4.0</span>
           </div>
           <span class="sim-badge-thread">Latest Stable Release</span>
         </div>
 
         <div class="changelog-items">
+          <div class="changelog-item-card">
+            <span class="changelog-item-badge" style="color: var(--accent-primary); background: rgba(239, 68, 68, 0.12);">MEDIA DOWNLOADER</span>
+            <strong>Universal Media Downloader &amp; YouTube Engine</strong>
+            <p>Seamlessly search and browse YouTube inside the app without API keys. Inspect streams up to 4K/1080p, extract audio to MP3, and queue full playlists with per-item format controls and custom destination folders.</p>
+          </div>
+
           <div class="changelog-item-card">
             <span class="changelog-item-badge" style="color: var(--accent-purple); background: rgba(139, 92, 246, 0.12);">BITTORRENT</span>
             <strong>BitTorrent &amp; Magnet P2P Engine</strong>
@@ -1014,15 +1055,9 @@
           </div>
 
           <div class="changelog-item-card">
-            <span class="changelog-item-badge">ACCELERATION</span>
-            <strong>Segmented Multi-Connection Engine</strong>
-            <p>Download resumable files up to 10x faster with 2-32 parallel HTTP Range streams written in-place concurrently, complete with live chunk matrix visualizer.</p>
-          </div>
-
-          <div class="changelog-item-card">
-            <span class="changelog-item-badge" style="color: var(--accent-green); background: rgba(16, 185, 129, 0.1);">ORGANIZATION</span>
-            <strong>Category Auto-Sorting</strong>
-            <p>Automatically sorts incoming downloads into designated subdirectories (Videos, Audio, Documents, Compressed, Programs, Torrents, Others) with folder locking.</p>
+            <span class="changelog-item-badge" style="color: var(--accent-cyan); background: rgba(6, 182, 212, 0.12);">UI WORKFLOW</span>
+            <strong>Material-UI Tabs &amp; Segmented Controls</strong>
+            <p>Refined tab navigation for Browse, Single Video, and Batch &amp; Playlist modes alongside multi-segment HTTP Range acceleration and category auto-sorting.</p>
           </div>
         </div>
       </div>
@@ -1079,7 +1114,7 @@
             <i class="fa-solid fa-chevron-down faq-icon-chevron"></i>
           </button>
           <div class="faq-answer">
-            Switch your Steam Deck to Desktop Mode. Download the standalone <code>Voltrex Loader-1.3.0.AppImage</code>, right click it, select Properties &gt; Permissions, and check "Is Executable", then double-click to run! Alternatively, download <code>voltrex-loader-1.3.0-linux.tar.gz</code> and run <code>bash install.sh</code> to automatically add desktop icons and application launcher entries.
+            Switch your Steam Deck to Desktop Mode. Download the standalone <code>Voltrex Loader-1.4.0.AppImage</code>, right click it, select Properties &gt; Permissions, and check "Is Executable", then double-click to run! Alternatively, download <code>voltrex-loader-1.4.0-linux.tar.gz</code> and run <code>bash install.sh</code> to automatically add desktop icons and application launcher entries.
           </div>
         </div>
 
@@ -1109,7 +1144,7 @@
         <div style="display: flex; justify-content: center; gap: 12px; flex-wrap: wrap;">
           <a href="#downloads" class="btn-primary-action">
             <i class="fa-solid fa-download"></i>
-            <span>Download Voltrex Loader v1.3.0</span>
+            <span>Download Voltrex Loader v1.4.0</span>
           </a>
           <a href="https://github.com/ziard47/voltrex_loader" target="_blank" rel="noopener noreferrer" class="btn-secondary-action">
             <i class="fa-brands fa-github"></i>
