@@ -185,8 +185,13 @@
 .MuiButton-containedSecondary,
 button.bg-\[\#D84040\]:not([class*="/"]):not([class*="hover"]),
 button.\!bg-\[\#D84040\]:not([class*="/"]):not([class*="hover"]),
-[role="button"].bg-\[\#D84040\]:not([class*="/"]):not([class*="hover"]) {
+[role="button"].bg-\[\#D84040\]:not([class*="/"]):not([class*="hover"]),
+.MuiInputBase-root .btn-theme-primary,
+.MuiInputAdornment-root .btn-theme-primary,
+.MuiInputBase-root .MuiButton-contained,
+.MuiInputAdornment-root .MuiButton-contained {
   color: #ffffff !important;
+  -webkit-text-fill-color: #ffffff !important;
 }
 
 .btn-theme-primary *,
@@ -194,14 +199,33 @@ button.\!bg-\[\#D84040\]:not([class*="/"]):not([class*="hover"]),
 .MuiButton-containedPrimary *,
 .MuiButton-containedSecondary *,
 button.bg-\[\#D84040\]:not([class*="/"]):not([class*="hover"]) *,
-button.\!bg-\[\#D84040\]:not([class*="/"]):not([class*="hover"]) * {
+button.\!bg-\[\#D84040\]:not([class*="/"]):not([class*="hover"]) *,
+.MuiInputBase-root .btn-theme-primary *,
+.MuiInputAdornment-root .btn-theme-primary *,
+.MuiInputBase-root .MuiButton-contained *,
+.MuiInputAdornment-root .MuiButton-contained * {
   color: #ffffff !important;
+  -webkit-text-fill-color: #ffffff !important;
+}
+
+/* Ensure Lucide stroke-based icons and CircularProgress spinners never get corrupted by solid fills */
+svg.lucide,
+svg[fill="none"],
+.lucide,
+circle.MuiCircularProgress-circle {
+  fill: none !important;
+  stroke: currentColor !important;
+}
+
+.MuiSvgIcon-root {
+  fill: currentColor !important;
 }
 
 /* Dynamic Theme Action Buttons */
 .btn-theme-primary {
   background-color: var(--theme-primary) !important;
   color: #ffffff !important;
+  -webkit-text-fill-color: #ffffff !important;
   box-shadow: none !important;
   border: 1px solid transparent !important;
   transition: all 0.15s ease-in-out !important;
@@ -212,11 +236,13 @@ button.btn-theme-primary:hover {
   background-color: var(--theme-primary-hover) !important;
   box-shadow: none !important;
   color: #ffffff !important;
+  -webkit-text-fill-color: #ffffff !important;
 }
 
 .btn-theme-primary *,
 .btn-theme-primary:hover * {
   color: #ffffff !important;
+  -webkit-text-fill-color: #ffffff !important;
 }
 
 .btn-theme-outlined {
@@ -417,12 +443,34 @@ html.light .MuiDialogActions-root {
 html.light input,
 html.light textarea,
 html.light select,
-html.light .MuiInputBase-root,
 html.light .MuiInputBase-input,
 html.light .MuiSelect-select {
   background-color: #ffffff !important;
   color: var(--theme-text-primary) !important;
   -webkit-text-fill-color: var(--theme-text-primary) !important;
+}
+
+html.light .MuiInputBase-root:not(.MuiButtonBase-root) {
+  background-color: #ffffff !important;
+}
+
+/* Ensure buttons and icons inside input adornments in light mode stay crisp white */
+html.light .btn-theme-primary,
+html.light .btn-theme-primary *,
+html.light .btn-theme-primary svg,
+html.light .MuiButton-contained,
+html.light .MuiButton-contained *,
+html.light .MuiButton-contained svg,
+html.light .MuiInputBase-root .btn-theme-primary,
+html.light .MuiInputBase-root .btn-theme-primary *,
+html.light .MuiInputAdornment-root .btn-theme-primary,
+html.light .MuiInputAdornment-root .btn-theme-primary *,
+html.light .MuiInputBase-root .MuiButton-contained,
+html.light .MuiInputBase-root .MuiButton-contained *,
+html.light .MuiInputAdornment-root .MuiButton-contained,
+html.light .MuiInputAdornment-root .MuiButton-contained * {
+  color: #ffffff !important;
+  -webkit-text-fill-color: #ffffff !important;
 }
 
 html.light input::placeholder,
@@ -977,8 +1025,16 @@ html.windows-legacy:not(.dark) .MuiDialogContent-root {
   color: #000000 !important;
 }
 
-html.windows-legacy:not(.dark) .MuiDialogContent-root * {
+html.windows-legacy:not(.dark) .MuiDialogContent-root *:not(.btn-theme-primary):not(.btn-theme-primary *):not(.MuiButton-contained):not(.MuiButton-contained *) {
   color: #000000 !important;
+}
+
+html.windows-legacy:not(.dark) .MuiDialogContent-root .btn-theme-primary,
+html.windows-legacy:not(.dark) .MuiDialogContent-root .btn-theme-primary *,
+html.windows-legacy:not(.dark) .MuiDialogContent-root .MuiButton-contained,
+html.windows-legacy:not(.dark) .MuiDialogContent-root .MuiButton-contained * {
+  color: #ffffff !important;
+  -webkit-text-fill-color: #ffffff !important;
 }
 
 html.windows-legacy:not(.dark) .MuiDialogActions-root {

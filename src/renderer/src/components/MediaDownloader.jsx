@@ -808,14 +808,28 @@ export default function MediaDownloader({
                       disabled={isSearchingBrowse || !browseQuery.trim()}
                       startIcon={
                         isSearchingBrowse ? (
-                          <CircularProgress size={13} color="inherit" />
+                          <CircularProgress size={13} sx={{ color: '#ffffff !important' }} />
                         ) : (
-                          <SearchRounded className="!text-sm text-white" />
+                          <SearchRounded className="!text-sm !text-white" sx={{ color: '#ffffff !important' }} />
                         )
                       }
                       className="btn-theme-primary !text-white !font-bold !text-xs !py-2 !px-4 !rounded-lg !normal-case shadow-sm whitespace-nowrap shrink-0"
+                      sx={{
+                        color: '#ffffff !important',
+                        WebkitTextFillColor: '#ffffff !important',
+                        backgroundColor: 'var(--theme-primary) !important',
+                        '&, & *, & .MuiButton-startIcon, & .MuiSvgIcon-root': {
+                          color: '#ffffff !important',
+                          WebkitTextFillColor: '#ffffff !important'
+                        },
+                        '&:hover': {
+                          backgroundColor: 'var(--theme-primary-hover) !important'
+                        }
+                      }}
                     >
-                      {isSearchingBrowse ? 'Searching...' : 'Search'}
+                      <span style={{ color: '#ffffff', WebkitTextFillColor: '#ffffff' }}>
+                        {isSearchingBrowse ? 'Searching...' : 'Search'}
+                      </span>
                     </Button>
                   </InputAdornment>
                 ),
@@ -1088,14 +1102,28 @@ export default function MediaDownloader({
                       disabled={isProbing || !urlInput.trim()}
                       startIcon={
                         isProbing ? (
-                          <CircularProgress size={13} color="inherit" />
+                          <CircularProgress size={13} sx={{ color: '#ffffff !important' }} />
                         ) : (
-                          <SearchRounded className="!text-sm text-white" />
+                          <SearchRounded className="!text-sm !text-white" sx={{ color: '#ffffff !important' }} />
                         )
                       }
                       className="btn-theme-primary !text-white !font-bold !text-xs !py-2 !px-4 !rounded-lg !normal-case shadow-sm whitespace-nowrap shrink-0"
+                      sx={{
+                        color: '#ffffff !important',
+                        WebkitTextFillColor: '#ffffff !important',
+                        backgroundColor: 'var(--theme-primary) !important',
+                        '&, & *, & .MuiButton-startIcon, & .MuiSvgIcon-root': {
+                          color: '#ffffff !important',
+                          WebkitTextFillColor: '#ffffff !important'
+                        },
+                        '&:hover': {
+                          backgroundColor: 'var(--theme-primary-hover) !important'
+                        }
+                      }}
                     >
-                      {isProbing ? 'Analyzing...' : 'Search'}
+                      <span style={{ color: '#ffffff', WebkitTextFillColor: '#ffffff' }}>
+                        {isProbing ? 'Analyzing...' : 'Search'}
+                      </span>
                     </Button>
                   </InputAdornment>
                 ),
@@ -1270,14 +1298,28 @@ export default function MediaDownloader({
                             const def = probeResult?.videoPresets?.find((p) => p.recommended) || probeResult?.videoPresets?.[0];
                             if (def) setSelectedPresetId(def.id);
                           }}
-                          startIcon={<MovieRounded className="!text-base" />}
+                          startIcon={<MovieRounded className="!text-base" sx={downloadMode === 'video' ? { color: '#ffffff !important' } : {}} />}
                           className={`!py-2 !rounded-lg !text-xs !font-bold !normal-case transition-all ${
                             downloadMode === 'video'
                               ? 'btn-theme-primary !text-white shadow-md'
                               : '!text-[var(--theme-text-muted)] hover:!text-[var(--theme-text-primary)] hover:!bg-[var(--theme-bg-hover)]'
                           }`}
+                          sx={
+                            downloadMode === 'video'
+                              ? {
+                                  color: '#ffffff !important',
+                                  WebkitTextFillColor: '#ffffff !important',
+                                  '& *': {
+                                    color: '#ffffff !important',
+                                    WebkitTextFillColor: '#ffffff !important'
+                                  }
+                                }
+                              : {}
+                          }
                         >
-                          Video (MP4)
+                          <span style={downloadMode === 'video' ? { color: '#ffffff', WebkitTextFillColor: '#ffffff' } : {}}>
+                            Video (MP4)
+                          </span>
                         </Button>
 
                         <Button
@@ -1287,14 +1329,28 @@ export default function MediaDownloader({
                             const def = probeResult?.audioPresets?.[0];
                             if (def) setSelectedPresetId(def.id);
                           }}
-                          startIcon={<MusicNoteRounded className="!text-base" />}
+                          startIcon={<MusicNoteRounded className="!text-base" sx={downloadMode === 'audio' ? { color: '#ffffff !important' } : {}} />}
                           className={`!py-2 !rounded-lg !text-xs !font-bold !normal-case transition-all ${
                             downloadMode === 'audio'
                               ? 'btn-theme-primary !text-white shadow-md'
                               : '!text-[var(--theme-text-muted)] hover:!text-[var(--theme-text-primary)] hover:!bg-[var(--theme-bg-hover)]'
                           }`}
+                          sx={
+                            downloadMode === 'audio'
+                              ? {
+                                  color: '#ffffff !important',
+                                  WebkitTextFillColor: '#ffffff !important',
+                                  '& *': {
+                                    color: '#ffffff !important',
+                                    WebkitTextFillColor: '#ffffff !important'
+                                  }
+                                }
+                              : {}
+                          }
                         >
-                          Audio Only (MP3)
+                          <span style={downloadMode === 'audio' ? { color: '#ffffff', WebkitTextFillColor: '#ffffff' } : {}}>
+                            Audio Only (MP3)
+                          </span>
                         </Button>
                       </div>
                     </div>
@@ -1504,16 +1560,30 @@ export default function MediaDownloader({
                         disabled={isStartingDownload}
                         startIcon={
                           isStartingDownload ? (
-                            <CircularProgress size={16} color="inherit" />
+                            <CircularProgress size={16} sx={{ color: '#ffffff !important' }} />
                           ) : (
-                            <DownloadRounded className="!text-lg text-white" />
+                            <DownloadRounded className="!text-lg !text-white" sx={{ color: '#ffffff !important' }} />
                           )
                         }
                         className="btn-theme-primary !text-white !font-bold !text-sm !py-3 !rounded-xl shadow-lg hover:shadow-xl transition-all !normal-case"
+                        sx={{
+                          color: '#ffffff !important',
+                          WebkitTextFillColor: '#ffffff !important',
+                          backgroundColor: 'var(--theme-primary) !important',
+                          '&, & *, & .MuiButton-startIcon, & .MuiSvgIcon-root': {
+                            color: '#ffffff !important',
+                            WebkitTextFillColor: '#ffffff !important'
+                          },
+                          '&:hover': {
+                            backgroundColor: 'var(--theme-primary-hover) !important'
+                          }
+                        }}
                       >
-                        {isStartingDownload
-                          ? 'Queuing Download...'
-                          : `Download ${downloadMode === 'audio' ? 'Audio (MP3)' : 'Video'}`}
+                        <span style={{ color: '#ffffff', WebkitTextFillColor: '#ffffff' }}>
+                          {isStartingDownload
+                            ? 'Queuing Download...'
+                            : `Download ${downloadMode === 'audio' ? 'Audio (MP3)' : 'Video'}`}
+                        </span>
                       </Button>
                     </div>
                   </div>
@@ -1587,14 +1657,28 @@ export default function MediaDownloader({
                         disabled={isBatchProbing || !batchUrlInput.trim()}
                         startIcon={
                           isBatchProbing ? (
-                            <CircularProgress size={13} color="inherit" />
+                            <CircularProgress size={13} sx={{ color: '#ffffff !important' }} />
                           ) : (
-                            <SearchRounded className="!text-sm text-white" />
+                            <SearchRounded className="!text-sm !text-white" sx={{ color: '#ffffff !important' }} />
                           )
                         }
                         className="btn-theme-primary !text-white !font-bold !text-xs !py-2 !px-4 !rounded-lg !normal-case shadow-sm whitespace-nowrap shrink-0"
+                        sx={{
+                          color: '#ffffff !important',
+                          WebkitTextFillColor: '#ffffff !important',
+                          backgroundColor: 'var(--theme-primary) !important',
+                          '&, & *, & .MuiButton-startIcon, & .MuiSvgIcon-root': {
+                            color: '#ffffff !important',
+                            WebkitTextFillColor: '#ffffff !important'
+                          },
+                          '&:hover': {
+                            backgroundColor: 'var(--theme-primary-hover) !important'
+                          }
+                        }}
                       >
-                        {isBatchProbing ? 'Analyzing...' : 'Search'}
+                        <span style={{ color: '#ffffff', WebkitTextFillColor: '#ffffff' }}>
+                          {isBatchProbing ? 'Analyzing...' : 'Search'}
+                        </span>
                       </Button>
                     </InputAdornment>
                   ),
@@ -2051,16 +2135,30 @@ export default function MediaDownloader({
                       disabled={isStartingBatchDownload || selectedCount === 0}
                       startIcon={
                         isStartingBatchDownload ? (
-                          <CircularProgress size={16} color="inherit" />
+                          <CircularProgress size={16} sx={{ color: '#ffffff !important' }} />
                         ) : (
-                          <DownloadRounded className="!text-lg text-white" />
+                          <DownloadRounded className="!text-lg !text-white" sx={{ color: '#ffffff !important' }} />
                         )
                       }
                       className="btn-theme-primary !text-white !font-bold !text-xs sm:!text-sm !py-2.5 !px-6 !rounded-xl shadow-lg hover:shadow-xl transition-all !normal-case"
+                      sx={{
+                        color: '#ffffff !important',
+                        WebkitTextFillColor: '#ffffff !important',
+                        backgroundColor: 'var(--theme-primary) !important',
+                        '&, & *, & .MuiButton-startIcon, & .MuiSvgIcon-root': {
+                          color: '#ffffff !important',
+                          WebkitTextFillColor: '#ffffff !important'
+                        },
+                        '&:hover': {
+                          backgroundColor: 'var(--theme-primary-hover) !important'
+                        }
+                      }}
                     >
-                      {isStartingBatchDownload
-                        ? 'Queuing Batch...'
-                        : `Download Selected (${selectedCount} Videos)`}
+                      <span style={{ color: '#ffffff', WebkitTextFillColor: '#ffffff' }}>
+                        {isStartingBatchDownload
+                          ? 'Queuing Batch...'
+                          : `Download Selected (${selectedCount} Videos)`}
+                      </span>
                     </Button>
                   </div>
                 </div>
