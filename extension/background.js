@@ -1,31 +1,18 @@
 const VOLTREX_BASE = 'http://127.0.0.1:9580';
 
-// Track extension background worker boot time to avoid intercepting restored session downloads
-const extensionBootTime = Date.now();
-const BOOT_GRACE_PERIOD_MS = 3000;
-
-// Track existing downloads on startup so historical downloads are never intercepted
-const existingDownloadIds = new Set();
+// Track intercepted downloads to prevent duplicate processing
 const handledDownloadIds = new Set();
 const handledUrls = new Map(); // url -> timestamp
 
-// Pre-populate with all downloads currently in Chrome history/database at extension launch
-try {
-  chrome.downloads.search({}, (items) => {
-    if (items && Array.isArray(items)) {
-      for (const d of items) {
-        if (d && d.id) {
-          existingDownloadIds.add(d.id);
-        }
-      }
-    }
-  });
-} catch (e) {
-  console.warn('[VoltrexExtension] Failed to scan initial downloads:', e);
-}
+let lastOnlineCheckTime = 0;
+let lastOnlineStatus = false;
 
 // Check if Voltrex Loader desktop app is running
-async function isVoltrexOnline() {
+async function isVoltrexOnline(force = false) {
+  const now = Date.now();
+  if (!force && (now - lastOnlineCheckTime < 2500)) {
+    return lastOnlineStatus;
+  }
   try {
     const controller = new AbortController();
     const timeout = setTimeout(() => controller.abort(), 1200);
@@ -34,10 +21,18 @@ async function isVoltrexOnline() {
       signal: controller.signal
     });
     clearTimeout(timeout);
-    if (!res.ok) return false;
+    if (!res.ok) {
+      lastOnlineStatus = false;
+      lastOnlineCheckTime = now;
+      return false;
+    }
     const data = await res.json();
-    return data.app === 'voltrex-loader';
+    lastOnlineStatus = (data.app === 'voltrex-loader');
+    lastOnlineCheckTime = now;
+    return lastOnlineStatus;
   } catch {
+    lastOnlineStatus = false;
+    lastOnlineCheckTime = now;
     return false;
   }
 }
@@ -158,85 +153,69 @@ chrome.contextMenus.onClicked.addListener(async (info) => {
 chrome.downloads.onCreated.addListener(async (item) => {
   if (!item || !item.id) return;
 
-  // 1. Ignore if download existed prior to or during startup
-  if (existingDownloadIds.has(item.id)) {
-    return;
-  }
-
-  // 2. Ignore if already handled in this session
+  // 1. Ignore if already handled in this worker cycle
   if (handledDownloadIds.has(item.id)) {
     return;
   }
 
-  // 3. State check: ONLY intercept brand new downloads in progress
-  // Chrome fires onCreated for 'complete' or 'interrupted' downloads during session restore
+  // 2. State check: ONLY intercept downloads currently in progress
+  // Ignore completed or interrupted downloads
   if (item.state && item.state !== 'in_progress') {
-    existingDownloadIds.add(item.id);
     return;
   }
 
-  // 4. EndTime check: If it has an endTime, it already ended in the past
+  // 3. EndTime check: If it has an endTime, it already ended in the past
   if (item.endTime) {
-    existingDownloadIds.add(item.id);
     return;
   }
 
-  // 5. StartTime check: Validate download began recently and after extension boot
+  // 4. Resume / Paused check: If download was paused or is resumable from a prior session, ignore
+  if (item.paused || item.canResume) {
+    return;
+  }
+
+  // 5. Byte count check: Brand new downloads have 0 or negligible bytes received.
+  // If it already received > 256KB, it was previously in-progress
+  if (typeof item.bytesReceived === 'number' && item.bytesReceived > 256 * 1024) {
+    return;
+  }
+
+  // 6. StartTime check: Validate download began recently (within 15 seconds)
+  // This cleanly avoids intercepting restored past session downloads without blocking new downloads
   if (item.startTime) {
     const itemStart = new Date(item.startTime).getTime();
     const now = Date.now();
-    // If it started before the extension booted, or is older than 8 seconds, it is a restored past download
-    if (itemStart < extensionBootTime - 1000 || now - itemStart > 8000 || itemStart - now > 8000) {
-      existingDownloadIds.add(item.id);
+    if (Math.abs(now - itemStart) > 15000) {
       return;
     }
   }
 
-  // 6. Resume / Paused check: If download was paused or is resumable from a prior session, ignore
-  if (item.paused || item.canResume) {
-    existingDownloadIds.add(item.id);
-    return;
-  }
-
-  // 7. Byte count check: Brand new downloads have 0 bytes or very few bytes.
-  // If it already received > 256KB, it was previously in-progress
-  if (typeof item.bytesReceived === 'number' && item.bytesReceived > 256 * 1024) {
-    existingDownloadIds.add(item.id);
-    return;
-  }
-
-  // 8. Boot grace period: Ignore any events in the first 3 seconds of browser launch
-  if (Date.now() - extensionBootTime < BOOT_GRACE_PERIOD_MS) {
-    existingDownloadIds.add(item.id);
-    return;
-  }
-
   const downloadUrl = item.finalUrl || item.url;
 
-  // 9. URL validation: Only intercept valid http, https, or magnet URLs
+  // 7. URL validation: Only intercept valid http, https, or magnet URLs
   if (!downloadUrl || (!downloadUrl.startsWith('http://') && !downloadUrl.startsWith('https://') && !downloadUrl.startsWith('magnet:'))) {
     return;
   }
 
-  // 10. Deduplicate rapid duplicate events for the same URL (within 4 seconds)
+  // 8. Deduplicate rapid duplicate events for the same URL (within 3 seconds)
   const now = Date.now();
-  if (handledUrls.has(downloadUrl) && now - handledUrls.get(downloadUrl) < 4000) {
+  if (handledUrls.has(downloadUrl) && now - handledUrls.get(downloadUrl) < 3000) {
     return;
   }
 
-  // 11. Check if user has enabled interception in extension settings
+  // 9. Check if user has enabled interception in extension settings
   const config = await chrome.storage.local.get(['captureDownloads']);
   if (config.captureDownloads === false) {
     return;
   }
 
-  // 12. Check if Voltrex Loader desktop app is running
+  // 10. Check if Voltrex Loader desktop app is running
   const online = await isVoltrexOnline();
   if (!online) {
     return;
   }
 
-  // Mark handled
+  // Mark handled immediately
   handledDownloadIds.add(item.id);
   handledUrls.set(downloadUrl, now);
 
@@ -254,7 +233,12 @@ chrome.downloads.onCreated.addListener(async (item) => {
   // Cancel and erase browser native download
   try {
     chrome.downloads.cancel(item.id, () => {
-      chrome.downloads.erase({ id: item.id });
+      if (chrome.runtime.lastError) {}
+      try {
+        chrome.downloads.erase({ id: item.id }, () => {
+          if (chrome.runtime.lastError) {}
+        });
+      } catch {}
     });
   } catch {}
 

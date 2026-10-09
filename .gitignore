@@ -5,3 +5,4 @@ out/
 *.log
 .npm
 release/
+voltrex-loader-browser-extension.zip
