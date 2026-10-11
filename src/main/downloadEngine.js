@@ -24,6 +24,7 @@ class DownloadEngine extends EventEmitter {
     this.activeStreams = new Map(); // id -> active streaming record
     this.progressInterval = null;
     this.lastStateSave = 0;
+    this.awaitingRefreshTaskId = null;
     const initialSettings = this.getSettings();
     this.tempDownloadPath = (initialSettings && initialSettings.tempDownloadPath) || path.join(this.userDataPath, 'temp_downloads');
     try {
@@ -144,6 +145,14 @@ class DownloadEngine extends EventEmitter {
     }
   }
 
+  setAwaitingRefreshTaskId(taskId) {
+    this.awaitingRefreshTaskId = taskId || null;
+  }
+
+  getAwaitingRefreshTaskId() {
+    return this.awaitingRefreshTaskId;
+  }
+
   getTaskTempDir(taskId) {
     const task = this.tasks ? this.tasks.get(taskId) : null;
     if (task && task.tempDir && fs.existsSync(task.tempDir)) {
@@ -255,7 +264,7 @@ class DownloadEngine extends EventEmitter {
   }
 
   // Probe URL to check online status, file size, filename, and range resume support
-  async probeUrl(rawUrl) {
+  async probeUrl(rawUrl, customHeaders = {}) {
     try {
       if (!rawUrl || typeof rawUrl !== 'string') {
         return { online: false, error: 'Invalid URL provided' };
@@ -311,7 +320,8 @@ class DownloadEngine extends EventEmitter {
           redirect: 'follow',
           signal: controller.signal,
           headers: {
-            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36 VoltrexLoader/1.0'
+            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36 VoltrexLoader/1.0',
+            ...(customHeaders || {})
           }
         });
         clearTimeout(timeoutId);
@@ -334,7 +344,8 @@ class DownloadEngine extends EventEmitter {
             signal: controller.signal,
             headers: {
               'Range': 'bytes=0-0',
-              'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36 VoltrexLoader/1.0'
+              'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36 VoltrexLoader/1.0',
+              ...(customHeaders || {})
             }
           });
           clearTimeout(timeoutId);
@@ -1195,6 +1206,8 @@ class DownloadEngine extends EventEmitter {
         const isResumingChunk = chunk.currentByte > chunk.startByte;
         const headers = {
           'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36 VoltrexLoader/1.0',
+          ...(task.referrer ? { 'Referer': task.referrer } : {}),
+          ...(task.headers || {}),
           'Range': `bytes=${chunk.currentByte}-${chunk.endByte}`
         };
 
@@ -1490,7 +1503,9 @@ class DownloadEngine extends EventEmitter {
     }
 
     const headers = {
-      'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36 VoltrexLoader/1.0'
+      'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36 VoltrexLoader/1.0',
+      ...(task.referrer ? { 'Referer': task.referrer } : {}),
+      ...(task.headers || {})
     };
 
     const isResuming = task.resumable && existingBytes > 0;
@@ -1760,6 +1775,124 @@ class DownloadEngine extends EventEmitter {
     this.emit('task-updated', task);
     this.scheduleQueue();
     return true;
+  }
+
+  // IDM-Style Refresh Download Address Feature
+  async refreshDownloadUrl(taskId, newUrl, options = {}) {
+    const task = this.tasks.get(taskId);
+    if (!task) {
+      throw new Error(`Download task with ID ${taskId} not found`);
+    }
+
+    if (task.status === 'COMPLETED') {
+      throw new Error('Completed downloads cannot have their address refreshed');
+    }
+
+    if (!newUrl || typeof newUrl !== 'string') {
+      throw new Error('A valid new download URL must be provided');
+    }
+
+    const trimmedUrl = newUrl.trim();
+    if (!trimmedUrl.startsWith('http://') && !trimmedUrl.startsWith('https://')) {
+      throw new Error('Only HTTP and HTTPS URLs are supported for address refresh');
+    }
+
+    // 1. If currently downloading or assembling, pause cleanly first
+    if (task.status === 'DOWNLOADING' || task.status === 'APPENDING') {
+      this.pauseDownload(taskId);
+      await new Promise((r) => setTimeout(r, 250));
+    }
+
+    // 2. Probe the new URL to verify server status, headers, and file size
+    const probeHeaders = {
+      ...(task.headers || {}),
+      ...(options.headers || {})
+    };
+    if (task.referrer && !probeHeaders['Referer']) {
+      probeHeaders['Referer'] = task.referrer;
+    }
+
+    const probe = await this.probeUrl(trimmedUrl, probeHeaders);
+    if (!probe.online) {
+      return {
+        success: false,
+        error: probe.error || `Server responded with status ${probe.statusCode || 'unreachable'}`
+      };
+    }
+
+    // 3. IDM size check: alert user if file size does not match original download
+    if (task.totalBytes > 0 && probe.fileSize > 0 && task.totalBytes !== probe.fileSize) {
+      if (!options.force) {
+        return {
+          success: false,
+          sizeMismatch: true,
+          originalSize: this.formatBytes(task.totalBytes),
+          newSize: this.formatBytes(probe.fileSize),
+          originalBytes: task.totalBytes,
+          newBytes: probe.fileSize,
+          message: `The file size at the new address (${this.formatBytes(probe.fileSize)}) does not match the original download (${this.formatBytes(task.totalBytes)}). Resuming from this address might corrupt the file.`
+        };
+      }
+    }
+
+    // If original totalBytes was unknown/0, set it to the newly probed size
+    if (task.totalBytes === 0 && probe.fileSize > 0) {
+      task.totalBytes = probe.fileSize;
+    }
+
+    // 4. Update task URL and headers
+    task.url = trimmedUrl;
+    task.finalUrl = probe.url || trimmedUrl;
+    if (options.headers) {
+      task.headers = { ...(task.headers || {}), ...options.headers };
+    }
+    if (options.referrer) {
+      task.referrer = options.referrer;
+    }
+    if (probe.resumable !== undefined) {
+      task.resumable = probe.resumable;
+    }
+
+    // 5. Clear error state
+    task.error = null;
+    task.updatedAt = new Date().toISOString();
+
+    // 6. Resynchronize chunk state from disk to preserve all existing parts
+    this.syncTaskChunkStateFromDisk(task);
+
+    // 7. Reset non-completed chunks to QUEUED
+    if (task.chunks && task.chunks.length > 0) {
+      for (const chunk of task.chunks) {
+        if (chunk.status !== 'COMPLETED') {
+          chunk.status = 'QUEUED';
+          chunk.speed = 0;
+        }
+      }
+    }
+
+    // 8. Auto-resume (default true)
+    const autoResume = options.autoResume !== false;
+    if (autoResume) {
+      task.status = 'QUEUED';
+    } else {
+      task.status = 'PAUSED';
+    }
+
+    if (this.awaitingRefreshTaskId === taskId) {
+      this.awaitingRefreshTaskId = null;
+    }
+
+    this.saveState();
+    this.emit('task-updated', task);
+
+    if (autoResume) {
+      this.scheduleQueue();
+    }
+
+    return {
+      success: true,
+      task
+    };
   }
 
   cancelDownload(taskId) {

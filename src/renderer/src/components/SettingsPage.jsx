@@ -395,12 +395,9 @@ export default function SettingsPage({ onBack, defaultSavePath, onSaveSuccess, a
                     <div>
                       <div className="flex items-center gap-2">
                         <span className="text-xs font-semibold text-[#EEEEEE]">Temporary Download Folder</span>
-                        <span className="text-[10px] font-bold px-1.5 py-0.5 rounded bg-[var(--theme-primary)]/20 text-[var(--theme-primary)] border border-[var(--theme-primary)]/40 uppercase tracking-wider">
-                          IDM Chunk Parts Buffer
-                        </span>
                       </div>
                       <div className="text-[11px] text-[#b8a5a5] mt-0.5">
-                        Download chunk parts are buffered in this folder before final assembly. Once 100% complete, parts are appended into your final file. Preserves chunk progress across PC restarts and interruptions.
+                        Stores download chunks to resume across restarts, then merges them upon completion.
                       </div>
                     </div>
                     <Button

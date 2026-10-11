@@ -47,7 +47,8 @@ import {
   Gauge,
   Video,
   Layers,
-  RotateCw
+  RotateCw,
+  RefreshCw
 } from 'lucide-react';
 import ChunkMatrix from './ChunkMatrix';
 import TorrentContextMenu from './TorrentContextMenu';
@@ -62,7 +63,8 @@ export default function DownloadTable({
   onDelete,
   onOpenFile,
   onShowInFolder,
-  onSetPriority
+  onSetPriority,
+  onRefreshUrl
 }) {
   const [deleteModal, setDeleteModal] = useState({ open: false, task: null, deleteDisk: false });
   const [contextMenu, setContextMenu] = useState(null);
@@ -276,11 +278,19 @@ export default function DownloadTable({
         );
       case 'ERROR':
         return (
-          <Chip
-            size="small"
-            label="Error"
-            className="status-chip-error !bg-rose-500/15 !text-rose-600 dark:!text-[#D84040] !border !border-rose-500/40 dark:!border-[#D84040]/50 !font-semibold !text-[10px] !h-5 !px-1.5 [&_.MuiChip-label]:!px-1.5 [&_.MuiChip-label]:!overflow-visible"
-          />
+          <Tooltip title={task?.error || 'Download error. Click or right-click to refresh download address.'} arrow placement="top">
+            <Chip
+              size="small"
+              label="Error"
+              className="status-chip-error !bg-rose-500/15 !text-rose-600 dark:!text-[#D84040] !border !border-rose-500/40 dark:!border-[#D84040]/50 !font-semibold !text-[10px] !h-5 !px-1.5 [&_.MuiChip-label]:!px-1.5 [&_.MuiChip-label]:!overflow-visible cursor-pointer hover:!brightness-125"
+              onClick={(e) => {
+                if (onRefreshUrl && task && !task.isTorrent) {
+                  e.stopPropagation();
+                  onRefreshUrl(task);
+                }
+              }}
+            />
+          </Tooltip>
         );
       case 'CANCELLED':
         return (
@@ -582,7 +592,7 @@ export default function DownloadTable({
 
                     {/* Status */}
                     <TableCell className="!border-b !border-[#8E1616]/25 !py-2.5 whitespace-nowrap !px-2 w-[125px] min-w-[120px]">
-                      {getStatusChip(isAppending ? 'APPENDING' : task.status)}
+                      {getStatusChip(isAppending ? 'APPENDING' : task.status, task)}
                     </TableCell>
 
                     {/* Speed */}
@@ -722,6 +732,19 @@ export default function DownloadTable({
                 >
                   <Play className="w-4 h-4 mr-2.5 text-emerald-400" />
                   <span>{contextMenu.task.status === 'ERROR' ? 'Retry Download' : 'Resume Download'}</span>
+                </MenuItem>
+              )}
+
+              {contextMenu.task.status !== 'COMPLETED' && !contextMenu.task.isTorrent && (
+                <MenuItem
+                  onClick={() => {
+                    onRefreshUrl?.(contextMenu.task);
+                    handleCloseContextMenu();
+                  }}
+                  className="!text-xs !text-amber-400 hover:!bg-[var(--theme-secondary-subtle)] !py-2 !px-3 font-semibold"
+                >
+                  <RefreshCw className="w-4 h-4 mr-2.5 text-amber-400" />
+                  <span>Refresh Download Address...</span>
                 </MenuItem>
               )}
 

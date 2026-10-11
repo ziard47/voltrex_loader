@@ -10,6 +10,7 @@ import SetupWizardModal from './components/SetupWizardModal';
 import UpdateModal from './components/UpdateModal';
 import SettingsPage from './components/SettingsPage';
 import MediaDownloader from './components/MediaDownloader';
+import RefreshUrlModal from './components/RefreshUrlModal';
 import { getFileCategory } from './utils/formatters';
 
 export default function App() {
@@ -33,6 +34,7 @@ export default function App() {
   const [isSetupWizardOpen, setIsSetupWizardOpen] = useState(false);
   const [isUpdateModalOpen, setIsUpdateModalOpen] = useState(false);
   const [availableUpdateInfo, setAvailableUpdateInfo] = useState(null);
+  const [refreshTask, setRefreshTask] = useState(null);
   const [addModalTab, setAddModalTab] = useState('single');
 
   const isAddModalOpenRef = useRef(false);
@@ -553,6 +555,7 @@ export default function App() {
               onOpenFile={handleOpenFile}
               onShowInFolder={handleShowInFolder}
               onSetPriority={handleSetPriority}
+              onRefreshUrl={(task) => setRefreshTask(task)}
             />
           )}
         </main>
@@ -643,6 +646,14 @@ export default function App() {
         currentVersion={appVersion}
         preloadedUpdateInfo={availableUpdateInfo}
         autoCheckOnOpen={!availableUpdateInfo}
+      />
+
+      {/* IDM-Style Refresh Download Address Modal Dialog */}
+      <RefreshUrlModal
+        open={Boolean(refreshTask)}
+        task={refreshTask}
+        onClose={() => setRefreshTask(null)}
+        onSuccess={() => setRefreshTask(null)}
       />
     </div>
   );

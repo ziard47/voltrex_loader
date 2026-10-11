@@ -435,6 +435,16 @@ function setupIpcHandlers() {
     return settings.tempDownloadPath || (downloadEngine && downloadEngine.getTempPath()) || path.join(app.getPath('userData'), 'temp_downloads');
   });
 
+  ipcMain.handle('download:refresh-url', async (_event, payload) => {
+    const { taskId, newUrl, options } = payload || {};
+    return await downloadEngine.refreshDownloadUrl(taskId, newUrl, options);
+  });
+
+  ipcMain.handle('download:set-awaiting-refresh', async (_event, taskId) => {
+    downloadEngine.setAwaitingRefreshTaskId(taskId);
+    return true;
+  });
+
   // Native directory picker (cross platform Linux/SteamOS/Windows)
   ipcMain.handle('dialog:browse-directory', async (_event, currentPath) => {
     if (!mainWindow) return null;
