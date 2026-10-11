@@ -907,12 +907,16 @@ export default function ChunkMatrix({ task, initialSection = null }) {
           <div>
             <div className="flex items-center gap-2">
               <span className="text-xs font-bold text-[var(--theme-text-primary)]">
-                Segmented Range Acceleration
+                {task.status === 'APPENDING' || task.assembling ? 'Joining & Appending Segments' : 'Segmented Range Acceleration'}
               </span>
               <Chip
                 size="small"
-                label={`${totalChunks} Parallel Streams`}
-                className="!bg-[var(--theme-secondary-subtle)] !text-[var(--theme-primary)] !border !border-[var(--theme-border-accent)] !font-bold !text-[10px] !h-4 !px-1"
+                label={task.status === 'APPENDING' || task.assembling ? `Appending (${task.appendProgress || 0}%)` : `${totalChunks} Parallel Streams`}
+                className={`!font-bold !text-[10px] !h-4 !px-1 ${
+                  task.status === 'APPENDING' || task.assembling
+                    ? '!bg-amber-500/20 !text-amber-400 !border !border-amber-500/40 animate-pulse'
+                    : '!bg-[var(--theme-secondary-subtle)] !text-[var(--theme-primary)] !border !border-[var(--theme-border-accent)]'
+                }`}
               />
             </div>
           </div>
@@ -926,7 +930,7 @@ export default function ChunkMatrix({ task, initialSection = null }) {
 
           <div className="flex items-center gap-1.5 text-[var(--theme-text-muted)]">
             <Activity className="w-3.5 h-3.5 text-[var(--theme-primary)]" />
-            <span>Active Streams: <strong className="text-[var(--theme-text-primary)]">{activeChunks}</strong></span>
+            <span>{task.status === 'APPENDING' || task.assembling ? 'Join Progress:' : 'Active Streams:'} <strong className="text-[var(--theme-text-primary)]">{task.status === 'APPENDING' || task.assembling ? `${task.appendProgress || 0}%` : activeChunks}</strong></span>
           </div>
         </div>
       </div>

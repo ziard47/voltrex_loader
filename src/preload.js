@@ -31,6 +31,7 @@ contextBridge.exposeInMainWorld('electronAPI', {
   getAllDownloads: () => ipcRenderer.invoke('download:get-all'),
   setConcurrency: (limit) => ipcRenderer.invoke('download:set-concurrency', limit),
   getDefaultDownloadPath: () => ipcRenderer.invoke('download:get-default-path'),
+  getTempDownloadPath: () => ipcRenderer.invoke('download:get-temp-path'),
 
   // Native Dialogs & Shell
   browseDirectory: (currentPath) => ipcRenderer.invoke('dialog:browse-directory', currentPath),

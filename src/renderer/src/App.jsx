@@ -405,7 +405,7 @@ export default function App() {
     let error = 0;
 
     for (const d of downloads) {
-      if (d.status === 'DOWNLOADING' || d.status === 'QUEUED') active++;
+      if (['DOWNLOADING', 'QUEUED', 'APPENDING'].includes(d.status) || d.assembling) active++;
       else if (d.status === 'PAUSED') paused++;
       else if (d.status === 'COMPLETED') completed++;
       else if (d.status === 'ERROR' || d.status === 'CANCELLED') error++;
@@ -440,7 +440,7 @@ export default function App() {
   const filteredDownloads = useMemo(() => {
     return downloads.filter((item) => {
       // Filter by category
-      if (selectedCategory === 'active' && !['DOWNLOADING', 'QUEUED'].includes(item.status)) return false;
+      if (selectedCategory === 'active' && !['DOWNLOADING', 'QUEUED', 'APPENDING'].includes(item.status) && !item.assembling) return false;
       if (selectedCategory === 'paused' && item.status !== 'PAUSED') return false;
       if (selectedCategory === 'completed' && item.status !== 'COMPLETED') return false;
       if (selectedCategory === 'error' && !['ERROR', 'CANCELLED'].includes(item.status)) return false;

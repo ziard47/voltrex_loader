@@ -430,6 +430,11 @@ function setupIpcHandlers() {
     return settings.defaultDownloadPath || (downloadEngine && downloadEngine.defaultDownloadPath) || app.getPath('downloads');
   });
 
+  ipcMain.handle('download:get-temp-path', async () => {
+    const settings = loadSettings();
+    return settings.tempDownloadPath || (downloadEngine && downloadEngine.getTempPath()) || path.join(app.getPath('userData'), 'temp_downloads');
+  });
+
   // Native directory picker (cross platform Linux/SteamOS/Windows)
   ipcMain.handle('dialog:browse-directory', async (_event, currentPath) => {
     if (!mainWindow) return null;
@@ -639,6 +644,7 @@ function getDefaultSettings() {
   return {
     setupWizardCompleted: false,
     defaultDownloadPath: app.getPath('downloads'),
+    tempDownloadPath: path.join(app.getPath('userData'), 'temp_downloads'),
     startWithSystem: false,
     concurrency: 3,
     autoStartDownloads: true,
@@ -824,6 +830,9 @@ function saveSettings(newSettings) {
       if (merged.defaultDownloadPath) {
         downloadEngine.defaultDownloadPath = merged.defaultDownloadPath;
       }
+      if (merged.tempDownloadPath) {
+        downloadEngine.setTempDownloadPath(merged.tempDownloadPath);
+      }
       if (typeof merged.defaultConnections === 'number') {
         downloadEngine.defaultConnections = merged.defaultConnections;
       }
@@ -856,7 +865,7 @@ function updateTrayMenu() {
   if (!tray) return;
 
   const tasks = downloadEngine ? downloadEngine.getAllTasks() : [];
-  const activeTasks = tasks.filter(t => t.status === 'DOWNLOADING');
+  const activeTasks = tasks.filter(t => t.status === 'DOWNLOADING' || t.status === 'APPENDING' || t.assembling);
   const activeCount = activeTasks.length;
 
   const contextMenu = Menu.buildFromTemplate([
@@ -988,8 +997,11 @@ app.whenReady().then(() => {
   if (typeof initialSettings.enableMultiConnection === 'boolean') {
     downloadEngine.enableMultiConnection = initialSettings.enableMultiConnection;
   }
-  if (typeof initialSettings.organizeByCategory === 'boolean') {
+  if (initialSettings.organizeByCategory !== undefined) {
     downloadEngine.organizeByCategory = initialSettings.organizeByCategory;
+  }
+  if (initialSettings.tempDownloadPath) {
+    downloadEngine.setTempDownloadPath(initialSettings.tempDownloadPath);
   }
 
   bridgeServer = new BridgeServer(
@@ -1030,6 +1042,9 @@ app.on('login', (event, _webContents, _request, authInfo, callback) => {
 
 app.on('before-quit', () => {
   isQuitting = true;
+  if (downloadEngine) {
+    downloadEngine.saveState();
+  }
 });
 
 app.on('window-all-closed', () => {

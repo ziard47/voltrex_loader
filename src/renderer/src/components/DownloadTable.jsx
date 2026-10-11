@@ -45,7 +45,9 @@ import {
   Users,
   Radio,
   Gauge,
-  Video
+  Video,
+  Layers,
+  RotateCw
 } from 'lucide-react';
 import ChunkMatrix from './ChunkMatrix';
 import TorrentContextMenu from './TorrentContextMenu';
@@ -227,6 +229,17 @@ export default function DownloadTable({
 
   const getStatusChip = (status) => {
     switch (status) {
+      case 'APPENDING':
+        return (
+          <Tooltip title="Appending & joining chunk parts into final file" arrow placement="top">
+            <Chip
+              size="small"
+              icon={<RotateCw className="w-2.5 h-2.5 animate-spin !text-amber-400 mr-0.5" />}
+              label="Appending"
+              className="status-chip-appending !bg-amber-500/20 !text-amber-400 !border !border-amber-400/50 !font-semibold !text-[10px] !h-5 !px-1.5 [&_.MuiChip-label]:!px-1.5 [&_.MuiChip-label]:!overflow-visible shadow-[0_0_8px_rgba(245,158,11,0.25)]"
+            />
+          </Tooltip>
+        );
       case 'DOWNLOADING':
         return (
           <Tooltip title="Downloading (Active transfer)" arrow placement="top">
@@ -390,7 +403,8 @@ export default function DownloadTable({
 
           <TableBody>
             {sortedDownloads.map((task) => {
-              const isDownloading = task.status === 'DOWNLOADING';
+              const isAppending = task.status === 'APPENDING' || Boolean(task.assembling);
+              const isDownloading = !isAppending && task.status === 'DOWNLOADING';
               const isPaused = task.status === 'PAUSED';
               const isCompleted = task.status === 'COMPLETED';
               const isError = task.status === 'ERROR';
@@ -399,6 +413,7 @@ export default function DownloadTable({
               const isExpanded = expandedRows.has(task.id);
               const hasChunks = task.chunks && task.chunks.length > 0;
               const connCount = task.connections || (hasChunks ? task.chunks.length : 1);
+              const currentProgress = isAppending ? Math.min(100, Math.max(0, task.appendProgress ?? 0)) : (task.progress || 0);
 
               return (
                 <React.Fragment key={task.id}>
@@ -515,29 +530,50 @@ export default function DownloadTable({
                     <TableCell className="!border-b !border-[#8E1616]/25 !py-3 whitespace-nowrap w-[145px] min-w-[130px]">
                       <div className="space-y-1.5 min-w-[130px]">
                         <div className="flex justify-between items-center text-[11px] font-mono-stat">
-                          <span className={isDownloading ? 'text-[#D84040] font-semibold' : 'text-[#b8a5a5]'}>
-                            {task.progress}%
+                          <span
+                            className={
+                              isAppending
+                                ? 'text-amber-400 font-bold animate-pulse'
+                                : isDownloading
+                                ? 'text-[#D84040] font-semibold'
+                                : 'text-[#b8a5a5]'
+                            }
+                          >
+                            {currentProgress}%
                           </span>
-                          {task.totalBytes > 0 && (
-                            <span className="text-[10px] text-[#b8a5a5]">
-                              {formatBytes(task.downloadedBytes)}
-                            </span>
-                          )}
+                          <span className="text-[10px] font-mono-stat text-[#b8a5a5]">
+                            {isAppending ? (
+                              <span className="text-amber-400/90 font-medium">Joining...</span>
+                            ) : task.totalBytes > 0 ? (
+                              formatBytes(task.downloadedBytes)
+                            ) : (
+                              ''
+                            )}
+                          </span>
                         </div>
                         <LinearProgress
                           variant="determinate"
-                          value={task.progress}
+                          value={currentProgress}
                           className="!rounded-full !h-2 !bg-[#261818]"
                           sx={{
                             '& .MuiLinearProgress-bar': {
                               borderRadius: 4,
-                              backgroundColor: isCompleted
+                              transition: isAppending ? 'transform 0.15s ease-out' : undefined,
+                              backgroundColor: isAppending
+                                ? '#f59e0b'
+                                : isCompleted
                                 ? '#34d399'
                                 : isError
                                 ? '#8E1616'
                                 : isPaused
                                 ? '#fbbf24'
-                                : '#D84040'
+                                : '#D84040',
+                              backgroundImage: isAppending
+                                ? 'linear-gradient(90deg, #f59e0b 0%, #fbbf24 50%, #f59e0b 100%)'
+                                : undefined,
+                              boxShadow: isAppending
+                                ? '0 0 10px rgba(245, 158, 11, 0.65)'
+                                : undefined
                             }
                           }}
                         />
@@ -546,12 +582,17 @@ export default function DownloadTable({
 
                     {/* Status */}
                     <TableCell className="!border-b !border-[#8E1616]/25 !py-2.5 whitespace-nowrap !px-2 w-[125px] min-w-[120px]">
-                      {getStatusChip(task.status)}
+                      {getStatusChip(isAppending ? 'APPENDING' : task.status)}
                     </TableCell>
 
                     {/* Speed */}
                     <TableCell className="!border-b !border-[#8E1616]/25 !py-3 font-mono-stat text-xs text-[#EEEEEE] whitespace-nowrap w-[110px] min-w-[100px]">
-                      {isDownloading ? (
+                      {isAppending ? (
+                        <div className="text-amber-400 font-semibold flex items-center gap-1 text-xs">
+                          <Layers className="w-3 h-3 text-amber-400 animate-pulse" />
+                          <span>Appending...</span>
+                        </div>
+                      ) : isDownloading ? (
                         <div>
                           <div className="text-[#D84040] font-semibold flex items-center gap-1">
                             {task.isTorrent && <ArrowDown className="w-2.5 h-2.5 text-emerald-400" />}
@@ -583,7 +624,13 @@ export default function DownloadTable({
 
                     {/* ETA */}
                     <TableCell className="!border-b !border-[#8E1616]/25 !py-3 font-mono-stat text-xs text-[#b8a5a5] whitespace-nowrap w-[75px] min-w-[70px]">
-                      {isDownloading ? formatEta(task.eta) : '--'}
+                      {isAppending ? (
+                        <span className="text-amber-400/90 text-xs font-mono-stat">Joining...</span>
+                      ) : isDownloading ? (
+                        formatEta(task.eta)
+                      ) : (
+                        '--'
+                      )}
                     </TableCell>
                   </TableRow>
 
@@ -645,7 +692,14 @@ export default function DownloadTable({
 
             {/* Transfer Control Items */}
             <div className="py-1">
-              {(contextMenu.task.status === 'DOWNLOADING' || contextMenu.task.status === 'QUEUED') && (
+              {(contextMenu.task.status === 'APPENDING' || contextMenu.task.assembling) && (
+                <MenuItem disabled className="!text-xs !text-amber-400 !py-2 !px-3">
+                  <RotateCw className="w-4 h-4 mr-2.5 text-amber-400 animate-spin" />
+                  <span>Joining chunk parts ({contextMenu.task.appendProgress || 0}%)...</span>
+                </MenuItem>
+              )}
+
+              {(contextMenu.task.status === 'DOWNLOADING' || contextMenu.task.status === 'QUEUED') && !contextMenu.task.assembling && (
                 <MenuItem
                   onClick={() => {
                     onPause(contextMenu.task.id);
