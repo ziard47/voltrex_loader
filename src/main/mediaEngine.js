@@ -299,7 +299,7 @@ class MediaEngine extends EventEmitter {
       }
 
       const client = url.startsWith('https') ? https : http;
-      const req = client.get(url, { headers: { 'User-Agent': 'Voltrex-Loader/1.4.0' } }, (res) => {
+      const req = client.get(url, { headers: { 'User-Agent': 'Voltrex-Loader/1.4.1' } }, (res) => {
         if (res.statusCode >= 300 && res.statusCode < 400 && res.headers.location) {
           return resolve(this.downloadFileWithRedirects(res.headers.location, destPath, maxRedirects - 1));
         }

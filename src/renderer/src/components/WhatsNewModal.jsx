@@ -14,25 +14,34 @@ import {
   CheckCircle2,
   ArrowRight,
   X,
-  Video
+  Video,
+  RefreshCw,
+  Layers
 } from 'lucide-react';
 import Logo from './Logo';
 
-export default function WhatsNewModal({ open, onClose, version = '1.4.0' }) {
+export default function WhatsNewModal({ open, onClose, version = '1.4.1' }) {
   const highlights = [
+    {
+      icon: RefreshCw,
+      title: 'Refresh Download Address (IDM Style)',
+      description:
+        'Renew expired download links (from Google Drive, file hosts, streaming links, or HTTP 401/403/410 errors) and seamlessly resume without restarting or losing any downloaded bytes. Includes automatic browser extension auto-capture and file size verification.',
+      badge: 'Recovery'
+    },
+    {
+      icon: Layers,
+      title: 'IDM Temp Chunk Parts & Safe Appending',
+      description:
+        'Parallel segmented streams now write directly to dedicated chunk part files inside a customizable temporary folder. Downloads safely survive PC reboots and pauses. Upon 100% download, watch live joining progress (0%–100%) with an amber glowing progress bar.',
+      badge: 'Architecture'
+    },
     {
       icon: Video,
       title: 'Universal Media Downloader',
       description:
-        'Download high-definition videos and extract MP3 audio directly from YouTube, TikTok, Facebook, Reddit, Instagram, and hundreds of sites with automatic quality probing, stream resolution selection, and queue integration.',
+        'Download high-definition videos and extract MP3 audio directly from YouTube, TikTok, Facebook, Reddit, and hundreds of sites with automatic quality probing and queue integration.',
       badge: 'Media Engine'
-    },
-    {
-      icon: Sparkles,
-      title: 'UI Enhancements & Material UI Modernization',
-      description:
-        'Refined user interface with sleek Material UI form controls, themed format dropdowns, minimal unified search inputs, optimized dark & light mode contrast, and streamlined popup modals.',
-      badge: 'UI / UX'
     }
   ];
 
