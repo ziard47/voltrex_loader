@@ -10,6 +10,7 @@ import SetupWizardModal from './components/SetupWizardModal';
 import UpdateModal from './components/UpdateModal';
 import SettingsPage from './components/SettingsPage';
 import MediaDownloader from './components/MediaDownloader';
+import RefreshUrlModal from './components/RefreshUrlModal';
 import { getFileCategory } from './utils/formatters';
 
 export default function App() {
@@ -28,11 +29,12 @@ export default function App() {
   const [capturedData, setCapturedData] = useState(null);
   const [pendingCapture, setPendingCapture] = useState(null);
   const [currentSingleData, setCurrentSingleData] = useState(null);
-  const [appVersion, setAppVersion] = useState('1.4.0');
+  const [appVersion, setAppVersion] = useState('1.4.1');
   const [isWhatsNewOpen, setIsWhatsNewOpen] = useState(false);
   const [isSetupWizardOpen, setIsSetupWizardOpen] = useState(false);
   const [isUpdateModalOpen, setIsUpdateModalOpen] = useState(false);
   const [availableUpdateInfo, setAvailableUpdateInfo] = useState(null);
+  const [refreshTask, setRefreshTask] = useState(null);
   const [addModalTab, setAddModalTab] = useState('single');
 
   const isAddModalOpenRef = useRef(false);
@@ -405,7 +407,7 @@ export default function App() {
     let error = 0;
 
     for (const d of downloads) {
-      if (d.status === 'DOWNLOADING' || d.status === 'QUEUED') active++;
+      if (['DOWNLOADING', 'QUEUED', 'APPENDING'].includes(d.status) || d.assembling) active++;
       else if (d.status === 'PAUSED') paused++;
       else if (d.status === 'COMPLETED') completed++;
       else if (d.status === 'ERROR' || d.status === 'CANCELLED') error++;
@@ -440,7 +442,7 @@ export default function App() {
   const filteredDownloads = useMemo(() => {
     return downloads.filter((item) => {
       // Filter by category
-      if (selectedCategory === 'active' && !['DOWNLOADING', 'QUEUED'].includes(item.status)) return false;
+      if (selectedCategory === 'active' && !['DOWNLOADING', 'QUEUED', 'APPENDING'].includes(item.status) && !item.assembling) return false;
       if (selectedCategory === 'paused' && item.status !== 'PAUSED') return false;
       if (selectedCategory === 'completed' && item.status !== 'COMPLETED') return false;
       if (selectedCategory === 'error' && !['ERROR', 'CANCELLED'].includes(item.status)) return false;
@@ -553,6 +555,7 @@ export default function App() {
               onOpenFile={handleOpenFile}
               onShowInFolder={handleShowInFolder}
               onSetPriority={handleSetPriority}
+              onRefreshUrl={(task) => setRefreshTask(task)}
             />
           )}
         </main>
@@ -643,6 +646,14 @@ export default function App() {
         currentVersion={appVersion}
         preloadedUpdateInfo={availableUpdateInfo}
         autoCheckOnOpen={!availableUpdateInfo}
+      />
+
+      {/* IDM-Style Refresh Download Address Modal Dialog */}
+      <RefreshUrlModal
+        open={Boolean(refreshTask)}
+        task={refreshTask}
+        onClose={() => setRefreshTask(null)}
+        onSuccess={() => setRefreshTask(null)}
       />
     </div>
   );

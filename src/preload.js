@@ -31,6 +31,9 @@ contextBridge.exposeInMainWorld('electronAPI', {
   getAllDownloads: () => ipcRenderer.invoke('download:get-all'),
   setConcurrency: (limit) => ipcRenderer.invoke('download:set-concurrency', limit),
   getDefaultDownloadPath: () => ipcRenderer.invoke('download:get-default-path'),
+  getTempDownloadPath: () => ipcRenderer.invoke('download:get-temp-path'),
+  refreshDownloadUrl: (payload) => ipcRenderer.invoke('download:refresh-url', payload),
+  setAwaitingRefresh: (taskId) => ipcRenderer.invoke('download:set-awaiting-refresh', taskId),
 
   // Native Dialogs & Shell
   browseDirectory: (currentPath) => ipcRenderer.invoke('dialog:browse-directory', currentPath),
@@ -99,6 +102,11 @@ contextBridge.exposeInMainWorld('electronAPI', {
     const handler = (_event, data) => callback(data);
     ipcRenderer.on('download:captured-prompt', handler);
     return () => ipcRenderer.removeListener('download:captured-prompt', handler);
+  },
+  onRefreshUrlCaptured: (callback) => {
+    const handler = (_event, data) => callback(data);
+    ipcRenderer.on('download:refresh-url-captured', handler);
+    return () => ipcRenderer.removeListener('download:refresh-url-captured', handler);
   },
   onTrayOpenAddModal: (callback) => {
     const handler = () => callback();

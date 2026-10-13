@@ -66,6 +66,7 @@ export default function SettingsPage({ onBack, defaultSavePath, onSaveSuccess, a
   // Settings State
   const [settings, setSettings] = useState({
     defaultDownloadPath: defaultSavePath || '',
+    tempDownloadPath: '',
     concurrency: 3,
     autoStartDownloads: true,
     organizeByCategory: false,
@@ -147,6 +148,29 @@ export default function SettingsPage({ onBack, defaultSavePath, onSaveSuccess, a
       }
     } catch (err) {
       console.error('Failed to open directory:', err);
+    }
+  };
+
+  const handleBrowseTempFolder = async () => {
+    try {
+      if (window.electronAPI?.browseDirectory) {
+        const picked = await window.electronAPI.browseDirectory(settings.tempDownloadPath);
+        if (picked) {
+          setSettings((prev) => ({ ...prev, tempDownloadPath: picked }));
+        }
+      }
+    } catch (err) {
+      console.error('Failed to browse temp directory:', err);
+    }
+  };
+
+  const handleOpenTempFolder = async () => {
+    try {
+      if (window.electronAPI?.openPath && settings.tempDownloadPath) {
+        await window.electronAPI.openPath(settings.tempDownloadPath);
+      }
+    } catch (err) {
+      console.error('Failed to open temp directory:', err);
     }
   };
 
@@ -358,6 +382,51 @@ export default function SettingsPage({ onBack, defaultSavePath, onSaveSuccess, a
                     <Button
                       variant="contained"
                       onClick={handleBrowseFolder}
+                      className="!bg-[#8E1616] hover:!bg-[#D84040] !text-white !text-xs !px-4 !py-2 shrink-0 font-medium"
+                    >
+                      Browse...
+                    </Button>
+                  </div>
+                </div>
+
+                {/* Temporary Download Folder (IDM Chunk Parts Buffer) */}
+                <div className="p-4 rounded-xl bg-[#1D1616] border border-[#8E1616]/30 space-y-3">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <div className="flex items-center gap-2">
+                        <span className="text-xs font-semibold text-[#EEEEEE]">Temporary Download Folder</span>
+                      </div>
+                      <div className="text-[11px] text-[#b8a5a5] mt-0.5">
+                        Stores download chunks to resume across restarts, then merges them upon completion.
+                      </div>
+                    </div>
+                    <Button
+                      size="small"
+                      variant="outlined"
+                      startIcon={<FolderOpen className="w-3.5 h-3.5" />}
+                      onClick={handleOpenTempFolder}
+                      className="!border-[#8E1616]/40 !text-[#b8a5a5] hover:!text-white hover:!bg-[#8E1616]/20 !text-xs !py-1 !px-2.5"
+                    >
+                      Open Folder
+                    </Button>
+                  </div>
+
+                  <div className="flex items-center gap-2">
+                    <TextField
+                      size="small"
+                      fullWidth
+                      value={settings.tempDownloadPath || ''}
+                      onChange={(e) => setSettings({ ...settings, tempDownloadPath: e.target.value })}
+                      placeholder="Default temporary folder"
+                      InputProps={{
+                        readOnly: true,
+                        startAdornment: <Folder className="w-4 h-4 text-[var(--theme-primary)] mr-2 shrink-0" />,
+                        className: '!bg-[#140e0e] !text-xs !text-[#EEEEEE] font-mono-stat border border-[#8E1616]/30 rounded-lg'
+                      }}
+                    />
+                    <Button
+                      variant="contained"
+                      onClick={handleBrowseTempFolder}
                       className="!bg-[#8E1616] hover:!bg-[#D84040] !text-white !text-xs !px-4 !py-2 shrink-0 font-medium"
                     >
                       Browse...

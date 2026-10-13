@@ -95,6 +95,33 @@ class BridgeServer {
             const settings = typeof this.getSettings === 'function' ? this.getSettings() : { autoCapturePrompt: true };
             const win = this.getMainWindow();
 
+            // If user has the Refresh Download Address modal open awaiting re-capture from browser
+            const awaitingTaskId = this.downloadEngine?.getAwaitingRefreshTaskId
+              ? this.downloadEngine.getAwaitingRefreshTaskId()
+              : this.downloadEngine?.awaitingRefreshTaskId;
+
+            if (awaitingTaskId) {
+              if (win && !win.isDestroyed()) {
+                win.webContents.send('download:refresh-url-captured', {
+                  taskId: awaitingTaskId,
+                  newUrl: downloadUrl,
+                  fileName: resolvedFileName,
+                  referrer: data.referrer,
+                  headers: data.headers || {}
+                });
+                if (typeof this.focusWindow === 'function') {
+                  this.focusWindow();
+                } else {
+                  if (win.isMinimized()) win.restore();
+                  if (!win.isVisible()) win.show();
+                  win.focus();
+                }
+              }
+              res.writeHead(200, { 'Content-Type': 'application/json' });
+              res.end(JSON.stringify({ success: true, capturedForRefresh: true, taskId: awaitingTaskId, fileName: resolvedFileName }));
+              return;
+            }
+
             if (settings && settings.autoCapturePrompt === false) {
               // Direct auto-start without modal prompt
               const task = await this.downloadEngine.addDownload({
