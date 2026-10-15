@@ -5,15 +5,37 @@ const urlInput = document.getElementById('url-input');
 const btnSend = document.getElementById('btn-send');
 const msgFeedback = document.getElementById('msg-feedback');
 
+// Direct fetch fallback in case background worker is waking up
+async function checkDirectPing() {
+  const endpoints = ['http://127.0.0.1:9580/ping', 'http://localhost:9580/ping'];
+  for (const endpoint of endpoints) {
+    try {
+      const controller = new AbortController();
+      const timeout = setTimeout(() => controller.abort(), 1500);
+      const res = await fetch(endpoint, { method: 'GET', signal: controller.signal });
+      clearTimeout(timeout);
+      if (res.ok) {
+        const data = await res.json();
+        if (data && data.app === 'voltrex-loader') return true;
+      }
+    } catch {}
+  }
+  return false;
+}
+
 // Check desktop app status
 function updateStatus() {
-  chrome.runtime.sendMessage({ action: 'checkStatus' }, (response) => {
-    if (chrome.runtime.lastError || !response?.online) {
-      statusPill.className = 'status-pill offline';
-      statusText.textContent = 'Offline';
-    } else {
+  chrome.runtime.sendMessage({ action: 'checkStatus' }, async (response) => {
+    let online = !chrome.runtime.lastError && Boolean(response?.online);
+    if (!online) {
+      online = await checkDirectPing();
+    }
+    if (online) {
       statusPill.className = 'status-pill online';
       statusText.textContent = 'Connected';
+    } else {
+      statusPill.className = 'status-pill offline';
+      statusText.textContent = 'Offline';
     }
   });
 }
@@ -67,3 +89,5 @@ function showFeedback(text, type) {
 
 // Init
 updateStatus();
+const pollTimer = setInterval(updateStatus, 2500);
+window.addEventListener('unload', () => clearInterval(pollTimer));

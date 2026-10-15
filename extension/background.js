@@ -1,4 +1,4 @@
-const VOLTREX_BASE = 'http://127.0.0.1:9580';
+const BASE_ENDPOINTS = ['http://127.0.0.1:9580', 'http://localhost:9580'];
 
 // Track intercepted downloads to prevent duplicate processing
 const handledDownloadIds = new Set();
@@ -13,51 +13,59 @@ async function isVoltrexOnline(force = false) {
   if (!force && (now - lastOnlineCheckTime < 2500)) {
     return lastOnlineStatus;
   }
-  try {
-    const controller = new AbortController();
-    const timeout = setTimeout(() => controller.abort(), 1200);
-    const res = await fetch(`${VOLTREX_BASE}/ping`, {
-      method: 'GET',
-      signal: controller.signal
-    });
-    clearTimeout(timeout);
-    if (!res.ok) {
-      lastOnlineStatus = false;
-      lastOnlineCheckTime = now;
-      return false;
-    }
-    const data = await res.json();
-    lastOnlineStatus = (data.app === 'voltrex-loader');
-    lastOnlineCheckTime = now;
-    return lastOnlineStatus;
-  } catch {
-    lastOnlineStatus = false;
-    lastOnlineCheckTime = now;
-    return false;
+
+  for (const base of BASE_ENDPOINTS) {
+    try {
+      const controller = new AbortController();
+      const timeout = setTimeout(() => controller.abort(), 2500);
+      const res = await fetch(`${base}/ping`, {
+        method: 'GET',
+        signal: controller.signal
+      });
+      clearTimeout(timeout);
+      if (res.ok) {
+        const data = await res.json();
+        if (data.app === 'voltrex-loader') {
+          lastOnlineStatus = true;
+          lastOnlineCheckTime = now;
+          return true;
+        }
+      }
+    } catch {}
   }
+
+  lastOnlineStatus = false;
+  lastOnlineCheckTime = now;
+  return false;
 }
 
 // Send download payload to Voltrex Loader
 async function sendToVoltrex({ url, fileName, referrer }) {
-  try {
-    const controller = new AbortController();
-    const timeout = setTimeout(() => controller.abort(), 3000);
-    const res = await fetch(`${VOLTREX_BASE}/download`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        url,
-        fileName: fileName ? fileName.replace(/[\\/:*?"<>|]/g, '_') : undefined,
-        referrer,
-        autoStart: true
-      }),
-      signal: controller.signal
-    });
-    clearTimeout(timeout);
-    return await res.json();
-  } catch (err) {
-    return { success: false, error: err.message };
+  let lastError = 'Failed to connect to Voltrex Loader';
+  for (const base of BASE_ENDPOINTS) {
+    try {
+      const controller = new AbortController();
+      const timeout = setTimeout(() => controller.abort(), 4000);
+      const res = await fetch(`${base}/download`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          url,
+          fileName: fileName ? fileName.replace(/[\\/:*?"<>|]/g, '_') : undefined,
+          referrer,
+          autoStart: true
+        }),
+        signal: controller.signal
+      });
+      clearTimeout(timeout);
+      if (res.ok) {
+        return await res.json();
+      }
+    } catch (err) {
+      lastError = err.message;
+    }
   }
+  return { success: false, error: lastError };
 }
 
 function extractUrlFileName(urlStr) {
@@ -263,7 +271,7 @@ chrome.downloads.onCreated.addListener(async (item) => {
 // Respond to popup messages
 chrome.runtime.onMessage.addListener((request, _sender, sendResponse) => {
   if (request.action === 'checkStatus') {
-    isVoltrexOnline().then((online) => sendResponse({ online }));
+    isVoltrexOnline(true).then((online) => sendResponse({ online }));
     return true; // Keep channel open for async response
   }
   if (request.action === 'sendUrl') {

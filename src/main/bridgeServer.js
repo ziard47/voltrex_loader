@@ -13,10 +13,11 @@ class BridgeServer {
 
   start() {
     this.server = http.createServer(async (req, res) => {
-      // Setup CORS headers
+      // Setup CORS headers including Private Network Access for Chromium browsers
       res.setHeader('Access-Control-Allow-Origin', '*');
       res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
-      res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
+      res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Access-Control-Request-Private-Network, Authorization, X-Requested-With, *');
+      res.setHeader('Access-Control-Allow-Private-Network', 'true');
 
       if (req.method === 'OPTIONS') {
         res.writeHead(204);

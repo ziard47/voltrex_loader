@@ -229,7 +229,7 @@ export default function DownloadTable({
     }
   };
 
-  const getStatusChip = (status) => {
+  const getStatusChip = (status, task) => {
     switch (status) {
       case 'APPENDING':
         return (
