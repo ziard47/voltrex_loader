@@ -16,12 +16,20 @@ import {
   X,
   Video,
   RefreshCw,
-  Layers
+  Layers,
+  Globe
 } from 'lucide-react';
 import Logo from './Logo';
 
-export default function WhatsNewModal({ open, onClose, version = '1.4.1' }) {
+export default function WhatsNewModal({ open, onClose, version = '1.4.2' }) {
   const highlights = [
+    {
+      icon: Globe,
+      title: 'Browser Extension Private Network Access & Auto-Sync',
+      description:
+        'Complete Chromium Private Network Access (PNA) integration with auto-reconnect, dual IPv4/localhost fallback, live status polling, and resilient browser download interception.',
+      badge: 'Integration'
+    },
     {
       icon: RefreshCw,
       title: 'Refresh Download Address (IDM Style)',
@@ -35,13 +43,6 @@ export default function WhatsNewModal({ open, onClose, version = '1.4.1' }) {
       description:
         'Parallel segmented streams now write directly to dedicated chunk part files inside a customizable temporary folder. Downloads safely survive PC reboots and pauses. Upon 100% download, watch live joining progress (0%–100%) with an amber glowing progress bar.',
       badge: 'Architecture'
-    },
-    {
-      icon: Video,
-      title: 'Universal Media Downloader',
-      description:
-        'Download high-definition videos and extract MP3 audio directly from YouTube, TikTok, Facebook, Reddit, and hundreds of sites with automatic quality probing and queue integration.',
-      badge: 'Media Engine'
     }
   ];
 
