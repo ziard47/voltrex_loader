@@ -63,7 +63,12 @@ async function main() {
   try {
     execSync(`npx electron-builder --linux -c.directories.output="${tempOutputDir}"`, {
       cwd: rootDir,
-      stdio: 'inherit'
+      stdio: 'inherit',
+      env: {
+        ...process.env,
+        CSC_IDENTITY_AUTO_DISCOVERY: 'false',
+        NODE_OPTIONS: `${process.env.NODE_OPTIONS || ''} --experimental-require-module`.trim()
+      }
     });
 
     // 3. Prepare target release structure: release/linux/<version>/

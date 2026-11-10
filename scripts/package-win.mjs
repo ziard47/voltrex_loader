@@ -62,12 +62,13 @@ async function main() {
   const zipName = `voltrex-loader-${chosenVersion}-win.zip`;
 
   try {
-    execSync(`CSC_IDENTITY_AUTO_DISCOVERY=false npx electron-builder --win --dir -c.directories.output="${tempOutputDir}"`, {
+    execSync(`npx electron-builder --win --dir -c.directories.output="${tempOutputDir}"`, {
       cwd: rootDir,
       stdio: 'inherit',
       env: {
         ...process.env,
-        CSC_IDENTITY_AUTO_DISCOVERY: 'false'
+        CSC_IDENTITY_AUTO_DISCOVERY: 'false',
+        NODE_OPTIONS: `${process.env.NODE_OPTIONS || ''} --experimental-require-module`.trim()
       }
     });
 
@@ -95,10 +96,24 @@ async function main() {
       fs.unlinkSync(zipPath);
     }
 
-    execSync(`zip -r -q "${zipPath}" win-unpacked`, {
-      cwd: tempOutputDir,
-      stdio: 'inherit'
-    });
+    try {
+      execSync(`tar -a -cf "${zipPath}" win-unpacked`, {
+        cwd: tempOutputDir,
+        stdio: 'inherit'
+      });
+    } catch {
+      try {
+        execSync(`powershell -NoProfile -Command "Compress-Archive -Path 'win-unpacked' -DestinationPath '${zipPath}' -Force"`, {
+          cwd: tempOutputDir,
+          stdio: 'inherit'
+        });
+      } catch {
+        execSync(`zip -r -q "${zipPath}" win-unpacked`, {
+          cwd: tempOutputDir,
+          stdio: 'inherit'
+        });
+      }
+    }
     console.log(`✓ Created portable Windows zip package: ${path.relative(rootDir, zipPath)}`);
 
     // 5. Copy win-unpacked folder into release/windows/<version>/win-unpacked
