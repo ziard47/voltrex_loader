@@ -106,7 +106,7 @@ class TorrentEngine extends EventEmitter {
     // Check if source is an HTTP / HTTPS link to a .torrent file
     if (typeof source === 'string' && (source.startsWith('http://') || source.startsWith('https://')) && (source.endsWith('.torrent') || source.includes('.torrent?'))) {
       const res = await fetch(source, {
-        headers: { 'User-Agent': 'VoltrexLoader/1.2 BitTorrent' }
+        headers: { 'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/128.0.0.0 Safari/537.36' }
       });
       if (!res.ok) {
         throw new Error(`Failed to fetch .torrent file: HTTP ${res.status}`);

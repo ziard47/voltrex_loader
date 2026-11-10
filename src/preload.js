@@ -2,7 +2,7 @@ const { contextBridge, ipcRenderer } = require('electron');
 
 contextBridge.exposeInMainWorld('electronAPI', {
   // Probing & inspection
-  probeUrl: (url) => ipcRenderer.invoke('download:probe-url', url),
+  probeUrl: (url, customHeaders) => ipcRenderer.invoke('download:probe-url', url, customHeaders),
   batchProbeUrls: (urls) => ipcRenderer.invoke('download:batch-probe', urls),
   probeMedia: (url) => ipcRenderer.invoke('media:probe', url),
   probePlaylist: (url) => ipcRenderer.invoke('media:probe-playlist', url),

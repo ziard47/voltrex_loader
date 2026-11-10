@@ -1,3 +1,18 @@
+
+// Gracefully absorb stream destruction races during task cancellation/pause
+process.on('uncaughtException', (err) => {
+  if (err && (err.code === 'ERR_STREAM_DESTROYED' || err.message?.includes('stream was destroyed') || err.message?.includes('premature close'))) {
+    return;
+  }
+  console.error('[Main] Uncaught Exception:', err);
+});
+
+process.on('unhandledRejection', (reason) => {
+  if (reason && (reason.code === 'ERR_STREAM_DESTROYED' || reason.message?.includes('stream was destroyed') || reason.message?.includes('premature close'))) {
+    return;
+  }
+  console.error('[Main] Unhandled Rejection:', reason);
+});
 const { app, BrowserWindow, ipcMain, dialog, shell, Tray, Menu, nativeImage, session, screen } = require('electron');
 const path = require('node:path');
 const fs = require('node:fs');
@@ -305,8 +320,8 @@ function createWindow() {
 // Setup IPC Handlers
 function setupIpcHandlers() {
   // Query / Probe URL online status & metadata
-  ipcMain.handle('download:probe-url', async (_event, url) => {
-    return await downloadEngine.probeUrl(url);
+  ipcMain.handle('download:probe-url', async (_event, url, customHeaders) => {
+    return await downloadEngine.probeUrl(url, customHeaders);
   });
 
   // Universal Media Downloader handlers (YouTube, TikTok, Facebook, Reddit, etc.)

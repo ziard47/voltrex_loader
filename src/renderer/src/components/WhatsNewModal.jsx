@@ -21,28 +21,28 @@ import {
 } from 'lucide-react';
 import Logo from './Logo';
 
-export default function WhatsNewModal({ open, onClose, version = '1.4.2' }) {
+export default function WhatsNewModal({ open, onClose, version = '1.4.3' }) {
   const highlights = [
     {
       icon: Globe,
-      title: 'Browser Extension Private Network Access & Auto-Sync',
+      title: 'Anti-Hotlink & Storage Mirror Resiliency',
       description:
-        'Complete Chromium Private Network Access (PNA) integration with auto-reconnect, dual IPv4/localhost fallback, live status polling, and resilient browser download interception.',
-      badge: 'Integration'
+        'Resolved HTTP 400 and 403 Forbidden errors across Google Drive mirrors, Cloudflare CDN, and protected file hosts using standard browser TLS headers and smart apex domain referer fallback.',
+      badge: 'Connectivity'
     },
     {
       icon: RefreshCw,
-      title: 'Refresh Download Address (IDM Style)',
+      title: 'Advanced Referer & Cookie Controls',
       description:
-        'Renew expired download links (from Google Drive, file hosts, streaming links, or HTTP 401/403/410 errors) and seamlessly resume without restarting or losing any downloaded bytes. Includes automatic browser extension auto-capture and file size verification.',
-      badge: 'Recovery'
+        'New Advanced Network Options in Add Download modal allowing custom Referer and Session Cookies injection for restricted, tokenized, and authenticated file downloads.',
+      badge: 'Network'
     },
     {
       icon: Layers,
-      title: 'IDM Temp Chunk Parts & Safe Appending',
+      title: 'Cross-Drive & Stream Crash Safeguards',
       description:
-        'Parallel segmented streams now write directly to dedicated chunk part files inside a customizable temporary folder. Downloads safely survive PC reboots and pauses. Upon 100% download, watch live joining progress (0%–100%) with an amber glowing progress bar.',
-      badge: 'Architecture'
+        'Safe multi-drive file moves (EXDEV protection) when saving to external partitions/hard drives, single-stream fallback when servers reject range requests, and zero-crash cancellation handling.',
+      badge: 'Core Engine'
     }
   ];
 
@@ -100,7 +100,7 @@ export default function WhatsNewModal({ open, onClose, version = '1.4.2' }) {
         <div className="flex items-center gap-2 px-3 py-2 rounded-xl bg-[var(--theme-secondary-subtle)] border border-[var(--theme-border-accent)] text-xs text-[var(--theme-text-primary)]">
           <Sparkles className="w-4 h-4 text-[var(--theme-primary)] shrink-0" />
           <span>
-            Voltrex Loader has been upgraded to <strong>v{version}</strong> with the new Universal Media Downloader and sleek UI enhancements!
+            Voltrex Loader has been upgraded to <strong>v{version}</strong> with enhanced download engine stability, anti-hotlink bypass, and cross-drive file support!
           </span>
         </div>
 

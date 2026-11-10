@@ -1,13 +1,14 @@
 {
   "manifest_version": 3,
   "name": "Voltrex Loader - Browser Integration",
-  "version": "1.0.4",
+  "version": "1.0.5",
   "description": "Seamlessly capture downloads and send links directly into the Voltrex Loader download accelerator.",
   "permissions": [
     "downloads",
     "contextMenus",
     "storage",
-    "notifications"
+    "notifications",
+    "cookies"
   ],
   "host_permissions": [
     "http://127.0.0.1:9580/*",
