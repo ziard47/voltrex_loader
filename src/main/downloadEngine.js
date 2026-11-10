@@ -263,6 +263,176 @@ class DownloadEngine extends EventEmitter {
     }
   }
 
+  // Safe Cross-Device File Move (handles EXDEV when temp directory and save directory are on different drives, e.g. C: and F:)
+  async safeMoveFile(src, dest) {
+    try {
+      if (fs.existsSync(dest)) {
+        try { fs.unlinkSync(dest); } catch {}
+      }
+      fs.renameSync(src, dest);
+    } catch (err) {
+      if (err.code === 'EXDEV' || err.code === 'EPERM' || err.code === 'EBUSY') {
+        await fsPromises.copyFile(src, dest);
+        try { fs.unlinkSync(src); } catch {}
+      } else {
+        throw err;
+      }
+    }
+  }
+
+  safeMoveFileSync(src, dest) {
+    try {
+      if (fs.existsSync(dest)) {
+        try { fs.unlinkSync(dest); } catch {}
+      }
+      fs.renameSync(src, dest);
+    } catch (err) {
+      if (err.code === 'EXDEV' || err.code === 'EPERM' || err.code === 'EBUSY') {
+        fs.copyFileSync(src, dest);
+        try { fs.unlinkSync(src); } catch {}
+      } else {
+        throw err;
+      }
+    }
+  }
+
+  // Safe URL Normalizer to ensure spaces, special characters, and query strings do not cause HTTP 400 Bad Request
+  normalizeUrl(rawUrl) {
+    if (!rawUrl || typeof rawUrl !== 'string') return '';
+    const trimmed = rawUrl.trim();
+    if (trimmed.startsWith('magnet:')) return trimmed;
+
+    try {
+      const parsed = new URL(trimmed);
+      return parsed.href;
+    } catch {
+      try {
+        const encoded = encodeURI(trimmed);
+        return new URL(encoded).href;
+      } catch {
+        return trimmed;
+      }
+    }
+  }
+
+  // Extract apex/root domain (e.g. sto2.romsforever.co -> romsforever.co, storage.host.co.uk -> host.co.uk)
+  getRootDomain(hostname) {
+    if (!hostname || typeof hostname !== 'string') return '';
+    const host = hostname.toLowerCase().trim();
+    const parts = host.split('.');
+    if (parts.length <= 2) return host;
+
+    const twoPartTLDs = new Set([
+      'co.uk', 'org.uk', 'me.uk', 'com.au', 'net.au', 'org.au',
+      'co.nz', 'net.nz', 'org.nz', 'co.za', 'com.br', 'co.in', 'net.in', 'org.in'
+    ]);
+
+    const lastTwo = parts.slice(-2).join('.');
+    if (twoPartTLDs.has(lastTwo) && parts.length >= 3) {
+      return parts.slice(-3).join('.');
+    }
+
+    return parts.slice(-2).join('.');
+  }
+
+  // Generate candidate referers ordered by highest probability of bypassing hotlink / 403 blocks
+  getCandidateReferers(targetUrl, customReferer = null) {
+    const list = [];
+    if (customReferer && typeof customReferer === 'string' && customReferer.trim()) {
+      list.push(customReferer.trim());
+    }
+
+    try {
+      const u = new URL(targetUrl);
+      const root = this.getRootDomain(u.hostname);
+      if (root) {
+        const rootOrigin = `${u.protocol}//${root}/`;
+        if (!list.includes(rootOrigin)) {
+          list.push(rootOrigin);
+        }
+      }
+      const origin = `${u.origin}/`;
+      if (!list.includes(origin)) {
+        list.push(origin);
+      }
+    } catch {}
+
+    // Also include null (no Referer header) - many CDNs only allow direct navigation
+    list.push(null);
+    return list;
+  }
+
+  // Standard Chrome Browser Headers with realistic Sec-Fetch-Site aligned with Referer
+  getDefaultHeaders(targetUrl, customHeaders = {}, customReferer = undefined) {
+    let parsedUrl = null;
+    try {
+      parsedUrl = new URL(targetUrl);
+    } catch {}
+
+    let effectiveReferer = customReferer !== undefined ? customReferer : (customHeaders?.['Referer'] || customHeaders?.['referer']);
+    if (effectiveReferer === undefined && parsedUrl) {
+      const root = this.getRootDomain(parsedUrl.hostname);
+      effectiveReferer = root ? `${parsedUrl.protocol}//${root}/` : `${parsedUrl.origin}/`;
+    }
+
+    let secFetchSite = 'none';
+    if (effectiveReferer) {
+      try {
+        const refUrl = new URL(effectiveReferer);
+        if (parsedUrl) {
+          if (refUrl.origin === parsedUrl.origin) {
+            secFetchSite = 'same-origin';
+          } else if (this.getRootDomain(refUrl.hostname) === this.getRootDomain(parsedUrl.hostname)) {
+            secFetchSite = 'same-site';
+          } else {
+            secFetchSite = 'cross-site';
+          }
+        }
+      } catch {
+        secFetchSite = 'cross-site';
+      }
+    }
+
+    const headers = {
+      'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/128.0.0.0 Safari/537.36',
+      'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7',
+      'Accept-Language': 'en-US,en;q=0.9',
+      'Sec-Ch-Ua': '"Chromium";v="128", "Not;A=Brand";v="24", "Google Chrome";v="128"',
+      'Sec-Ch-Ua-Mobile': '?0',
+      'Sec-Ch-Ua-Platform': '"Windows"',
+      'Sec-Fetch-Dest': 'document',
+      'Sec-Fetch-Mode': 'navigate',
+      'Sec-Fetch-Site': secFetchSite,
+      'Sec-Fetch-User': '?1',
+      'Upgrade-Insecure-Requests': '1',
+      'Connection': 'keep-alive'
+    };
+
+    if (effectiveReferer) {
+      headers['Referer'] = effectiveReferer;
+    }
+
+    if (customHeaders && typeof customHeaders === 'object') {
+      for (const [key, value] of Object.entries(customHeaders)) {
+        if (value !== undefined && value !== null && String(value).trim()) {
+          if (key.toLowerCase() === 'user-agent') {
+            const cleanedUa = String(value)
+              .replace(/\s*VoltrexLoader\/[^\s]+/gi, '')
+              .replace(/\s*Voltrex-Loader\/[^\s]+/gi, '')
+              .trim();
+            headers['User-Agent'] = cleanedUa || headers['User-Agent'];
+          } else if (key.toLowerCase() === 'referer' && customReferer !== undefined) {
+            // Explicit customReferer takes precedence
+          } else {
+            headers[key] = value;
+          }
+        }
+      }
+    }
+
+    return headers;
+  }
+
   // Probe URL to check online status, file size, filename, and range resume support
   async probeUrl(rawUrl, customHeaders = {}) {
     try {
@@ -298,9 +468,10 @@ class DownloadEngine extends EventEmitter {
         }
       }
 
+      const normalizedUrl = this.normalizeUrl(trimmed);
       let parsedUrl;
       try {
-        parsedUrl = new URL(trimmed);
+        parsedUrl = new URL(normalizedUrl);
       } catch {
         return { online: false, error: 'Malformed URL structure' };
       }
@@ -309,62 +480,136 @@ class DownloadEngine extends EventEmitter {
         return { online: false, error: 'Only HTTP, HTTPS, and Magnet protocols are supported' };
       }
 
-      // Try HEAD request first with timeout
-      let headRes = null;
-      let finalUrl = rawUrl;
-      try {
-        const controller = new AbortController();
-        const timeoutId = setTimeout(() => controller.abort(), 8000);
-        headRes = await fetch(rawUrl, {
-          method: 'HEAD',
-          redirect: 'follow',
-          signal: controller.signal,
-          headers: {
-            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36 VoltrexLoader/1.0',
-            ...(customHeaders || {})
-          }
-        });
-        clearTimeout(timeoutId);
-        finalUrl = headRes.url || rawUrl;
-      } catch {
-        // HEAD failed, fallback to GET range request
-      }
+      const candidateReferers = this.getCandidateReferers(
+        normalizedUrl,
+        customHeaders?.['Referer'] || customHeaders?.['referer']
+      );
 
-      let status = headRes ? headRes.status : 0;
-      let headers = headRes ? headRes.headers : null;
+      let status = 0;
+      let headers = null;
+      let resumable = false;
+      let activeUrl = normalizedUrl;
+      let finalUrl = normalizedUrl;
+      let workingReferer = candidateReferers[0];
 
-      // If HEAD is not allowed (405) or failed, test with a 1-byte GET Range request
-      if (!headRes || status === 405 || status >= 400) {
+      // Test candidate referers until server accepts one
+      for (const candidateRef of candidateReferers) {
+        const baseHeaders = this.getDefaultHeaders(normalizedUrl, customHeaders, candidateRef);
+
+        // STEP 1: Attempt HEAD request first with timeout
         try {
           const controller = new AbortController();
-          const timeoutId = setTimeout(() => controller.abort(), 8000);
-          const getRes = await fetch(rawUrl, {
-            method: 'GET',
+          const timeoutId = setTimeout(() => controller.abort(), 7000);
+          const headRes = await fetch(activeUrl, {
+            method: 'HEAD',
             redirect: 'follow',
             signal: controller.signal,
-            headers: {
-              'Range': 'bytes=0-0',
-              'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36 VoltrexLoader/1.0',
-              ...(customHeaders || {})
-            }
+            headers: baseHeaders
           });
           clearTimeout(timeoutId);
-          status = getRes.status;
-          headers = getRes.headers;
-          finalUrl = getRes.url || rawUrl;
-        } catch (err) {
-          return {
-            online: false,
-            error: `Network error or host unreachable: ${err.message}`
-          };
+          finalUrl = headRes.url || activeUrl;
+
+          if (headRes.ok || (headRes.status >= 200 && headRes.status < 400)) {
+            status = headRes.status;
+            headers = headRes.headers;
+            workingReferer = candidateRef;
+            break;
+          } else {
+            status = headRes.status;
+          }
+        } catch {
+          // HEAD failed, fallback to Range GET
+        }
+
+        // STEP 2: If HEAD was rejected (400, 403, 405, 416, 501) or timed out, test with a 1-byte GET Range request
+        if (!headers || status >= 400 || status === 0) {
+          try {
+            const controller = new AbortController();
+            const timeoutId = setTimeout(() => controller.abort(), 9000);
+            const rangeHeaders = {
+              ...baseHeaders,
+              'Range': 'bytes=0-0',
+              'Accept-Encoding': 'identity'
+            };
+            const getRangeRes = await fetch(activeUrl, {
+              method: 'GET',
+              redirect: 'follow',
+              signal: controller.signal,
+              headers: rangeHeaders
+            });
+            clearTimeout(timeoutId);
+            finalUrl = getRangeRes.url || activeUrl;
+
+            if (getRangeRes.status === 206 || getRangeRes.status === 200) {
+              status = getRangeRes.status;
+              headers = getRangeRes.headers;
+              if (getRangeRes.status === 206) {
+                resumable = true;
+              }
+              workingReferer = candidateRef;
+              try { if (getRangeRes.body) await getRangeRes.body.cancel(); } catch {}
+              break;
+            } else {
+              status = getRangeRes.status;
+            }
+
+            try { if (getRangeRes.body) await getRangeRes.body.cancel(); } catch {}
+          } catch {
+            // Range request failed
+          }
+        }
+
+        // STEP 3: Fallback to standard GET without Range, inspect headers, and cancel body immediately
+        if (!headers || status >= 400 || status === 0) {
+          try {
+            const controller = new AbortController();
+            const timeoutId = setTimeout(() => controller.abort(), 9000);
+            const getRes = await fetch(activeUrl, {
+              method: 'GET',
+              redirect: 'follow',
+              signal: controller.signal,
+              headers: baseHeaders
+            });
+            clearTimeout(timeoutId);
+            finalUrl = getRes.url || activeUrl;
+
+            if (getRes.ok || (getRes.status >= 200 && getRes.status < 400)) {
+              status = getRes.status;
+              headers = getRes.headers;
+              workingReferer = candidateRef;
+              try { if (getRes.body) await getRes.body.cancel(); } catch {}
+              break;
+            } else {
+              status = getRes.status;
+            }
+
+            try { if (getRes.body) await getRes.body.cancel(); } catch {}
+          } catch {
+            // GET failed
+          }
+        }
+
+        // If this candidate succeeded, stop trying candidates
+        if (headers && status >= 200 && status < 400) {
+          break;
         }
       }
 
-      if (status >= 400) {
+      if (status >= 400 || !headers) {
+        let errorDetail = `Server responded with HTTP ${status || 'Error'}`;
+        if (status === 400) {
+          errorDetail = 'Server responded with HTTP 400 (Bad Request). The link may be expired, require browser session cookies, or contain invalid parameters.';
+        } else if (status === 401 || status === 403) {
+          errorDetail = `Server responded with HTTP ${status} (Access Denied). Authentication or browser session cookies may be required.`;
+        } else if (status === 404) {
+          errorDetail = 'Server responded with HTTP 404 (File Not Found). The file may have been moved or deleted.';
+        } else if (status === 410) {
+          errorDetail = 'Server responded with HTTP 410 (Gone). This download link has expired.';
+        }
         return {
           online: false,
           statusCode: status,
-          error: `Server responded with HTTP ${status}`
+          error: errorDetail
         };
       }
 
@@ -384,8 +629,10 @@ class DownloadEngine extends EventEmitter {
       }
 
       // Resume support check
-      const resumable = (acceptRangesHeader && acceptRangesHeader.toLowerCase().includes('bytes')) ||
-                        Boolean(contentRangeHeader && status === 206);
+      if (!resumable) {
+        resumable = (acceptRangesHeader && acceptRangesHeader.toLowerCase().includes('bytes')) ||
+                    Boolean(contentRangeHeader && status === 206);
+      }
 
       // Extract filename
       let fileName = this.extractFileName(finalUrl, contentDisposition, contentType);
@@ -398,7 +645,8 @@ class DownloadEngine extends EventEmitter {
         fileSize: totalBytes,
         formattedSize: this.formatBytes(totalBytes),
         mimeType: contentType.split(';')[0].trim(),
-        resumable
+        resumable,
+        effectiveReferer: workingReferer
       };
     } catch (err) {
       return {
@@ -407,7 +655,6 @@ class DownloadEngine extends EventEmitter {
       };
     }
   }
-
   extractFileName(urlStr, disposition, contentType = '') {
     if (typeof urlStr === 'string' && urlStr.startsWith('magnet:')) {
       const dnMatch = urlStr.match(/[?&]dn=([^&]+)/i);
@@ -1204,25 +1451,27 @@ class DownloadEngine extends EventEmitter {
         }
 
         const isResumingChunk = chunk.currentByte > chunk.startByte;
-        const headers = {
-          'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36 VoltrexLoader/1.0',
+        const normalizedTaskUrl = this.normalizeUrl(task.url);
+        const headers = this.getDefaultHeaders(normalizedTaskUrl, {
           ...(task.referrer ? { 'Referer': task.referrer } : {}),
           ...(task.headers || {}),
-          'Range': `bytes=${chunk.currentByte}-${chunk.endByte}`
-        };
+          'Range': `bytes=${chunk.currentByte}-${chunk.endByte}`,
+          'Accept-Encoding': 'identity'
+        }, task.referrer);
 
         let writeStream = null;
 
         try {
-          const response = await fetch(task.url, {
+          const response = await fetch(normalizedTaskUrl, {
             method: 'GET',
             headers,
             redirect: 'follow',
             signal: controller.signal
           });
 
-          // If server returns HTTP 200 instead of 206 for range requests, fallback to single-stream
-          if (response.status === 200 && chunk.index === 0 && chunk.startByte === 0 && chunk.currentByte === 0) {
+          // If server returns HTTP 200, 400, 403, 416, 405 instead of 206 for range requests, host rejects multi-chunk ranges
+          // Automatically fallback to single-stream download without infinite retry loops!
+          if ([200, 400, 403, 416, 405].includes(response.status)) {
             console.warn(`Host does not support byte range requests (returned 200 OK). Falling back to single-stream.`);
             await cleanupAndClose();
             task.resumable = false;
@@ -1256,6 +1505,11 @@ class DownloadEngine extends EventEmitter {
           writeStream = fs.createWriteStream(chunkPartPath, {
             flags: isResumingChunk ? 'a' : 'w'
           });
+          writeStream.on('error', (err) => {
+            if (err.code !== 'ERR_STREAM_DESTROYED' && !isTerminated) {
+              console.warn(`[Chunk ${chunk.index + 1}] writeStream error:`, err.message);
+            }
+          });
           chunkStreams.set(chunk.index, writeStream);
 
           const reader = response.body.getReader();
@@ -1263,13 +1517,23 @@ class DownloadEngine extends EventEmitter {
 
           while (!isTerminated && task.status === 'DOWNLOADING') {
             const { done, value } = await reader.read();
-            if (done) break;
+            if (done || isTerminated || task.status !== 'DOWNLOADING') break;
 
             if (value && value.length > 0) {
+              if (!writeStream || writeStream.destroyed || writeStream.closed || !writeStream.writable) {
+                break;
+              }
               const buf = Buffer.from(value);
-              const canWriteMore = writeStream.write(buf);
-              if (!canWriteMore) {
-                await new Promise((resolve) => writeStream.once('drain', resolve));
+              try {
+                const canWriteMore = writeStream.write(buf);
+                if (!canWriteMore && !writeStream.destroyed && writeStream.writable) {
+                  await new Promise((resolve) => writeStream.once('drain', resolve));
+                }
+              } catch (writeErr) {
+                if (writeErr.code === 'ERR_STREAM_DESTROYED' || isTerminated || task.status !== 'DOWNLOADING') {
+                  break;
+                }
+                throw writeErr;
               }
 
               chunk.currentByte += buf.length;
@@ -1310,6 +1574,17 @@ class DownloadEngine extends EventEmitter {
           }
 
           if (isTerminated || task.status === 'PAUSED' || task.status === 'CANCELLED') {
+            return;
+          }
+
+          // If server rejected byte range with 400, 416, or 405: host does not support byte ranges
+          // Fall back to single-stream immediately rather than looping through retries
+          if ([400, 416, 405].some((c) => chunkErr.message.includes(`HTTP ${c}`))) {
+            console.warn(`Chunk received ${chunkErr.message}. Host does not support byte ranges. Falling back to single-stream.`);
+            await cleanupAndClose();
+            task.resumable = false;
+            task.chunks = [];
+            await this.executeSingleStreamDownload(task);
             return;
           }
 
@@ -1382,6 +1657,11 @@ class DownloadEngine extends EventEmitter {
       }
 
       const destStream = fs.createWriteStream(assemblingPath, { flags: 'w' });
+      destStream.on('error', (err) => {
+        if (err.code !== 'ERR_STREAM_DESTROYED') {
+          console.warn('[Assembly] destStream error:', err.message);
+        }
+      });
       const totalBytesToAppend = task.totalBytes || task.chunks.reduce((acc, c) => acc + (c.totalBytes || 0), 0);
       let totalAppendedBytes = 0;
       let lastReportTime = 0;
@@ -1436,10 +1716,7 @@ class DownloadEngine extends EventEmitter {
         }
       }
 
-      if (fs.existsSync(task.filePath)) {
-        fs.unlinkSync(task.filePath);
-      }
-      fs.renameSync(assemblingPath, task.filePath);
+      await this.safeMoveFile(assemblingPath, task.filePath);
 
       // Clean up chunk files in task's temporary directory
       const taskTempDir = this.getTaskTempDir(task.id);
@@ -1488,29 +1765,29 @@ class DownloadEngine extends EventEmitter {
       try {
         const stat = fs.statSync(task.partPath);
         existingBytes = stat.size;
-        fs.renameSync(task.partPath, tempPartPath);
+        this.safeMoveFileSync(task.partPath, tempPartPath);
       } catch {
         existingBytes = 0;
       }
     }
 
     if (task.totalBytes > 0 && existingBytes >= task.totalBytes) {
-      if (fs.existsSync(task.filePath)) fs.unlinkSync(task.filePath);
-      fs.renameSync(tempPartPath, task.filePath);
+      await this.safeMoveFile(tempPartPath, task.filePath);
       try { fs.rmSync(taskTempDir, { recursive: true, force: true }); } catch {}
       this.finalizeCompletedTask(task);
       return;
     }
 
-    const headers = {
-      'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36 VoltrexLoader/1.0',
+    const normalizedTaskUrl = this.normalizeUrl(task.url);
+    const headers = this.getDefaultHeaders(normalizedTaskUrl, {
       ...(task.referrer ? { 'Referer': task.referrer } : {}),
       ...(task.headers || {})
-    };
+    }, task.referrer);
 
-    const isResuming = task.resumable && existingBytes > 0;
+    let isResuming = task.resumable && existingBytes > 0;
     if (isResuming) {
       headers['Range'] = `bytes=${existingBytes}-`;
+      headers['Accept-Encoding'] = 'identity';
       task.downloadedBytes = existingBytes;
     } else {
       existingBytes = 0;
@@ -1518,12 +1795,30 @@ class DownloadEngine extends EventEmitter {
     }
 
     try {
-      const response = await fetch(task.url, {
+      let response = await fetch(normalizedTaskUrl, {
         method: 'GET',
         headers,
         redirect: 'follow',
         signal: abortController.signal
       });
+
+      // If server returned 400, 416, 403, or 405 when resuming with Range,
+      // restart cleanly from byte 0 without Range
+      if ((response.status === 400 || response.status === 416 || response.status === 403 || response.status === 405) && isResuming) {
+        console.warn(`Server rejected Range resume with HTTP ${response.status}. Restarting download from byte 0 without Range.`);
+        delete headers['Range'];
+        delete headers['Accept-Encoding'];
+        isResuming = false;
+        existingBytes = 0;
+        task.downloadedBytes = 0;
+        try { if (fs.existsSync(tempPartPath)) fs.truncateSync(tempPartPath, 0); } catch {}
+        response = await fetch(normalizedTaskUrl, {
+          method: 'GET',
+          headers,
+          redirect: 'follow',
+          signal: abortController.signal
+        });
+      }
 
       if (!response.ok) {
         throw new Error(`Server returned HTTP ${response.status} ${response.statusText}`);
@@ -1539,6 +1834,11 @@ class DownloadEngine extends EventEmitter {
         existingBytes = 0;
         writeStream = fs.createWriteStream(tempPartPath, { flags: 'w' });
       }
+      writeStream.on('error', (err) => {
+        if (err.code !== 'ERR_STREAM_DESTROYED' && !abortController.signal.aborted) {
+          console.warn('[SingleStream] writeStream error:', err.message);
+        }
+      });
 
       const cl = response.headers.get('content-length');
       const cr = response.headers.get('content-range');
@@ -1566,13 +1866,23 @@ class DownloadEngine extends EventEmitter {
         try {
           while (true) {
             const { done, value } = await reader.read();
-            if (done) break;
+            if (done || abortController.signal.aborted || task.status !== 'DOWNLOADING') break;
 
             if (value && value.length > 0) {
+              if (!writeStream || writeStream.destroyed || writeStream.closed || !writeStream.writable) {
+                break;
+              }
               const buf = Buffer.from(value);
-              const canWriteMore = writeStream.write(buf);
-              if (!canWriteMore) {
-                await new Promise((resolve) => writeStream.once('drain', resolve));
+              try {
+                const canWriteMore = writeStream.write(buf);
+                if (!canWriteMore && !writeStream.destroyed && writeStream.writable) {
+                  await new Promise((resolve) => writeStream.once('drain', resolve));
+                }
+              } catch (writeErr) {
+                if (writeErr.code === 'ERR_STREAM_DESTROYED' || abortController.signal.aborted || task.status !== 'DOWNLOADING') {
+                  break;
+                }
+                throw writeErr;
               }
 
               task.downloadedBytes += value.length;
@@ -1589,15 +1899,16 @@ class DownloadEngine extends EventEmitter {
             }
           }
 
-          writeStream.end();
-          await new Promise((resolve, reject) => {
-            writeStream.on('finish', resolve);
-            writeStream.on('error', reject);
-          });
+          if (writeStream && !writeStream.destroyed && writeStream.writable) {
+            writeStream.end();
+            await new Promise((resolve) => {
+              writeStream.on('finish', resolve);
+              writeStream.on('error', resolve);
+            });
+          }
 
           this.activeStreams.delete(task.id);
-          if (fs.existsSync(task.filePath)) fs.unlinkSync(task.filePath);
-          fs.renameSync(tempPartPath, task.filePath);
+          await this.safeMoveFile(tempPartPath, task.filePath);
           try { fs.rmSync(taskTempDir, { recursive: true, force: true }); } catch {}
           this.finalizeCompletedTask(task);
         } catch (pumpErr) {
@@ -1621,7 +1932,7 @@ class DownloadEngine extends EventEmitter {
   finalizeCompletedTask(task) {
     try {
       if (task.partPath && fs.existsSync(task.partPath) && !fs.existsSync(task.filePath)) {
-        fs.renameSync(task.partPath, task.filePath);
+        this.safeMoveFileSync(task.partPath, task.filePath);
       }
     } catch (err) {
       this.handleTaskError(task, new Error(`Failed to save completed file: ${err.message}`));

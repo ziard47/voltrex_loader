@@ -53,6 +53,30 @@ import { getFileCategory, CATEGORY_FOLDERS, CATEGORY_LABELS, formatBytes } from 
 import { POPULAR_TRACKERS, parseTrackersInput } from '../utils/torrentTrackers';
 import { useTheme } from '../context/ThemeContext';
 
+function inferRootReferer(urlStr) {
+  if (!urlStr || typeof urlStr !== 'string') return '';
+  try {
+    const u = new URL(urlStr.trim());
+    const host = u.hostname.toLowerCase();
+    const parts = host.split('.');
+    let root = host;
+    if (parts.length > 2) {
+      const twoPartTLDs = new Set([
+        'co.uk', 'org.uk', 'me.uk', 'com.au', 'net.au', 'org.au',
+        'co.nz', 'net.nz', 'org.nz', 'co.za', 'com.br', 'co.in', 'net.in', 'org.in'
+      ]);
+      const lastTwo = parts.slice(-2).join('.');
+      if (twoPartTLDs.has(lastTwo) && parts.length >= 3) {
+        root = parts.slice(-3).join('.');
+      } else {
+        root = parts.slice(-2).join('.');
+      }
+    }
+    return `${u.protocol}//${root}/`;
+  } catch {
+    return '';
+  }
+}
 function inferFileNameFromUrl(urlStr) {
   if (!urlStr || typeof urlStr !== 'string') return '';
   try {
@@ -105,6 +129,9 @@ export default function AddDownloadModal({
   const [isProbing, setIsProbing] = useState(false);
   const [probeResult, setProbeResult] = useState(null);
   const [errorMsg, setErrorMsg] = useState('');
+  const [customReferer, setCustomReferer] = useState('');
+  const [customCookies, setCustomCookies] = useState('');
+  const [showAdvanced, setShowAdvanced] = useState(false);
 
   // Torrent mode state
   const [torrentSource, setTorrentSource] = useState('');
@@ -296,6 +323,9 @@ export default function AddDownloadModal({
       setPriority('NORMAL');
       setProbeResult(null);
       setErrorMsg('');
+      setCustomReferer(initialData?.referrer || inferRootReferer(incomingUrl) || '');
+      setCustomCookies(initialData?.cookies || '');
+      setShowAdvanced(false);
 
       const customPicked = Boolean(initialData?.customFolderSelected);
       setIsCustomFolder(customPicked);
@@ -350,7 +380,7 @@ export default function AddDownloadModal({
   }, [open, organizeByCategory, isCustomFolder, categoryFolderName, activeTab, initialData?.defaultSavePath, defaultSavePath, getCategorizedPath]);
 
   // Handle URL probe
-  const handleCheckUrl = async (overrideUrl) => {
+  const handleCheckUrl = async (overrideUrl, overrideReferer) => {
     const targetUrl = (overrideUrl || url).trim();
     if (!targetUrl) return;
 
@@ -359,7 +389,13 @@ export default function AddDownloadModal({
     setErrorMsg('');
     try {
       if (window.electronAPI?.probeUrl) {
-        const result = await window.electronAPI.probeUrl(targetUrl);
+        const probeHeaders = {};
+        const effRef = overrideReferer !== undefined ? overrideReferer : (customReferer || initialData?.referrer || inferRootReferer(targetUrl));
+        if (effRef) probeHeaders['Referer'] = effRef;
+        const effCook = customCookies || initialData?.cookies;
+        if (effCook) probeHeaders['Cookie'] = effCook;
+        if (initialData?.headers) Object.assign(probeHeaders, initialData.headers);
+        const result = await window.electronAPI.probeUrl(targetUrl, probeHeaders);
         setProbeResult(result);
         if (result.online) {
           if (result.isTorrent) {
@@ -376,6 +412,9 @@ export default function AddDownloadModal({
           }
           if (result.fileName) {
             setFileName(result.fileName);
+          }
+          if (result.effectiveReferer && !customReferer) {
+            setCustomReferer(result.effectiveReferer);
           }
         } else {
           setErrorMsg(result.error || 'The URL could not be reached or is offline.');
@@ -625,7 +664,13 @@ export default function AddDownloadModal({
       priority,
       connections: Number(connections) || 8,
       autoStart,
-      customFolderSelected: isCustomFolder
+      customFolderSelected: isCustomFolder,
+      referrer: customReferer || probeResult?.effectiveReferer || initialData?.referrer || inferRootReferer(trimmedUrl),
+      headers: {
+        ...(initialData?.headers || {}),
+        ...(customCookies ? { 'Cookie': customCookies } : {})
+      },
+      cookies: customCookies || initialData?.cookies
     });
 
     onClose();
@@ -1113,9 +1158,42 @@ export default function AddDownloadModal({
 
             {/* Error Message */}
             {errorMsg && (
-              <div className="p-2.5 rounded-lg bg-rose-950/30 border border-rose-500/40 text-rose-300 text-xs flex items-center gap-2">
-                <AlertTriangle className="w-4 h-4 text-rose-400 shrink-0" />
-                <span className="truncate">{errorMsg}</span>
+              <div className="p-2.5 rounded-lg bg-rose-950/30 border border-rose-500/40 text-rose-300 text-xs flex flex-col gap-2">
+                <div className="flex items-start gap-2">
+                  <AlertTriangle className="w-4 h-4 text-rose-400 shrink-0 mt-0.5" />
+                  <span className="leading-relaxed break-words">{errorMsg}</span>
+                </div>
+                {(errorMsg.includes('403') || errorMsg.includes('401') || errorMsg.includes('Access Denied')) && (
+                  <div className="flex flex-wrap items-center gap-1.5 pl-6 pt-0.5">
+                    <Button
+                      size="small"
+                      variant="outlined"
+                      onClick={() => {
+                        const inferred = inferRootReferer(url);
+                        if (inferred) {
+                          setCustomReferer(inferred);
+                          setShowAdvanced(true);
+                          handleCheckUrl(url, inferred);
+                        }
+                      }}
+                      className="!text-[10px] !py-0.5 !px-2 !normal-case !text-rose-200 !border-rose-400/40 hover:!bg-rose-900/30 rounded"
+                    >
+                      Use Main Domain ({inferRootReferer(url) || 'Auto'})
+                    </Button>
+                    <Button
+                      size="small"
+                      variant="outlined"
+                      onClick={() => {
+                        setCustomReferer('');
+                        setShowAdvanced(true);
+                        handleCheckUrl(url, '');
+                      }}
+                      className="!text-[10px] !py-0.5 !px-2 !normal-case !text-rose-200 !border-rose-400/40 hover:!bg-rose-900/30 rounded"
+                    >
+                      Direct Navigation (No Referer)
+                    </Button>
+                  </div>
+                )}
               </div>
             )}
 
@@ -1291,6 +1369,90 @@ export default function AddDownloadModal({
             </div>
           )}
         </div>
+
+        {/* Advanced Network Options (Referer & Session Cookies) */}
+        {activeTab === 'single' && (
+          <div className="pt-1">
+            <button
+              type="button"
+              onClick={() => setShowAdvanced((prev) => !prev)}
+              className="flex items-center gap-1.5 text-[11px] font-semibold text-[#b8a5a5] hover:text-[var(--theme-primary)] transition-colors"
+            >
+              <Sliders className="w-3.5 h-3.5 text-[var(--theme-primary)]" />
+              <span>Advanced Network Options (Referer & Session Cookies)</span>
+              {showAdvanced ? <ChevronUp className="w-3.5 h-3.5 ml-0.5" /> : <ChevronDown className="w-3.5 h-3.5 ml-0.5" />}
+            </button>
+
+            {showAdvanced && (
+              <div className="mt-2.5 p-3 rounded-lg bg-[#140e0e] border border-[#8E1616]/30 space-y-3 animate-in fade-in duration-200">
+                <div>
+                  <div className="flex items-center justify-between mb-1">
+                    <label className="text-[11px] font-semibold text-[#b8a5a5] flex items-center gap-1">
+                      <Globe className="w-3 h-3 text-[var(--theme-primary)]" />
+                      <span>Referer URL (Origin Website)</span>
+                    </label>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        const inferred = inferRootReferer(url);
+                        if (inferred) {
+                          setCustomReferer(inferred);
+                          handleCheckUrl(url, inferred);
+                        }
+                      }}
+                      className="text-[10px] text-[var(--theme-primary)] hover:underline"
+                    >
+                      Auto-detect Root Domain
+                    </button>
+                  </div>
+                  <TextField
+                    fullWidth
+                    size="small"
+                    placeholder="e.g. https://romsforever.co/"
+                    value={customReferer}
+                    onChange={(e) => setCustomReferer(e.target.value)}
+                    onBlur={() => {
+                      if (url.trim()) handleCheckUrl(url, customReferer);
+                    }}
+                    className="!bg-[#1c1313] !text-xs !rounded-lg"
+                    sx={{
+                      '& .MuiInputBase-input': { color: '#EEEEEE', fontSize: '0.75rem', py: '7px' },
+                      '& .MuiOutlinedInput-notchedOutline': { borderColor: 'rgba(142, 22, 22, 0.3)' }
+                    }}
+                  />
+                  <p className="text-[10px] text-slate-500 dark:text-slate-400 mt-1">
+                    Storage mirrors (such as sto2.romsforever.co) require the main website address as Referer to bypass HTTP 403 hotlink protection.
+                  </p>
+                </div>
+
+                <div>
+                  <label className="block text-[11px] font-semibold text-[#b8a5a5] mb-1 flex items-center gap-1">
+                    <FileText className="w-3 h-3 text-[var(--theme-primary)]" />
+                    <span>Browser Session Cookies (Optional)</span>
+                  </label>
+                  <TextField
+                    fullWidth
+                    size="small"
+                    placeholder="e.g. session_id=xyz; auth_token=123"
+                    value={customCookies}
+                    onChange={(e) => setCustomCookies(e.target.value)}
+                    onBlur={() => {
+                      if (url.trim()) handleCheckUrl(url);
+                    }}
+                    className="!bg-[#1c1313] !text-xs !rounded-lg"
+                    sx={{
+                      '& .MuiInputBase-input': { color: '#EEEEEE', fontSize: '0.75rem', py: '7px' },
+                      '& .MuiOutlinedInput-notchedOutline': { borderColor: 'rgba(142, 22, 22, 0.3)' }
+                    }}
+                  />
+                  <p className="text-[10px] text-slate-500 dark:text-slate-400 mt-1">
+                    Required for download links behind member logins or temporary session cookies.
+                  </p>
+                </div>
+              </div>
+            )}
+          </div>
+        )}
 
         {/* BitTorrent Trackers & Per-Torrent Speed Limits (Torrent Mode Only) */}
         {activeTab === 'torrent' && (

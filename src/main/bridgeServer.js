@@ -129,6 +129,8 @@ class BridgeServer {
                 url: downloadUrl,
                 fileName: resolvedFileName,
                 referrer: data.referrer,
+                headers: data.headers || {},
+                cookies: data.cookies || data.cookie || '',
                 isTorrent
               });
               res.writeHead(200, { 'Content-Type': 'application/json' });
@@ -158,6 +160,9 @@ class BridgeServer {
                   url: downloadUrl,
                   fileName: resolvedFileName,
                   referrer: data.referrer,
+                  headers: data.headers || {},
+                  cookies: data.cookies || data.cookie || '',
+                  userAgent: data.userAgent || '',
                   isTorrent,
                   defaultSavePath: effectiveDefaultPath,
                   organizeByCategory: Boolean(this.downloadEngine?.organizeByCategory || (settings && settings.organizeByCategory))

@@ -7,7 +7,8 @@
     "downloads",
     "contextMenus",
     "storage",
-    "notifications"
+    "notifications",
+    "cookies"
   ],
   "host_permissions": [
     "http://127.0.0.1:9580/*",

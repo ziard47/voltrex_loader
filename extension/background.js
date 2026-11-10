@@ -40,7 +40,7 @@ async function isVoltrexOnline(force = false) {
 }
 
 // Send download payload to Voltrex Loader
-async function sendToVoltrex({ url, fileName, referrer }) {
+async function sendToVoltrex({ url, fileName, referrer, cookies }) {
   let lastError = 'Failed to connect to Voltrex Loader';
   for (const base of BASE_ENDPOINTS) {
     try {
@@ -53,6 +53,7 @@ async function sendToVoltrex({ url, fileName, referrer }) {
           url,
           fileName: fileName ? fileName.replace(/[\\/:*?"<>|]/g, '_') : undefined,
           referrer,
+          cookies,
           autoStart: true
         }),
         signal: controller.signal
@@ -139,7 +140,22 @@ chrome.contextMenus.onClicked.addListener(async (info) => {
     return;
   }
 
-  const result = await sendToVoltrex({ url: targetUrl, fileName: extractUrlFileName(targetUrl) });
+  let cookies = '';
+  try {
+    if (chrome.cookies) {
+      const cookieList = await chrome.cookies.getAll({ url: targetUrl });
+      if (cookieList && cookieList.length > 0) {
+        cookies = cookieList.map((c) => `${c.name}=${c.value}`).join('; ');
+      }
+    }
+  } catch {}
+
+  const result = await sendToVoltrex({
+    url: targetUrl,
+    fileName: extractUrlFileName(targetUrl),
+    referrer: info.pageUrl,
+    cookies
+  });
   if (result?.success) {
     chrome.notifications.create({
       type: 'basic',
@@ -252,10 +268,21 @@ chrome.downloads.onCreated.addListener(async (item) => {
 
   // Forward to Voltrex Loader desktop app
   const detectedFileName = (item.filename && item.filename.trim()) || extractUrlFileName(downloadUrl);
+  let cookies = '';
+  try {
+    if (chrome.cookies) {
+      const cookieList = await chrome.cookies.getAll({ url: downloadUrl });
+      if (cookieList && cookieList.length > 0) {
+        cookies = cookieList.map((c) => `${c.name}=${c.value}`).join('; ');
+      }
+    }
+  } catch {}
+
   const result = await sendToVoltrex({
     url: downloadUrl,
     fileName: detectedFileName,
-    referrer: item.referrer
+    referrer: item.referrer,
+    cookies
   });
 
   if (result?.success) {
