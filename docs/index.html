@@ -39,7 +39,7 @@
           <img src="assets/icon.png" alt="Voltrex Loader Logo" />
         </div>
         <span class="brand-title">VOLTREX LOADER</span>
-        <span class="brand-version-badge">v1.4.2</span>
+        <span class="brand-version-badge">v1.4.3</span>
       </a>
 
       <ul class="nav-links">
@@ -161,7 +161,7 @@
               </div>
               <div class="window-app-name">
                 <img src="assets/icon.png" alt="Icon" style="width: 15px; height: 15px; border-radius: 2px;" />
-                <span>Voltrex Loader v1.4.2</span>
+                <span>Voltrex Loader v1.4.3</span>
               </div>
               <div class="window-status-pill" id="simStatusBadge">
                 <i class="fa-solid fa-circle"></i>
@@ -741,7 +741,7 @@
               <i class="fa-brands fa-edge"></i>
               <span>Get on Edge Add-ons Store</span>
             </a>
-            <a href="https://github.com/ziard47/voltrex_loader/releases/download/v1.4.2/voltrex-loader-browser-extension.zip" target="_blank" class="btn-secondary-action">
+            <a href="https://github.com/ziard47/voltrex_loader/releases/download/v1.4.3/voltrex-loader-browser-extension.zip" target="_blank" class="btn-secondary-action">
               <i class="fa-solid fa-download"></i>
               <span>Download ZIP (Chrome / Brave)</span>
             </a>
@@ -874,7 +874,7 @@
     <div class="container">
       <div class="section-header">
         <span class="section-tag red">Official Releases</span>
-        <h2 class="section-title">Get Voltrex Loader v1.4.2</h2>
+        <h2 class="section-title">Get Voltrex Loader v1.4.3</h2>
         <p class="section-description">
           Choose your operating system. Free, secure, portable, and ready to run immediately.
         </p>
@@ -933,7 +933,7 @@
             <div class="os-specs">
               <div class="os-spec-row">
                 <span>Package:</span>
-                <span class="os-spec-val">voltrex-loader-1.4.2-win.zip</span>
+                <span class="os-spec-val">voltrex-loader-1.4.3-win.zip</span>
               </div>
               <div class="os-spec-row">
                 <span>Compatibility:</span>
@@ -947,7 +947,7 @@
           </div>
 
           <div>
-            <a href="https://github.com/ziard47/voltrex_loader/releases/download/v1.4.2/voltrex-loader-1.4.2-win.zip" target="_blank" class="btn-card-download blue">
+            <a href="https://github.com/ziard47/voltrex_loader/releases/download/v1.4.3/voltrex-loader-1.4.3-win.zip" target="_blank" class="btn-card-download blue">
               <i class="fa-solid fa-download"></i>
               <span>Download Portable (.ZIP)</span>
             </a>
@@ -987,7 +987,7 @@
               <i class="fa-brands fa-edge"></i>
               <span>Get on Edge Add-ons</span>
             </a>
-            <a href="https://github.com/ziard47/voltrex_loader/releases/download/v1.4.2/voltrex-loader-browser-extension.zip" target="_blank" class="btn-card-download cyan">
+            <a href="https://github.com/ziard47/voltrex_loader/releases/download/v1.4.3/voltrex-loader-browser-extension.zip" target="_blank" class="btn-card-download cyan">
               <i class="fa-solid fa-download"></i>
               <span>Download ZIP (Chrome / Brave)</span>
             </a>
@@ -1028,7 +1028,7 @@
   </section>
 
   <!-- ==========================================================================
-       What's New in v1.4.2 Box
+       What's New in v1.4.3 Box
        ========================================================================== -->
   <section class="section section-alt">
     <div class="container">
@@ -1036,28 +1036,28 @@
         <div class="changelog-header-row">
           <div class="changelog-ver-title">
             <i class="fa-solid fa-code-branch" style="color: var(--accent-primary);"></i>
-            <span>What's New in Release v1.4.2</span>
+            <span>What's New in Release v1.4.3</span>
           </div>
           <span class="sim-badge-thread">Latest Stable Release</span>
         </div>
 
         <div class="changelog-items">
           <div class="changelog-item-card">
-            <span class="changelog-item-badge" style="color: var(--accent-cyan); background: rgba(6, 182, 212, 0.12);">BROWSER EXTENSION</span>
-            <strong>Chromium Private Network Access &amp; Auto-Sync</strong>
-            <p>Full support for Chromium's Private Network Access (PNA) security specifications, preflight CORS handling, dual-stack localhost / 127.0.0.1 fallback, and automatic connection health checks.</p>
+            <span class="changelog-item-badge" style="color: var(--accent-cyan); background: rgba(6, 182, 212, 0.12);">STORAGE &amp; ANTI-HOTLINK</span>
+            <strong>Smart Apex Referer &amp; CDN Compatibility</strong>
+            <p>Resolved HTTP 400 Bad Request and HTTP 403 Forbidden hotlink blocks across Google Drive mirrors, Cloudflare CDN workers, GoIndex, and protected file hosts by enforcing standard browser TLS client headers and multi-candidate apex domain referer probing.</p>
           </div>
 
           <div class="changelog-item-card">
-            <span class="changelog-item-badge" style="color: var(--accent-amber); background: rgba(245, 158, 11, 0.12);">IDM RECOVERY</span>
-            <strong>IDM-Style Refresh Download Address (URL)</strong>
-            <p>Renew expired download tokens (cloud storage, file hosts, or HTTP 401/403/410 errors) with full downloaded byte retention, pre-flight file size integrity checks, and real-time browser extension auto-capture.</p>
+            <span class="changelog-item-badge" style="color: var(--accent-amber); background: rgba(245, 158, 11, 0.12);">NETWORK CONTROLS</span>
+            <strong>Custom Referer &amp; Cookie Header Injection</strong>
+            <p>Added collapsible Advanced Network Options inside the Add Download dialog. Manually supply or tweak custom Referer and Session Cookie headers for private trackers, token-gated links, and protected gaming ROM archives.</p>
           </div>
 
           <div class="changelog-item-card">
-            <span class="changelog-item-badge" style="color: var(--accent-primary); background: rgba(239, 68, 68, 0.12);">CHUNK ARCHITECTURE</span>
-            <strong>IDM Chunk Temp Part Files &amp; Safe Appending</strong>
-            <p>Parallel segmented streams now write directly to dedicated chunk part files inside a customizable temporary folder (<code>temp_downloads</code>). Downloads safely survive PC reboots and pauses without resetting to 0%. Features live stream joining progress (0%–100%) with a glowing amber progress bar.</p>
+            <span class="changelog-item-badge" style="color: var(--accent-primary); background: rgba(239, 68, 68, 0.12);">ENGINE STABILITY</span>
+            <strong>Cross-Drive Migration &amp; Cancellation Safeguards</strong>
+            <p>Engineered safe cross-partition file movement (resolving <code>EXDEV: cross-device link not permitted</code> when downloading to external disks or secondary drives), graceful single-stream fallback when servers reject byte ranges, and stream-destruction crash guards on download cancellation.</p>
           </div>
         </div>
       </div>
@@ -1144,7 +1144,7 @@
         <div style="display: flex; justify-content: center; gap: 12px; flex-wrap: wrap;">
           <a href="#downloads" class="btn-primary-action">
             <i class="fa-solid fa-download"></i>
-            <span>Download Voltrex Loader v1.4.2</span>
+            <span>Download Voltrex Loader v1.4.3</span>
           </a>
           <a href="https://github.com/ziard47/voltrex_loader" target="_blank" rel="noopener noreferrer" class="btn-secondary-action">
             <i class="fa-brands fa-github"></i>
