@@ -1,6 +1,6 @@
 {
   "name": "voltrex-downloader",
-  "version": "1.4.3",
+  "version": "1.5.0",
   "description": "High-performance cross-platform Download Manager using Electron, React, MUI, and Tailwind",
   "main": "src/main.js",
   "scripts": {
