@@ -79,8 +79,12 @@ function findAssetForCurrentPlatform(assets) {
       };
     }
   } else if (platform === 'win32') {
-    // 1. Look for Windows setup installer (.exe)
-    const setupExe = assets.find(a => /setup.*\.exe$/i.test(a.name) || (/\.exe$/i.test(a.name) && !/\.blockmap$/i.test(a.name)));
+    // 1. Look for Windows setup installer (.exe) - prioritize setup / installer over portable
+    const setupExe = assets.find(a => 
+      /setup.*\.exe$/i.test(a.name) || 
+      /installer.*\.exe$/i.test(a.name) || 
+      (a.name.toLowerCase().endsWith('.exe') && !a.name.toLowerCase().includes('blockmap') && !a.name.toLowerCase().includes('portable'))
+    );
     if (setupExe) {
       return {
         name: setupExe.name,
@@ -258,6 +262,13 @@ async function downloadUpdateAsset(asset, onProgress) {
     const targetPath = path.join(tempDir, `voltrex-update-${safeName}`);
     activeDownloadFilePath = targetPath;
 
+    // Ensure any stale partial download is removed before starting
+    try {
+      if (fs.existsSync(targetPath)) {
+        fs.unlinkSync(targetPath);
+      }
+    } catch {}
+
     let downloadedBytes = 0;
     let totalBytes = asset.size || 0;
     let lastTime = Date.now();
@@ -397,7 +408,7 @@ function cancelUpdateDownload() {
 /**
  * Install the downloaded update according to the host operating system
  */
-async function installUpdate(filePath) {
+async function installUpdate(filePath, onQuit = null) {
   if (!filePath || !fs.existsSync(filePath)) {
     throw new Error('Update file not found on disk: ' + filePath);
   }
@@ -414,7 +425,6 @@ async function installUpdate(filePath) {
 
     // 2. If it is an AppImage, launch the new AppImage and quit the current process
     if (filePath.endsWith('.AppImage') || filePath.endsWith('.appimage')) {
-      // Detached spawn
       const child = spawn(filePath, [], {
         detached: true,
         stdio: 'ignore'
@@ -423,7 +433,11 @@ async function installUpdate(filePath) {
 
       // Gracefully exit Voltrex Loader
       setTimeout(() => {
-        app.quit();
+        if (typeof onQuit === 'function') {
+          onQuit();
+        } else {
+          app.exit(0);
+        }
       }, 500);
       return { success: true, message: 'Launching updated AppImage and restarting...' };
     }
@@ -432,18 +446,37 @@ async function installUpdate(filePath) {
     shell.showItemInFolder(filePath);
     return { success: true, message: 'Revealed downloaded Linux package in file manager.' };
   } else if (platform === 'win32') {
-    // Windows: If it's an executable installer, launch it
+    // Windows: If it's an executable installer, launch it with shell.openPath / spawn and cleanly exit app
     if (filePath.toLowerCase().endsWith('.exe')) {
-      const child = spawn(filePath, [], {
-        detached: true,
-        stdio: 'ignore'
-      });
-      child.unref();
+      let launched = false;
+      try {
+        const err = await shell.openPath(filePath);
+        if (!err) {
+          launched = true;
+        } else {
+          console.warn('[Updater] shell.openPath returned error, falling back to spawn:', err);
+        }
+      } catch (err) {
+        console.warn('[Updater] shell.openPath error:', err.message);
+      }
 
+      if (!launched) {
+        const child = spawn(filePath, [], {
+          detached: true,
+          stdio: 'ignore'
+        });
+        child.unref();
+      }
+
+      // Allow installer window to initiate, then terminate current Voltrex Loader process cleanly
       setTimeout(() => {
-        app.quit();
-      }, 500);
-      return { success: true, message: 'Starting installer and closing Voltrex Loader...' };
+        if (typeof onQuit === 'function') {
+          onQuit();
+        } else {
+          app.exit(0);
+        }
+      }, 600);
+      return { success: true, message: 'Starting Windows installer and closing Voltrex Loader...' };
     }
 
     // If zip or other archive, reveal in Windows Explorer

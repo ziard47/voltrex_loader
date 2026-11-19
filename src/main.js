@@ -593,7 +593,22 @@ function setupIpcHandlers() {
   });
 
   ipcMain.handle('updater:install', async (_event, filePath) => {
-    return await installUpdate(filePath);
+    return await installUpdate(filePath, () => {
+      isQuitting = true;
+      if (bridgeServer) {
+        try { bridgeServer.stop(); } catch {}
+      }
+      if (downloadEngine) {
+        try { downloadEngine.destroy(); } catch {}
+      }
+      if (schedulerEngine) {
+        try { schedulerEngine.destroy(); } catch {}
+      }
+      if (tray) {
+        try { tray.destroy(); } catch {}
+      }
+      app.exit(0);
+    });
   });
 
   // Settings Management IPC
