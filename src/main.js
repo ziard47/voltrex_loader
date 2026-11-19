@@ -18,6 +18,7 @@ const path = require('node:path');
 const fs = require('node:fs');
 const { DownloadEngine } = require('./main/downloadEngine');
 const { SchedulerEngine } = require('./main/schedulerEngine');
+const { Logger } = require('./main/logger');
 const { BridgeServer } = require('./main/bridgeServer');
 const {
   checkForGitHubUpdate,
@@ -29,6 +30,7 @@ const {
 let mainWindow = null;
 let downloadEngine = null;
 let schedulerEngine = null;
+let logger = null;
 let bridgeServer = null;
 let tray = null;
 let isQuitting = false;
@@ -294,6 +296,7 @@ function createWindow() {
 
   downloadEngine.on('progress-batch', (batch) => forwardEvent('download:progress-batch', batch));
   downloadEngine.on('task-added', (task) => {
+    if (logger) logger.activity('DOWNLOAD', `Added download: "${task.fileName || task.url}"`);
     forwardEvent('download:task-added', task);
     updateTrayMenu();
   });
@@ -302,24 +305,33 @@ function createWindow() {
     updateTrayMenu();
   });
   downloadEngine.on('task-completed', (task) => {
+    if (logger) logger.activity('DOWNLOAD', `Download completed: "${task.fileName || task.url}"`);
     forwardEvent('download:task-completed', task);
     updateTrayMenu();
   });
   downloadEngine.on('task-error', (info) => {
+    const task = info.task || info;
+    if (logger) logger.error('DOWNLOAD', `Download failed: "${task?.fileName || 'task'}" - ${info.error || 'Unknown error'}`);
     forwardEvent('download:task-error', info);
     updateTrayMenu();
   });
   downloadEngine.on('task-deleted', (taskId) => {
+    if (logger) logger.activity('DOWNLOAD', `Deleted download task (${taskId})`);
     forwardEvent('download:task-deleted', taskId);
     updateTrayMenu();
   });
   downloadEngine.on('tasks-cleared', () => {
+    if (logger) logger.activity('DOWNLOAD', 'Cleared completed download tasks');
     forwardEvent('download:tasks-cleared');
     updateTrayMenu();
   });
 
   if (schedulerEngine) {
     schedulerEngine.on('state-updated', (state) => forwardEvent('scheduler:state-updated', state));
+  }
+
+  if (logger) {
+    logger.on('new-entry', (entry) => forwardEvent('logs:new-entry', entry));
   }
 }
 
@@ -757,6 +769,35 @@ function setupIpcHandlers() {
     }
     return null;
   });
+
+  // Logs & Activity API Handlers
+  ipcMain.handle('logs:get', async (_event, options) => {
+    if (logger) {
+      return logger.getLogs(options || {});
+    }
+    return [];
+  });
+
+  ipcMain.handle('logs:clear', async () => {
+    if (logger) {
+      return logger.clearLogs();
+    }
+    return false;
+  });
+
+  ipcMain.handle('logs:export', async () => {
+    if (logger) {
+      return await logger.exportLogs(mainWindow);
+    }
+    return { success: false, error: 'Logger not initialized' };
+  });
+
+  ipcMain.handle('logs:open-folder', async () => {
+    if (logger) {
+      return logger.openLogFolder();
+    }
+    return false;
+  });
 }
 
 // Settings helper methods
@@ -1105,6 +1146,8 @@ function createTray() {
 // App lifecycle
 app.whenReady().then(() => {
   const userDataPath = app.getPath('userData');
+  logger = new Logger(userDataPath);
+  logger.activity('SYSTEM', `Voltrex Loader engine started (v${app.getVersion()})`);
   settingsPath = path.join(userDataPath, 'voltrex-settings.json');
   const initialSettings = loadSettings();
   const defaultDownloadPath = initialSettings.defaultDownloadPath || app.getPath('downloads');

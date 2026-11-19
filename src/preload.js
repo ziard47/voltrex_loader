@@ -76,6 +76,12 @@ contextBridge.exposeInMainWorld('electronAPI', {
   resetSchedulerLimits: () => ipcRenderer.invoke('scheduler:reset-limits'),
   browseFile: (defaultPath) => ipcRenderer.invoke('dialog:browse-file', defaultPath),
 
+  // Application & Activity Logs API
+  getLogs: (options) => ipcRenderer.invoke('logs:get', options),
+  clearLogs: () => ipcRenderer.invoke('logs:clear'),
+  exportLogs: () => ipcRenderer.invoke('logs:export'),
+  openLogsFolder: () => ipcRenderer.invoke('logs:open-folder'),
+
   // Event Listeners from Main Process
   onProgressBatch: (callback) => {
     const handler = (_event, batch) => callback(batch);
@@ -151,5 +157,10 @@ contextBridge.exposeInMainWorld('electronAPI', {
     const handler = (_event, state) => callback(state);
     ipcRenderer.on('scheduler:state-updated', handler);
     return () => ipcRenderer.removeListener('scheduler:state-updated', handler);
+  },
+  onLogEntry: (callback) => {
+    const handler = (_event, entry) => callback(entry);
+    ipcRenderer.on('logs:new-entry', handler);
+    return () => ipcRenderer.removeListener('logs:new-entry', handler);
   }
 });

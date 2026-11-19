@@ -7,6 +7,7 @@ import MenuItem from '@mui/material/MenuItem';
 import Snackbar from '@mui/material/Snackbar';
 import Tooltip from '@mui/material/Tooltip';
 import IconButton from '@mui/material/IconButton';
+import Checkbox from '@mui/material/Checkbox';
 import {
   Settings,
   Folder,
@@ -40,7 +41,13 @@ import {
   Zap,
   AppWindow,
   Magnet,
-  RotateCw
+  RotateCw,
+  ScrollText,
+  Search,
+  Trash2,
+  FileDown,
+  Terminal,
+  Filter
 } from 'lucide-react';
 import Logo from './Logo';
 import { useTheme } from '../context/ThemeContext';
@@ -96,6 +103,97 @@ export default function SettingsPage({ onBack, defaultSavePath, onSaveSuccess, a
   const [isTestingProxy, setIsTestingProxy] = useState(false);
   const [proxyTestResult, setProxyTestResult] = useState(null);
   const [zoomFactor, setZoomFactor] = useState(1.0);
+
+  // Logs & Activity State
+  const [logs, setLogs] = useState([]);
+  const [logViewMode, setLogViewMode] = useState('activity'); // 'activity' | 'all'
+  const [logLevelFilter, setLogLevelFilter] = useState('ALL');
+  const [logCategoryFilter, setLogCategoryFilter] = useState('ALL');
+  const [logSearchQuery, setLogSearchQuery] = useState('');
+  const [autoScrollLogs, setAutoScrollLogs] = useState(true);
+  const logTerminalRef = React.useRef(null);
+
+  // Fetch initial logs and listen for incoming logs
+  useEffect(() => {
+    let isMounted = true;
+    if (window.electronAPI?.getLogs) {
+      window.electronAPI.getLogs().then((res) => {
+        if (isMounted && Array.isArray(res)) {
+          setLogs(res);
+        }
+      }).catch((e) => console.warn('Failed to load logs:', e));
+    }
+
+    const unsub = window.electronAPI?.onLogEntry?.((entry) => {
+      if (isMounted && entry) {
+        setLogs((prev) => [...prev.slice(-1999), entry]);
+      }
+    });
+
+    return () => {
+      isMounted = false;
+      unsub?.();
+    };
+  }, []);
+
+  // Auto-scroll log console
+  useEffect(() => {
+    if (autoScrollLogs && logTerminalRef.current) {
+      logTerminalRef.current.scrollTop = logTerminalRef.current.scrollHeight;
+    }
+  }, [logs, autoScrollLogs, activeTab]);
+
+  const handleClearLogs = async () => {
+    if (!window.confirm('Are you sure you want to clear all logs?')) return;
+    try {
+      if (window.electronAPI?.clearLogs) {
+        await window.electronAPI.clearLogs();
+        setLogs([]);
+        setToast({ open: true, message: 'Logs cleared successfully' });
+      }
+    } catch (err) {
+      console.error('Failed to clear logs:', err);
+    }
+  };
+
+  const handleExportLogs = async () => {
+    try {
+      if (window.electronAPI?.exportLogs) {
+        const res = await window.electronAPI.exportLogs();
+        if (res && res.success) {
+          setToast({ open: true, message: `Logs exported successfully to ${res.filePath}` });
+        }
+      }
+    } catch (err) {
+      console.error('Failed to export logs:', err);
+    }
+  };
+
+  const handleOpenLogsFolder = async () => {
+    try {
+      if (window.electronAPI?.openLogsFolder) {
+        await window.electronAPI.openLogsFolder();
+      }
+    } catch (err) {
+      console.error('Failed to open logs directory:', err);
+    }
+  };
+
+  const filteredLogs = React.useMemo(() => {
+    return logs.filter((l) => {
+      if (logViewMode === 'activity' && l.level !== 'ACTIVITY') return false;
+      if (logLevelFilter !== 'ALL' && l.level !== logLevelFilter) return false;
+      if (logCategoryFilter !== 'ALL' && l.category !== logCategoryFilter) return false;
+      if (logSearchQuery.trim()) {
+        const q = logSearchQuery.toLowerCase().trim();
+        const matchMsg = (l.message || '').toLowerCase().includes(q);
+        const matchCat = (l.category || '').toLowerCase().includes(q);
+        const matchTime = (l.timeFormatted || '').includes(q);
+        if (!matchMsg && !matchCat && !matchTime) return false;
+      }
+      return true;
+    });
+  }, [logs, logViewMode, logLevelFilter, logCategoryFilter, logSearchQuery]);
 
   // Load settings and zoom factor on mount
   useEffect(() => {
@@ -260,6 +358,7 @@ export default function SettingsPage({ onBack, defaultSavePath, onSaveSuccess, a
     { id: 'proxy', label: 'Proxy Settings', icon: Server },
     { id: 'notifications', label: 'Notifications & Sound', icon: Bell },
     { id: 'network', label: 'Network & Advanced', icon: Wifi },
+    { id: 'logs', label: 'Logs & Activity', icon: ScrollText },
     { id: 'about', label: 'About Voltrex', icon: Info }
   ];
 
@@ -1525,6 +1624,263 @@ export default function SettingsPage({ onBack, defaultSavePath, onSaveSuccess, a
                       Click &apos;Save Settings&apos; above to apply proxy changes.
                     </span>
                   </div>
+                </div>
+              </div>
+            )}
+
+            {/* LOGS & ACTIVITY */}
+            {activeTab === 'logs' && (
+              <div className="space-y-4">
+                <div className="flex flex-wrap items-center justify-between gap-3">
+                  <div>
+                    <h2 className="text-base font-bold text-slate-800 dark:text-[#EEEEEE] flex items-center gap-2">
+                      <ScrollText className="w-4 h-4 text-[var(--theme-primary)]" />
+                      <span>Application & User Activity Logs</span>
+                    </h2>
+                    <p className="text-xs text-slate-500 dark:text-[#b8a5a5] mt-0.5">
+                      View real-time download activities, system diagnostic logs, and events.
+                    </p>
+                  </div>
+
+                  {/* Mode Toggle: User Activity vs All System Logs */}
+                  <div className="flex items-center gap-1.5 p-1 rounded-lg bg-slate-100 dark:bg-[#1D1616] border border-slate-200 dark:border-[#8E1616]/30">
+                    <button
+                      onClick={() => setLogViewMode('activity')}
+                      className={`px-3 py-1 text-xs font-semibold rounded-md transition-all ${
+                        logViewMode === 'activity'
+                          ? 'bg-[var(--theme-primary)] text-white shadow-sm'
+                          : 'text-slate-600 dark:text-[#b8a5a5] hover:text-slate-900 dark:hover:text-white'
+                      }`}
+                    >
+                      User Activity
+                    </button>
+                    <button
+                      onClick={() => setLogViewMode('all')}
+                      className={`px-3 py-1 text-xs font-semibold rounded-md transition-all ${
+                        logViewMode === 'all'
+                          ? 'bg-[var(--theme-primary)] text-white shadow-sm'
+                          : 'text-slate-600 dark:text-[#b8a5a5] hover:text-slate-900 dark:hover:text-white'
+                      }`}
+                    >
+                      All Logs (Diagnostic)
+                    </button>
+                  </div>
+                </div>
+
+                {/* Filters & Actions Bar */}
+                <div className="p-3.5 rounded-xl bg-white dark:bg-[#1D1616] border border-slate-200 dark:border-[#8E1616]/30 flex flex-wrap items-center justify-between gap-3 shadow-sm">
+                  {/* Left Controls: Level, Category, Search */}
+                  <div className="flex flex-wrap items-center gap-2.5 flex-1 min-w-[280px]">
+                    {logViewMode === 'all' && (
+                      <Select
+                        size="small"
+                        value={logLevelFilter}
+                        onChange={(e) => setLogLevelFilter(e.target.value)}
+                        sx={{
+                          height: 32,
+                          fontSize: '0.75rem',
+                          color: 'var(--theme-text-primary)',
+                          backgroundColor: 'var(--theme-bg-input)'
+                        }}
+                      >
+                        <MenuItem value="ALL">All Levels</MenuItem>
+                        <MenuItem value="ACTIVITY">Activity</MenuItem>
+                        <MenuItem value="INFO">Info</MenuItem>
+                        <MenuItem value="WARN">Warnings</MenuItem>
+                        <MenuItem value="ERROR">Errors</MenuItem>
+                      </Select>
+                    )}
+
+                    <Select
+                      size="small"
+                      value={logCategoryFilter}
+                      onChange={(e) => setLogCategoryFilter(e.target.value)}
+                      sx={{
+                        height: 32,
+                        fontSize: '0.75rem',
+                        color: 'var(--theme-text-primary)',
+                        backgroundColor: 'var(--theme-bg-input)'
+                      }}
+                    >
+                      <MenuItem value="ALL">All Categories</MenuItem>
+                      <MenuItem value="DOWNLOAD">Downloads</MenuItem>
+                      <MenuItem value="TORRENT">Torrents</MenuItem>
+                      <MenuItem value="MEDIA">Media</MenuItem>
+                      <MenuItem value="SCHEDULER">Scheduler</MenuItem>
+                      <MenuItem value="SETTINGS">Settings</MenuItem>
+                      <MenuItem value="SYSTEM">System</MenuItem>
+                    </Select>
+
+                    {/* Search Field */}
+                    <TextField
+                      size="small"
+                      placeholder="Filter logs by keyword..."
+                      value={logSearchQuery}
+                      onChange={(e) => setLogSearchQuery(e.target.value)}
+                      className="!min-w-[180px] !flex-1"
+                      InputProps={{
+                        startAdornment: <Search className="w-3.5 h-3.5 mr-1.5 text-slate-400 dark:text-[#b8a5a5]" />
+                      }}
+                      sx={{
+                        '& .MuiInputBase-root': {
+                          height: 32,
+                          fontSize: '0.75rem',
+                          color: 'var(--theme-text-primary)',
+                          backgroundColor: 'var(--theme-bg-input)'
+                        }
+                      }}
+                    />
+                  </div>
+
+                  {/* Right Actions: Auto-scroll, Export, Open Folder, Clear */}
+                  <div className="flex items-center gap-1.5 shrink-0 flex-wrap">
+                    <label className="flex items-center gap-1 text-[11px] text-slate-600 dark:text-[#b8a5a5] cursor-pointer mr-1">
+                      <Checkbox
+                        size="small"
+                        checked={autoScrollLogs}
+                        onChange={(e) => setAutoScrollLogs(e.target.checked)}
+                        sx={{ p: 0.5, color: 'var(--theme-border-accent)', '&.Mui-checked': { color: 'var(--theme-primary)' } }}
+                      />
+                      <span>Auto-scroll</span>
+                    </label>
+
+                    <Tooltip title="Copy all visible logs to clipboard" arrow>
+                      <Button
+                        size="small"
+                        variant="outlined"
+                        onClick={() => {
+                          const text = filteredLogs
+                            .map((l) => `[${l.dateFormatted} ${l.timeFormatted}] [${l.level}] [${l.category}] ${l.message}`)
+                            .join('\n');
+                          copyToClipboard(text, `${filteredLogs.length} logs copied to clipboard`);
+                        }}
+                        className="!border-slate-300 dark:!border-[#8E1616]/40 !text-slate-700 dark:!text-[#b8a5a5] hover:!text-[var(--theme-primary)] !text-xs !py-1 !px-2.5"
+                      >
+                        <Copy className="w-3.5 h-3.5" />
+                      </Button>
+                    </Tooltip>
+
+                    <Tooltip title="Export logs to file" arrow>
+                      <Button
+                        size="small"
+                        variant="outlined"
+                        onClick={handleExportLogs}
+                        startIcon={<FileDown className="w-3.5 h-3.5" />}
+                        className="!border-slate-300 dark:!border-[#8E1616]/40 !text-slate-700 dark:!text-[#b8a5a5] hover:!text-[var(--theme-primary)] !text-xs !py-1 !px-2.5"
+                      >
+                        Export
+                      </Button>
+                    </Tooltip>
+
+                    <Tooltip title="Open log folder in Windows Explorer" arrow>
+                      <Button
+                        size="small"
+                        variant="outlined"
+                        onClick={handleOpenLogsFolder}
+                        startIcon={<FolderOpen className="w-3.5 h-3.5" />}
+                        className="!border-slate-300 dark:!border-[#8E1616]/40 !text-slate-700 dark:!text-[#b8a5a5] hover:!text-[var(--theme-primary)] !text-xs !py-1 !px-2.5"
+                      >
+                        Folder
+                      </Button>
+                    </Tooltip>
+
+                    <Tooltip title="Clear logs history" arrow>
+                      <Button
+                        size="small"
+                        variant="outlined"
+                        onClick={handleClearLogs}
+                        className="!border-slate-300 dark:!border-rose-900/40 !text-rose-500 hover:!bg-rose-950/20 !text-xs !py-1 !px-2"
+                      >
+                        <Trash2 className="w-3.5 h-3.5" />
+                      </Button>
+                    </Tooltip>
+                  </div>
+                </div>
+
+                {/* Log Console Terminal */}
+                <div
+                  ref={logTerminalRef}
+                  className="rounded-xl border border-slate-200 dark:border-[#8E1616]/30 bg-slate-900 dark:bg-[#0c0808] p-3 font-mono text-xs overflow-y-auto h-[480px] space-y-1 shadow-inner select-text"
+                >
+                  {filteredLogs.length === 0 ? (
+                    <div className="h-full flex flex-col items-center justify-center text-slate-500 dark:text-[#6e5858] space-y-2 select-none">
+                      <Terminal className="w-8 h-8 opacity-40" />
+                      <span className="text-xs">No logs matching current filters.</span>
+                    </div>
+                  ) : (
+                    filteredLogs.map((l) => {
+                      const isActivity = l.level === 'ACTIVITY';
+                      const isError = l.level === 'ERROR';
+                      const isWarn = l.level === 'WARN';
+
+                      return (
+                        <div
+                          key={l.id}
+                          className="flex items-start gap-2 hover:bg-white/[0.04] p-1 rounded transition-colors group text-[11px] leading-relaxed"
+                        >
+                          {/* Timestamp */}
+                          <span className="text-slate-500 dark:text-[#7d6868] shrink-0 font-mono select-none">
+                            {l.timeFormatted}
+                          </span>
+
+                          {/* Level Badge */}
+                          <span
+                            className={`px-1.5 py-0.2 rounded text-[9px] font-bold shrink-0 tracking-wider select-none ${
+                              isActivity
+                                ? 'bg-emerald-950/80 text-emerald-400 border border-emerald-700/50'
+                                : isError
+                                ? 'bg-rose-950/80 text-rose-400 border border-rose-700/50'
+                                : isWarn
+                                ? 'bg-amber-950/80 text-amber-300 border border-amber-700/50'
+                                : 'bg-sky-950/80 text-sky-400 border border-sky-700/50'
+                            }`}
+                          >
+                            {l.level}
+                          </span>
+
+                          {/* Category Badge */}
+                          <span className="text-[9px] px-1 py-0.2 rounded bg-black/40 text-slate-400 dark:text-[#a89595] border border-white/5 shrink-0 select-none">
+                            {l.category}
+                          </span>
+
+                          {/* Message */}
+                          <span
+                            className={`flex-1 break-all ${
+                              isError
+                                ? 'text-rose-300 font-medium'
+                                : isWarn
+                                ? 'text-amber-200'
+                                : isActivity
+                                ? 'text-emerald-200'
+                                : 'text-slate-200 dark:text-[#e0d6d6]'
+                            }`}
+                          >
+                            {l.message}
+                          </span>
+
+                          {/* Individual copy icon on hover */}
+                          <button
+                            onClick={() => copyToClipboard(`[${l.timeFormatted}] [${l.level}] [${l.category}] ${l.message}`, 'Log entry copied')}
+                            className="opacity-0 group-hover:opacity-100 transition-opacity text-slate-500 hover:text-white shrink-0 p-0.5"
+                            title="Copy entry"
+                          >
+                            <Copy className="w-3 h-3" />
+                          </button>
+                        </div>
+                      );
+                    })
+                  )}
+                </div>
+
+                {/* Footer Count */}
+                <div className="flex items-center justify-between text-[11px] text-slate-400 dark:text-[#b8a5a5] px-1 font-mono-stat">
+                  <span>
+                    Showing {filteredLogs.length} of {logs.length} logged events
+                  </span>
+                  <span className="text-emerald-500 dark:text-emerald-400 font-medium flex items-center gap-1.5">
+                    <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
+                    Live Logger Active
+                  </span>
                 </div>
               </div>
             )}
