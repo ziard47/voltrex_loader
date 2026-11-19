@@ -167,11 +167,12 @@ npm run package:win
 ```
 
 - **Interactive Version Prompt**: Prompts you to specify a version or press <kbd>Enter</kbd> to build the current version from `package.json`.
-- **Pure Portable Packaging**: Builds the full Windows binaries (`win-unpacked`) using `electron-builder` and compresses the unpacked folder into a standard zip archive.
+- **Dual Installer & Portable Packaging**: Builds the full Windows binaries (`win-unpacked`), compresses the unpacked folder into a portable zip archive, and automatically compiles an Inno Setup installer wizard.
 
 ### 2. Output Structure
 
 Artifacts are organized inside `release/windows/<version>/`:
 
+- **`voltrex-loader-<version>-setup.exe`**: Modern self-contained Inno Setup installer wizard featuring desktop shortcut creation, Start Menu registration, optional Windows startup task, and clean uninstaller.
 - **`voltrex-loader-<version>-win.zip`**: Complete portable Windows distribution zip archive containing the entire `win-unpacked` folder (`voltrex-loader.exe`, dependencies, resources, and libraries). Simply extract and run `voltrex-loader.exe` on Windows.
 - **`win-unpacked/`**: Staged raw unpacked Windows application directory for immediate local access or testing.

@@ -32,6 +32,37 @@ async function askVersion(currentVersion) {
   });
 }
 
+function findInnoSetupCompiler() {
+  const isWin = process.platform === 'win32';
+  if (!isWin) return null;
+
+  // 1. Check PATH
+  try {
+    const checkCmd = 'where.exe iscc.exe';
+    const out = execSync(checkCmd, { encoding: 'utf8', stdio: ['ignore', 'pipe', 'ignore'] }).trim();
+    const first = out.split(/\r?\n/)[0];
+    if (first && fs.existsSync(first)) return first;
+  } catch {}
+
+  // 2. Check standard Inno Setup installation paths
+  const candidates = [
+    path.join(process.env.LOCALAPPDATA || '', 'Programs', 'Inno Setup 6', 'ISCC.exe'),
+    path.join(process.env['ProgramFiles(x86)'] || 'C:\\Program Files (x86)', 'Inno Setup 6', 'ISCC.exe'),
+    path.join(process.env.ProgramFiles || 'C:\\Program Files', 'Inno Setup 6', 'ISCC.exe'),
+    path.join(process.env.LOCALAPPDATA || '', 'Programs', 'Inno Setup 5', 'ISCC.exe'),
+    path.join(process.env['ProgramFiles(x86)'] || 'C:\\Program Files (x86)', 'Inno Setup 5', 'ISCC.exe'),
+    path.join(process.env.ProgramFiles || 'C:\\Program Files', 'Inno Setup 5', 'ISCC.exe')
+  ];
+
+  for (const c of candidates) {
+    if (c && fs.existsSync(c)) {
+      return c;
+    }
+  }
+
+  return null;
+}
+
 async function main() {
   console.log('\n=============================================');
   console.log('      Voltrex Loader - Windows Packager      ');
@@ -137,6 +168,36 @@ async function main() {
     if (fs.existsSync(helperBin)) {
       console.log('✓ Verified bundled helper binary: resources/bin/yt-dlp.exe');
     }
+
+    // 6. Build Inno Setup Installer (.exe)
+    console.log('\n--- Step 6: Building Inno Setup Windows Installer (.exe) ---');
+    const isccExe = findInnoSetupCompiler();
+    const issScriptPath = path.join(rootDir, 'build', 'installer.iss');
+    const setupName = `voltrex-loader-${chosenVersion}-setup.exe`;
+    const setupPath = path.join(targetDir, setupName);
+
+    if (!isccExe) {
+      console.warn('⚠️ ISCC.exe (Inno Setup Compiler) was not found in PATH or standard installation directories.');
+      console.warn('   To compile the setup installer, please install Inno Setup 6 (https://jrsoftware.org/isdl.php).');
+    } else if (!fs.existsSync(issScriptPath)) {
+      console.warn(`⚠️ Inno Setup script file not found at: ${issScriptPath}`);
+    } else {
+      console.log(`Compiling Inno Setup script with ${isccExe}...`);
+      const iconPath = path.join(rootDir, 'build', 'icon.ico');
+      const isccCmd = `"${isccExe}" "/DMyAppVersion=${chosenVersion}" "/DSourceDir=${destWinUnpacked}" "/DOutputDir=${targetDir}" "/DOutputBaseFilename=voltrex-loader-${chosenVersion}-setup" "/DSetupIconFile=${iconPath}" "${issScriptPath}"`;
+
+      try {
+        execSync(isccCmd, {
+          cwd: rootDir,
+          stdio: 'inherit'
+        });
+        if (fs.existsSync(setupPath)) {
+          console.log(`✓ Created Inno Setup installer package: ${path.relative(rootDir, setupPath)}`);
+        }
+      } catch (err) {
+        console.error('❌ Failed to compile Inno Setup installer:', err.message);
+      }
+    }
   } finally {
     try {
       fs.rmSync(tempOutputDir, { recursive: true, force: true });
@@ -161,8 +222,9 @@ async function main() {
     }
   }
   console.log('\nSummary:');
-  console.log(`  1. ${zipName} contains the entire win-unpacked folder with voltrex-loader.exe and all dependencies.`);
-  console.log('  2. Ready for portable distribution or extraction on Windows without an installer wizard.\n');
+  console.log(`  1. ${zipName} contains the portable win-unpacked folder with voltrex-loader.exe and all dependencies.`);
+  console.log(`  2. voltrex-loader-${chosenVersion}-setup.exe is the self-contained modern Inno Setup Windows installer wizard.`);
+  console.log('  3. Ready for both installer and portable distribution on Windows 10/11.\n');
 }
 
 main().catch((err) => {
