@@ -150,21 +150,27 @@ async function main() {
     // 5. Copy win-unpacked folder into release/windows/<version>/win-unpacked
     console.log('\n--- Step 5: Staging win-unpacked Application Files ---');
     const destWinUnpacked = path.join(targetDir, 'win-unpacked');
-    if (fs.existsSync(destWinUnpacked)) {
-      try {
-        fs.rmSync(destWinUnpacked, { recursive: true, force: true });
-      } catch {
+    try {
+      if (fs.existsSync(destWinUnpacked)) {
         try {
-          const staleDir = path.join(rootDir, 'release', '.stale_fuse_dirs');
-          fs.mkdirSync(staleDir, { recursive: true });
-          fs.renameSync(destWinUnpacked, path.join(staleDir, `win_unpacked_${Date.now()}`));
-        } catch {}
+          fs.rmSync(destWinUnpacked, { recursive: true, force: true });
+        } catch {
+          try {
+            const staleDir = path.join(rootDir, 'release', '.stale_fuse_dirs');
+            fs.mkdirSync(staleDir, { recursive: true });
+            fs.renameSync(destWinUnpacked, path.join(staleDir, `win_unpacked_${Date.now()}`));
+          } catch {}
+        }
       }
+      fs.cpSync(winUnpackedDir, destWinUnpacked, { recursive: true, force: true });
+      console.log(`✓ Staged win-unpacked directory into: ${path.relative(rootDir, destWinUnpacked)}`);
+    } catch (stageErr) {
+      console.warn(`⚠️ Could not replace existing win-unpacked folder: ${stageErr.message}`);
+      console.warn('   (If Voltrex Loader is currently open on your desktop, please close it to overwrite the unpacked folder).');
+      console.log('   Note: The standalone installer (.exe) and portable archive (.zip) were created successfully from fresh build binaries.');
     }
-    fs.cpSync(winUnpackedDir, destWinUnpacked, { recursive: true });
-    console.log(`✓ Staged win-unpacked directory into: ${path.relative(rootDir, destWinUnpacked)}`);
 
-    const helperBin = path.join(destWinUnpacked, 'resources', 'bin', 'yt-dlp.exe');
+    const helperBin = path.join(winUnpackedDir, 'resources', 'bin', 'yt-dlp.exe');
     if (fs.existsSync(helperBin)) {
       console.log('✓ Verified bundled helper binary: resources/bin/yt-dlp.exe');
     }
@@ -184,7 +190,8 @@ async function main() {
     } else {
       console.log(`Compiling Inno Setup script with ${isccExe}...`);
       const iconPath = path.join(rootDir, 'build', 'icon.ico');
-      const isccCmd = `"${isccExe}" "/DMyAppVersion=${chosenVersion}" "/DSourceDir=${destWinUnpacked}" "/DOutputDir=${targetDir}" "/DOutputBaseFilename=voltrex-loader-${chosenVersion}-setup" "/DSetupIconFile=${iconPath}" "${issScriptPath}"`;
+      // Use winUnpackedDir directly to avoid locks from running instances
+      const isccCmd = `"${isccExe}" "/DMyAppVersion=${chosenVersion}" "/DSourceDir=${winUnpackedDir}" "/DOutputDir=${targetDir}" "/DOutputBaseFilename=voltrex-loader-${chosenVersion}-setup" "/DSetupIconFile=${iconPath}" "${issScriptPath}"`;
 
       try {
         execSync(isccCmd, {
