@@ -10,12 +10,13 @@ import SetupWizardModal from './components/SetupWizardModal';
 import UpdateModal from './components/UpdateModal';
 import SettingsPage from './components/SettingsPage';
 import MediaDownloader from './components/MediaDownloader';
+import SchedulerPage from './components/SchedulerPage';
 import RefreshUrlModal from './components/RefreshUrlModal';
 import { getFileCategory } from './utils/formatters';
 
 export default function App() {
   const [downloads, setDownloads] = useState([]);
-  const [currentView, setCurrentView] = useState('downloads'); // 'downloads' | 'settings' | 'media-downloader'
+  const [currentView, setCurrentView] = useState('downloads'); // 'downloads' | 'settings' | 'media-downloader' | 'scheduler'
   const [selectedCategory, setSelectedCategory] = useState('all');
   const [selectedType, setSelectedType] = useState('all');
   const [searchQuery, setSearchQuery] = useState('');
@@ -544,6 +545,15 @@ export default function App() {
               defaultSavePath={defaultSavePath}
               onNavigateToDownloads={() => setCurrentView('downloads')}
               activeCount={counts.active}
+            />
+          ) : currentView === 'scheduler' ? (
+            <SchedulerPage
+              onBack={() => setCurrentView('downloads')}
+              downloads={downloads}
+              onPauseDownload={handlePause}
+              onResumeDownload={handleResume}
+              onOpenFile={handleOpenFile}
+              onShowInFolder={handleShowInFolder}
             />
           ) : (
             <DownloadTable

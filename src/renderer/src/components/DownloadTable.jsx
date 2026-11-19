@@ -48,7 +48,8 @@ import {
   Video,
   Layers,
   RotateCw,
-  RefreshCw
+  RefreshCw,
+  CalendarClock
 } from 'lucide-react';
 import ChunkMatrix from './ChunkMatrix';
 import TorrentContextMenu from './TorrentContextMenu';
@@ -772,6 +773,27 @@ export default function DownloadTable({
                 <span>
                   {expandedRows.has(contextMenu.task.id) ? 'Hide Segment Chunk Matrix' : 'View Segment Chunk Matrix'}
                 </span>
+              </MenuItem>
+
+              <MenuItem
+                onClick={async () => {
+                  try {
+                    if (window.electronAPI?.addTasksToSchedulerQueue) {
+                      await window.electronAPI.addTasksToSchedulerQueue({
+                        queueId: 'main',
+                        taskIds: [contextMenu.task.id]
+                      });
+                      setToast({ open: true, message: 'Added to Main scheduler queue' });
+                    }
+                  } catch (e) {
+                    console.error(e);
+                  }
+                  handleCloseContextMenu();
+                }}
+                className="!text-xs !text-[var(--theme-text-primary)] hover:!bg-[var(--theme-secondary-subtle)] !py-2 !px-3"
+              >
+                <CalendarClock className="w-4 h-4 mr-2.5 text-amber-400" />
+                <span>Add to Main Scheduler Queue</span>
               </MenuItem>
             </div>
 

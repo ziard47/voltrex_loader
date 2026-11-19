@@ -17,6 +17,7 @@ const { app, BrowserWindow, ipcMain, dialog, shell, Tray, Menu, nativeImage, ses
 const path = require('node:path');
 const fs = require('node:fs');
 const { DownloadEngine } = require('./main/downloadEngine');
+const { SchedulerEngine } = require('./main/schedulerEngine');
 const { BridgeServer } = require('./main/bridgeServer');
 const {
   checkForGitHubUpdate,
@@ -27,6 +28,7 @@ const {
 
 let mainWindow = null;
 let downloadEngine = null;
+let schedulerEngine = null;
 let bridgeServer = null;
 let tray = null;
 let isQuitting = false;
@@ -315,6 +317,10 @@ function createWindow() {
     forwardEvent('download:tasks-cleared');
     updateTrayMenu();
   });
+
+  if (schedulerEngine) {
+    schedulerEngine.on('state-updated', (state) => forwardEvent('scheduler:state-updated', state));
+  }
 }
 
 // Setup IPC Handlers
@@ -659,6 +665,97 @@ function setupIpcHandlers() {
     } catch (err) {
       return { success: false, error: err.message };
     }
+  });
+
+  // Scheduler API Handlers
+  ipcMain.handle('scheduler:get-state', async () => {
+    if (schedulerEngine) {
+      return schedulerEngine.getState();
+    }
+    return { queues: [], downloadLimits: {} };
+  });
+
+  ipcMain.handle('scheduler:create-queue', async (_event, payload) => {
+    if (schedulerEngine) {
+      return schedulerEngine.createQueue(payload || {});
+    }
+    return null;
+  });
+
+  ipcMain.handle('scheduler:delete-queue', async (_event, queueId) => {
+    if (schedulerEngine) {
+      return schedulerEngine.deleteQueue(queueId);
+    }
+    return false;
+  });
+
+  ipcMain.handle('scheduler:save-queue', async (_event, { queueId, updates }) => {
+    if (schedulerEngine) {
+      return schedulerEngine.saveQueue(queueId, updates || {});
+    }
+    return null;
+  });
+
+  ipcMain.handle('scheduler:start-queue', async (_event, queueId) => {
+    if (schedulerEngine) {
+      return schedulerEngine.startQueue(queueId);
+    }
+    return false;
+  });
+
+  ipcMain.handle('scheduler:stop-queue', async (_event, queueId) => {
+    if (schedulerEngine) {
+      return schedulerEngine.stopQueue(queueId);
+    }
+    return false;
+  });
+
+  ipcMain.handle('scheduler:add-tasks', async (_event, { queueId, taskIds }) => {
+    if (schedulerEngine) {
+      return schedulerEngine.addTasksToQueue(queueId, taskIds);
+    }
+    return false;
+  });
+
+  ipcMain.handle('scheduler:remove-task', async (_event, { queueId, taskId }) => {
+    if (schedulerEngine) {
+      return schedulerEngine.removeTaskFromQueue(queueId, taskId);
+    }
+    return false;
+  });
+
+  ipcMain.handle('scheduler:reorder-tasks', async (_event, { queueId, taskIds }) => {
+    if (schedulerEngine) {
+      return schedulerEngine.reorderTasks(queueId, taskIds);
+    }
+    return false;
+  });
+
+  ipcMain.handle('scheduler:save-limits', async (_event, limits) => {
+    if (schedulerEngine) {
+      return schedulerEngine.saveDownloadLimits(limits);
+    }
+    return false;
+  });
+
+  ipcMain.handle('scheduler:reset-limits', async () => {
+    if (schedulerEngine) {
+      return schedulerEngine.resetDownloadLimits();
+    }
+    return false;
+  });
+
+  ipcMain.handle('dialog:browse-file', async (_event, defaultPath) => {
+    if (!mainWindow || mainWindow.isDestroyed()) return null;
+    const result = await dialog.showOpenDialog(mainWindow, {
+      title: 'Select Program or File to Open on Completion',
+      defaultPath: defaultPath || app.getPath('home'),
+      properties: ['openFile']
+    });
+    if (!result.canceled && result.filePaths.length > 0) {
+      return result.filePaths[0];
+    }
+    return null;
   });
 }
 
@@ -1029,6 +1126,12 @@ app.whenReady().then(() => {
     downloadEngine.setTempDownloadPath(initialSettings.tempDownloadPath);
   }
 
+  schedulerEngine = new SchedulerEngine({
+    userDataPath,
+    downloadEngine,
+    getSettings: loadSettings
+  });
+
   bridgeServer = new BridgeServer(
     downloadEngine,
     () => mainWindow,
@@ -1067,6 +1170,9 @@ app.on('login', (event, _webContents, _request, authInfo, callback) => {
 
 app.on('before-quit', () => {
   isQuitting = true;
+  if (schedulerEngine) {
+    schedulerEngine.destroy();
+  }
   if (downloadEngine) {
     downloadEngine.saveState();
   }
