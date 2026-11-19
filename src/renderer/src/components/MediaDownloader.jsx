@@ -66,7 +66,7 @@ export const BATCH_FORMAT_OPTIONS = [
     badge: '1080p',
     ext: 'mp4',
     audioOnly: false,
-    formatSelector: 'bestvideo[height<=1080]+bestaudio/best[height<=1080]/best'
+    formatSelector: 'bv*[height<=1080]+ba/b[height<=1080]/bv*+ba/b'
   },
   {
     id: 'best_quality',
@@ -74,7 +74,7 @@ export const BATCH_FORMAT_OPTIONS = [
     badge: 'MAX',
     ext: 'mp4',
     audioOnly: false,
-    formatSelector: 'bestvideo+bestaudio/best'
+    formatSelector: 'bv*+ba/b'
   },
   {
     id: 'video_720p',
@@ -82,7 +82,7 @@ export const BATCH_FORMAT_OPTIONS = [
     badge: '720p',
     ext: 'mp4',
     audioOnly: false,
-    formatSelector: 'bestvideo[height<=720]+bestaudio/best[height<=720]/best'
+    formatSelector: 'bv*[height<=720]+ba/b[height<=720]/bv*+ba/b'
   },
   {
     id: 'video_480p',
@@ -90,7 +90,7 @@ export const BATCH_FORMAT_OPTIONS = [
     badge: '480p',
     ext: 'mp4',
     audioOnly: false,
-    formatSelector: 'bestvideo[height<=480]+bestaudio/best[height<=480]/best'
+    formatSelector: 'bv*[height<=480]+ba/b[height<=480]/bv*+ba/b'
   },
   {
     id: 'video_360p',
@@ -98,7 +98,7 @@ export const BATCH_FORMAT_OPTIONS = [
     badge: '360p',
     ext: 'mp4',
     audioOnly: false,
-    formatSelector: 'bestvideo[height<=360]+bestaudio/best[height<=360]/best'
+    formatSelector: 'bv*[height<=360]+ba/b[height<=360]/bv*+ba/b'
   },
   {
     id: 'audio_mp3_best',

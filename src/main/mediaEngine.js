@@ -20,6 +20,7 @@ class MediaEngine extends EventEmitter {
     this.cachedYtDlpPath = null;
     this.cachedFfmpegPath = null;
     this.isDownloadingYtDlp = false;
+    this.isDownloadingFfmpeg = false;
   }
 
   /**
@@ -112,7 +113,144 @@ class MediaEngine extends EventEmitter {
       console.warn(`[MediaEngine] Failed to extract ${targetExeName} from asar:`, err.message);
     }
 
+    if (isWin && !this.isDownloadingFfmpeg) {
+      this.downloadFfmpegBinary().catch(() => {});
+    }
+
     return null;
+  }
+
+  /**
+   * Auto-download FFmpeg standalone binaries on Windows
+   */
+  async downloadFfmpegBinary() {
+    if (this.isDownloadingFfmpeg || process.platform !== 'win32') return null;
+    this.isDownloadingFfmpeg = true;
+
+    try {
+      const targetDir = path.join(this.userDataPath, 'bin');
+      if (!fs.existsSync(targetDir)) {
+        fs.mkdirSync(targetDir, { recursive: true });
+      }
+
+      const zipUrl = 'https://github.com/yt-dlp/FFmpeg-Builds/releases/download/latest/ffmpeg-master-latest-win64-gpl.zip';
+      const zipPath = path.join(targetDir, 'ffmpeg.zip');
+      const tempExtractDir = path.join(targetDir, 'ffmpeg_extract_temp');
+
+      console.log(`[MediaEngine] Downloading FFmpeg build from ${zipUrl}...`);
+      await this.downloadFileWithRedirects(zipUrl, zipPath);
+
+      if (fs.existsSync(zipPath)) {
+        console.log('[MediaEngine] Extracting FFmpeg archive...');
+        try {
+          if (!fs.existsSync(tempExtractDir)) {
+            fs.mkdirSync(tempExtractDir, { recursive: true });
+          }
+
+          try {
+            execSync(`tar -xf "${zipPath}" -C "${tempExtractDir}"`, { stdio: 'ignore' });
+          } catch {
+            execSync(`powershell -NoProfile -Command "Expand-Archive -Path '${zipPath}' -DestinationPath '${tempExtractDir}' -Force"`, { stdio: 'ignore' });
+          }
+
+          const findInDir = (dir, name) => {
+            if (!fs.existsSync(dir)) return null;
+            const entries = fs.readdirSync(dir, { withFileTypes: true });
+            for (const e of entries) {
+              const full = path.join(dir, e.name);
+              if (e.isDirectory()) {
+                const sub = findInDir(full, name);
+                if (sub) return sub;
+              } else if (e.name.toLowerCase() === name.toLowerCase()) {
+                return full;
+              }
+            }
+            return null;
+          };
+
+          const ffmpegExe = findInDir(tempExtractDir, 'ffmpeg.exe');
+          const ffprobeExe = findInDir(tempExtractDir, 'ffprobe.exe');
+
+          if (ffmpegExe) {
+            const destFfmpeg = path.join(targetDir, 'ffmpeg.exe');
+            fs.copyFileSync(ffmpegExe, destFfmpeg);
+            this.cachedFfmpegPath = destFfmpeg;
+          }
+          if (ffprobeExe) {
+            const destFfprobe = path.join(targetDir, 'ffprobe.exe');
+            fs.copyFileSync(ffprobeExe, destFfprobe);
+          }
+
+          console.log('[MediaEngine] FFmpeg successfully installed to user bin!');
+          return this.cachedFfmpegPath;
+        } finally {
+          try { if (fs.existsSync(zipPath)) fs.unlinkSync(zipPath); } catch {}
+          try { if (fs.existsSync(tempExtractDir)) fs.rmSync(tempExtractDir, { recursive: true, force: true }); } catch {}
+        }
+      }
+    } catch (err) {
+      console.warn('[MediaEngine] FFmpeg background auto-download error:', err.message);
+    } finally {
+      this.isDownloadingFfmpeg = false;
+    }
+    return null;
+  }
+
+  /**
+   * Get proxy arguments for yt-dlp according to Voltrex proxy settings
+   */
+  getYtDlpProxyArgs() {
+    try {
+      const s = typeof this.getSettings === 'function' ? this.getSettings() : {};
+      const mode = s.proxyMode || 'direct';
+
+      if (mode === 'manual') {
+        const protocol = s.proxyProtocol || 'http';
+        const host = (s.proxyHost || '').trim();
+        const port = s.proxyPort || 8080;
+        if (host) {
+          let auth = '';
+          if (s.proxyAuth && s.proxyUsername) {
+            auth = `${encodeURIComponent(s.proxyUsername)}:${encodeURIComponent(s.proxyPassword || '')}@`;
+          }
+          return ['--proxy', `${protocol}://${auth}${host}:${port}`];
+        }
+      }
+
+      if (mode === 'direct') {
+        // Explicit empty string forces yt-dlp to bypass broken Windows SOCKS proxies
+        return ['--proxy', ''];
+      }
+
+      return [];
+    } catch {
+      return ['--proxy', ''];
+    }
+  }
+
+  /**
+   * Get sanitized environment variables for yt-dlp process
+   */
+  getYtDlpSpawnEnv() {
+    try {
+      const s = typeof this.getSettings === 'function' ? this.getSettings() : {};
+      const mode = s.proxyMode || 'direct';
+      const cleanEnv = { ...process.env };
+
+      if (mode === 'direct') {
+        delete cleanEnv.HTTP_PROXY;
+        delete cleanEnv.HTTPS_PROXY;
+        delete cleanEnv.http_proxy;
+        delete cleanEnv.https_proxy;
+        delete cleanEnv.ALL_PROXY;
+        delete cleanEnv.all_proxy;
+        delete cleanEnv.SOCKS_PROXY;
+        delete cleanEnv.socks_proxy;
+      }
+      return cleanEnv;
+    } catch {
+      return process.env;
+    }
   }
 
   /**
@@ -175,7 +313,144 @@ class MediaEngine extends EventEmitter {
       return resolvedAssetBin;
     }
 
+    if (isWin && !this.isDownloadingFfmpeg) {
+      this.downloadFfmpegBinary().catch(() => {});
+    }
+
     return null;
+  }
+
+  /**
+   * Auto-download FFmpeg standalone binaries on Windows
+   */
+  async downloadFfmpegBinary() {
+    if (this.isDownloadingFfmpeg || process.platform !== 'win32') return null;
+    this.isDownloadingFfmpeg = true;
+
+    try {
+      const targetDir = path.join(this.userDataPath, 'bin');
+      if (!fs.existsSync(targetDir)) {
+        fs.mkdirSync(targetDir, { recursive: true });
+      }
+
+      const zipUrl = 'https://github.com/yt-dlp/FFmpeg-Builds/releases/download/latest/ffmpeg-master-latest-win64-gpl.zip';
+      const zipPath = path.join(targetDir, 'ffmpeg.zip');
+      const tempExtractDir = path.join(targetDir, 'ffmpeg_extract_temp');
+
+      console.log(`[MediaEngine] Downloading FFmpeg build from ${zipUrl}...`);
+      await this.downloadFileWithRedirects(zipUrl, zipPath);
+
+      if (fs.existsSync(zipPath)) {
+        console.log('[MediaEngine] Extracting FFmpeg archive...');
+        try {
+          if (!fs.existsSync(tempExtractDir)) {
+            fs.mkdirSync(tempExtractDir, { recursive: true });
+          }
+
+          try {
+            execSync(`tar -xf "${zipPath}" -C "${tempExtractDir}"`, { stdio: 'ignore' });
+          } catch {
+            execSync(`powershell -NoProfile -Command "Expand-Archive -Path '${zipPath}' -DestinationPath '${tempExtractDir}' -Force"`, { stdio: 'ignore' });
+          }
+
+          const findInDir = (dir, name) => {
+            if (!fs.existsSync(dir)) return null;
+            const entries = fs.readdirSync(dir, { withFileTypes: true });
+            for (const e of entries) {
+              const full = path.join(dir, e.name);
+              if (e.isDirectory()) {
+                const sub = findInDir(full, name);
+                if (sub) return sub;
+              } else if (e.name.toLowerCase() === name.toLowerCase()) {
+                return full;
+              }
+            }
+            return null;
+          };
+
+          const ffmpegExe = findInDir(tempExtractDir, 'ffmpeg.exe');
+          const ffprobeExe = findInDir(tempExtractDir, 'ffprobe.exe');
+
+          if (ffmpegExe) {
+            const destFfmpeg = path.join(targetDir, 'ffmpeg.exe');
+            fs.copyFileSync(ffmpegExe, destFfmpeg);
+            this.cachedFfmpegPath = destFfmpeg;
+          }
+          if (ffprobeExe) {
+            const destFfprobe = path.join(targetDir, 'ffprobe.exe');
+            fs.copyFileSync(ffprobeExe, destFfprobe);
+          }
+
+          console.log('[MediaEngine] FFmpeg successfully installed to user bin!');
+          return this.cachedFfmpegPath;
+        } finally {
+          try { if (fs.existsSync(zipPath)) fs.unlinkSync(zipPath); } catch {}
+          try { if (fs.existsSync(tempExtractDir)) fs.rmSync(tempExtractDir, { recursive: true, force: true }); } catch {}
+        }
+      }
+    } catch (err) {
+      console.warn('[MediaEngine] FFmpeg background auto-download error:', err.message);
+    } finally {
+      this.isDownloadingFfmpeg = false;
+    }
+    return null;
+  }
+
+  /**
+   * Get proxy arguments for yt-dlp according to Voltrex proxy settings
+   */
+  getYtDlpProxyArgs() {
+    try {
+      const s = typeof this.getSettings === 'function' ? this.getSettings() : {};
+      const mode = s.proxyMode || 'direct';
+
+      if (mode === 'manual') {
+        const protocol = s.proxyProtocol || 'http';
+        const host = (s.proxyHost || '').trim();
+        const port = s.proxyPort || 8080;
+        if (host) {
+          let auth = '';
+          if (s.proxyAuth && s.proxyUsername) {
+            auth = `${encodeURIComponent(s.proxyUsername)}:${encodeURIComponent(s.proxyPassword || '')}@`;
+          }
+          return ['--proxy', `${protocol}://${auth}${host}:${port}`];
+        }
+      }
+
+      if (mode === 'direct') {
+        // Explicit empty string forces yt-dlp to bypass broken Windows SOCKS proxies
+        return ['--proxy', ''];
+      }
+
+      return [];
+    } catch {
+      return ['--proxy', ''];
+    }
+  }
+
+  /**
+   * Get sanitized environment variables for yt-dlp process
+   */
+  getYtDlpSpawnEnv() {
+    try {
+      const s = typeof this.getSettings === 'function' ? this.getSettings() : {};
+      const mode = s.proxyMode || 'direct';
+      const cleanEnv = { ...process.env };
+
+      if (mode === 'direct') {
+        delete cleanEnv.HTTP_PROXY;
+        delete cleanEnv.HTTPS_PROXY;
+        delete cleanEnv.http_proxy;
+        delete cleanEnv.https_proxy;
+        delete cleanEnv.ALL_PROXY;
+        delete cleanEnv.all_proxy;
+        delete cleanEnv.SOCKS_PROXY;
+        delete cleanEnv.socks_proxy;
+      }
+      return cleanEnv;
+    } catch {
+      return process.env;
+    }
   }
 
   /**
