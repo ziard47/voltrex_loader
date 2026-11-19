@@ -39,7 +39,7 @@
           <img src="assets/icon.png" alt="Voltrex Loader Logo" />
         </div>
         <span class="brand-title">VOLTREX LOADER</span>
-        <span class="brand-version-badge">v1.4.3</span>
+        <span class="brand-version-badge">v1.5.0</span>
       </a>
 
       <ul class="nav-links">
@@ -77,7 +77,7 @@
       </h1>
 
       <p class="hero-subtitle">
-        A high-performance, open-source download accelerator built with Electron, React, and modern web standards. Featuring 2 to 32 parallel HTTP Range streams, Universal Media Downloader (YouTube search &amp; 4K playlists), native BitTorrent &amp; Magnet link swarm acceleration, automated category sorting, range resume recovery, and instant browser extension capture for Linux, SteamOS, and Windows.
+        A high-performance, open-source download accelerator built with Electron, React, and modern web standards. Featuring 2 to 32 parallel HTTP Range streams, IDM-Style Download Scheduler &amp; Queue Automation, Universal Media Downloader (YouTube search &amp; 4K playlists), native BitTorrent &amp; Magnet link swarm acceleration, automated category sorting, range resume recovery, and instant browser extension capture for Linux, SteamOS, and Windows.
       </p>
 
       <div class="hero-actions">
@@ -92,6 +92,10 @@
       </div>
 
       <div class="hero-platform-chips">
+        <span class="platform-chip">
+          <i class="fa-solid fa-clock"></i>
+          <span>Download Scheduler &amp; Queues</span>
+        </span>
         <span class="platform-chip">
           <i class="fa-solid fa-play"></i>
           <span>Universal Media Downloader</span>
@@ -161,7 +165,7 @@
               </div>
               <div class="window-app-name">
                 <img src="assets/icon.png" alt="Icon" style="width: 15px; height: 15px; border-radius: 2px;" />
-                <span>Voltrex Loader v1.4.3</span>
+                <span>Voltrex Loader v1.5.0</span>
               </div>
               <div class="window-status-pill" id="simStatusBadge">
                 <i class="fa-solid fa-circle"></i>
@@ -741,7 +745,7 @@
               <i class="fa-brands fa-edge"></i>
               <span>Get on Edge Add-ons Store</span>
             </a>
-            <a href="https://github.com/ziard47/voltrex_loader/releases/download/v1.4.3/voltrex-loader-browser-extension.zip" target="_blank" class="btn-secondary-action">
+            <a href="https://github.com/ziard47/voltrex_loader/releases/download/v1.5.0/voltrex-loader-browser-extension.zip" target="_blank" class="btn-secondary-action">
               <i class="fa-solid fa-download"></i>
               <span>Download ZIP (Chrome / Brave)</span>
             </a>
@@ -874,7 +878,7 @@
     <div class="container">
       <div class="section-header">
         <span class="section-tag red">Official Releases</span>
-        <h2 class="section-title">Get Voltrex Loader v1.4.3</h2>
+        <h2 class="section-title">Get Voltrex Loader v1.5.0</h2>
         <p class="section-description">
           Choose your operating system. Free, secure, portable, and ready to run immediately.
         </p>
@@ -927,31 +931,33 @@
             </div>
             <h3 class="os-title">Windows 10 / 11</h3>
             <p class="os-desc">
-              Portable 64-bit distribution. Extract and run immediately without administrative privileges or registry bloat.
+              Full Windows Setup Installer and standalone portable distribution for 64-bit systems.
             </p>
 
             <div class="os-specs">
               <div class="os-spec-row">
-                <span>Package:</span>
-                <span class="os-spec-val">voltrex-loader-1.4.3-win.zip</span>
+                <span>Setup Installer:</span>
+                <span class="os-spec-val">voltrex-loader-1.5.0-setup.exe</span>
+              </div>
+              <div class="os-spec-row">
+                <span>Portable ZIP:</span>
+                <span class="os-spec-val">voltrex-loader-1.5.0-win.zip</span>
               </div>
               <div class="os-spec-row">
                 <span>Compatibility:</span>
                 <span class="os-spec-val">Windows 10 / 11 (64-bit)</span>
               </div>
-              <div class="os-spec-row">
-                <span>Size:</span>
-                <span class="os-spec-val">~115 MB</span>
-              </div>
             </div>
           </div>
 
           <div>
-            <a href="https://github.com/ziard47/voltrex_loader/releases/download/v1.4.3/voltrex-loader-1.4.3-win.zip" target="_blank" class="btn-card-download blue">
+            <a href="https://github.com/ziard47/voltrex_loader/releases/download/v1.5.0/voltrex-loader-1.5.0-setup.exe" target="_blank" class="btn-card-download blue" style="margin-bottom: 8px;">
               <i class="fa-solid fa-download"></i>
-              <span>Download Portable (.ZIP)</span>
+              <span>Download Setup (.EXE)</span>
             </a>
-            <span class="card-alt-link">Extract & launch voltrex-loader.exe</span>
+            <a href="https://github.com/ziard47/voltrex_loader/releases/download/v1.5.0/voltrex-loader-1.5.0-win.zip" target="_blank" class="card-alt-link">
+              Or download Portable (.ZIP)
+            </a>
           </div>
         </div>
 
@@ -987,7 +993,7 @@
               <i class="fa-brands fa-edge"></i>
               <span>Get on Edge Add-ons</span>
             </a>
-            <a href="https://github.com/ziard47/voltrex_loader/releases/download/v1.4.3/voltrex-loader-browser-extension.zip" target="_blank" class="btn-card-download cyan">
+            <a href="https://github.com/ziard47/voltrex_loader/releases/download/v1.5.0/voltrex-loader-browser-extension.zip" target="_blank" class="btn-card-download cyan">
               <i class="fa-solid fa-download"></i>
               <span>Download ZIP (Chrome / Brave)</span>
             </a>
@@ -1028,7 +1034,7 @@
   </section>
 
   <!-- ==========================================================================
-       What's New in v1.4.3 Box
+       What's New in v1.5.0 Box
        ========================================================================== -->
   <section class="section section-alt">
     <div class="container">
@@ -1036,28 +1042,28 @@
         <div class="changelog-header-row">
           <div class="changelog-ver-title">
             <i class="fa-solid fa-code-branch" style="color: var(--accent-primary);"></i>
-            <span>What's New in Release v1.4.3</span>
+            <span>What's New in Release v1.5.0</span>
           </div>
           <span class="sim-badge-thread">Latest Stable Release</span>
         </div>
 
         <div class="changelog-items">
           <div class="changelog-item-card">
-            <span class="changelog-item-badge" style="color: var(--accent-cyan); background: rgba(6, 182, 212, 0.12);">STORAGE &amp; ANTI-HOTLINK</span>
-            <strong>Smart Apex Referer &amp; CDN Compatibility</strong>
-            <p>Resolved HTTP 400 Bad Request and HTTP 403 Forbidden hotlink blocks across Google Drive mirrors, Cloudflare CDN workers, GoIndex, and protected file hosts by enforcing standard browser TLS client headers and multi-candidate apex domain referer probing.</p>
+            <span class="changelog-item-badge" style="color: var(--accent-cyan); background: rgba(6, 182, 212, 0.12);">QUEUE AUTOMATION</span>
+            <strong>IDM-Style Download Scheduler &amp; Queues</strong>
+            <p>Added a dedicated Download Scheduler page in the sidebar. Create and manage multiple queues (Main Queue, Synchronization queues, and custom user queues), configure flexible start/stop schedules (One-time at a specific date/time, or Daily recurring with day-of-week checkboxes), limit parallel downloads (1 to 10 files simultaneously), set automatic retry counts, and automate post-completion actions: opening downloaded files, closing the application, or initiating computer shutdown, sleep, or hibernate.</p>
           </div>
 
           <div class="changelog-item-card">
-            <span class="changelog-item-badge" style="color: var(--accent-amber); background: rgba(245, 158, 11, 0.12);">NETWORK CONTROLS</span>
-            <strong>Custom Referer &amp; Cookie Header Injection</strong>
-            <p>Added collapsible Advanced Network Options inside the Add Download dialog. Manually supply or tweak custom Referer and Session Cookie headers for private trackers, token-gated links, and protected gaming ROM archives.</p>
+            <span class="changelog-item-badge" style="color: var(--accent-amber); background: rgba(245, 158, 11, 0.12);">DIAGNOSTICS &amp; AUDITING</span>
+            <strong>Application Logs &amp; User Activity Audit Trail</strong>
+            <p>Integrated a comprehensive Logs &amp; Activity viewer directly into the Settings page. Seamlessly toggle between a clean User Activity audit log and deep Diagnostic event logs. Features live streaming with auto-scroll, log level filtering (DEBUG, INFO, WARN, ERROR), component filters (SYSTEM, ENGINE, MEDIA, TORRENT, SCHEDULER, BRIDGE, UI), instant search, one-click clipboard copying, log clearing, and export to <code>.log</code> file with automatic 5MB log rotation.</p>
           </div>
 
           <div class="changelog-item-card">
-            <span class="changelog-item-badge" style="color: var(--accent-primary); background: rgba(239, 68, 68, 0.12);">ENGINE STABILITY</span>
-            <strong>Cross-Drive Migration &amp; Cancellation Safeguards</strong>
-            <p>Engineered safe cross-partition file movement (resolving <code>EXDEV: cross-device link not permitted</code> when downloading to external disks or secondary drives), graceful single-stream fallback when servers reject byte ranges, and stream-destruction crash guards on download cancellation.</p>
+            <span class="changelog-item-badge" style="color: var(--accent-primary); background: rgba(239, 68, 68, 0.12);">MEDIA ENGINE RESILIENCE</span>
+            <strong>Auto-FFmpeg Setup, SOCKS Proxy Bypass &amp; Format Fallbacks</strong>
+            <p>Universal Media Downloader now features automated silent background FFmpeg/FFprobe setup on Windows from official builds. Standard direct connection mode now bypasses dormant system and registry SOCKS proxies (eliminating <code>WinError 10061</code> errors). Video formats use modern resilient fallback chains (<code>bv*+ba/b</code>) preventing format errors on irregular streams or Shorts, and gracefully fall back to native progressive streams and <code>.m4a</code> audio when FFmpeg is not yet present.</p>
           </div>
         </div>
       </div>
@@ -1144,7 +1150,7 @@
         <div style="display: flex; justify-content: center; gap: 12px; flex-wrap: wrap;">
           <a href="#downloads" class="btn-primary-action">
             <i class="fa-solid fa-download"></i>
-            <span>Download Voltrex Loader v1.4.3</span>
+            <span>Download Voltrex Loader v1.5.0</span>
           </a>
           <a href="https://github.com/ziard47/voltrex_loader" target="_blank" rel="noopener noreferrer" class="btn-secondary-action">
             <i class="fa-brands fa-github"></i>

@@ -17,32 +17,34 @@ import {
   Video,
   RefreshCw,
   Layers,
-  Globe
+  Globe,
+  CalendarClock,
+  ScrollText
 } from 'lucide-react';
 import Logo from './Logo';
 
-export default function WhatsNewModal({ open, onClose, version = '1.4.3' }) {
+export default function WhatsNewModal({ open, onClose, version = '1.5.0' }) {
   const highlights = [
     {
-      icon: Globe,
-      title: 'Anti-Hotlink & Storage Mirror Resiliency',
+      icon: CalendarClock,
+      title: 'Download Scheduler & Queue Automation',
       description:
-        'Resolved HTTP 400 and 403 Forbidden errors across Google Drive mirrors, Cloudflare CDN, and protected file hosts using standard browser TLS headers and smart apex domain referer fallback.',
-      badge: 'Connectivity'
+        'New IDM-style Download Scheduler page under Features. Create and manage multiple queues with customizable one-time or recurring schedules, concurrency limits (1-10 simultaneous files), failed download retries, and automated post-completion actions (open file, exit app, PC shutdown/sleep/hibernate).',
+      badge: 'Automation'
     },
     {
-      icon: RefreshCw,
-      title: 'Advanced Referer & Cookie Controls',
+      icon: ScrollText,
+      title: 'Application Logs & User Activity Viewer',
       description:
-        'New Advanced Network Options in Add Download modal allowing custom Referer and Session Cookies injection for restricted, tokenized, and authenticated file downloads.',
-      badge: 'Network'
+        'New Logs & Activity suite inside Settings. Easily switch between a high-level user activity audit trail and granular system diagnostics. Features real-time live streaming with auto-scroll, severity & category filtering, keyword search, copy, clear, and export to .log file.',
+      badge: 'Diagnostics'
     },
     {
-      icon: Layers,
-      title: 'Cross-Drive & Stream Crash Safeguards',
+      icon: Video,
+      title: 'Media Downloader Auto-FFmpeg & Proxy Resilience',
       description:
-        'Safe multi-drive file moves (EXDEV protection) when saving to external partitions/hard drives, single-stream fallback when servers reject range requests, and zero-crash cancellation handling.',
-      badge: 'Core Engine'
+        'Universal Media Downloader now automatically installs official FFmpeg builds in the background on Windows, cleanly bypasses dormant system SOCKS proxies to eliminate connection errors, and introduces robust fallback chains with zero-crash progressive stream recovery.',
+      badge: 'Media Engine'
     }
   ];
 
@@ -100,7 +102,7 @@ export default function WhatsNewModal({ open, onClose, version = '1.4.3' }) {
         <div className="flex items-center gap-2 px-3 py-2 rounded-xl bg-[var(--theme-secondary-subtle)] border border-[var(--theme-border-accent)] text-xs text-[var(--theme-text-primary)]">
           <Sparkles className="w-4 h-4 text-[var(--theme-primary)] shrink-0" />
           <span>
-            Voltrex Loader has been upgraded to <strong>v{version}</strong> with enhanced download engine stability, anti-hotlink bypass, and cross-drive file support!
+            Voltrex Loader has been upgraded to <strong>v{version}</strong> with the new IDM-style Download Scheduler, in-app activity logging, and automated media engine enhancements!
           </span>
         </div>
 

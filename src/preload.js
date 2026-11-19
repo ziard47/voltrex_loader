@@ -62,6 +62,26 @@ contextBridge.exposeInMainWorld('electronAPI', {
   showTestNotification: () => ipcRenderer.invoke('notification:test'),
   testProxy: (proxyConfig) => ipcRenderer.invoke('proxy:test', proxyConfig),
 
+  // Scheduler API
+  getSchedulerState: () => ipcRenderer.invoke('scheduler:get-state'),
+  createSchedulerQueue: (payload) => ipcRenderer.invoke('scheduler:create-queue', payload),
+  deleteSchedulerQueue: (queueId) => ipcRenderer.invoke('scheduler:delete-queue', queueId),
+  saveSchedulerQueue: (payload) => ipcRenderer.invoke('scheduler:save-queue', payload),
+  startSchedulerQueue: (queueId) => ipcRenderer.invoke('scheduler:start-queue', queueId),
+  stopSchedulerQueue: (queueId) => ipcRenderer.invoke('scheduler:stop-queue', queueId),
+  addTasksToSchedulerQueue: (payload) => ipcRenderer.invoke('scheduler:add-tasks', payload),
+  removeTaskFromSchedulerQueue: (payload) => ipcRenderer.invoke('scheduler:remove-task', payload),
+  reorderSchedulerTasks: (payload) => ipcRenderer.invoke('scheduler:reorder-tasks', payload),
+  saveSchedulerLimits: (limits) => ipcRenderer.invoke('scheduler:save-limits', limits),
+  resetSchedulerLimits: () => ipcRenderer.invoke('scheduler:reset-limits'),
+  browseFile: (defaultPath) => ipcRenderer.invoke('dialog:browse-file', defaultPath),
+
+  // Application & Activity Logs API
+  getLogs: (options) => ipcRenderer.invoke('logs:get', options),
+  clearLogs: () => ipcRenderer.invoke('logs:clear'),
+  exportLogs: () => ipcRenderer.invoke('logs:export'),
+  openLogsFolder: () => ipcRenderer.invoke('logs:open-folder'),
+
   // Event Listeners from Main Process
   onProgressBatch: (callback) => {
     const handler = (_event, batch) => callback(batch);
@@ -132,5 +152,15 @@ contextBridge.exposeInMainWorld('electronAPI', {
     const handler = (_event, progress) => callback(progress);
     ipcRenderer.on('updater:progress', handler);
     return () => ipcRenderer.removeListener('updater:progress', handler);
+  },
+  onSchedulerStateUpdated: (callback) => {
+    const handler = (_event, state) => callback(state);
+    ipcRenderer.on('scheduler:state-updated', handler);
+    return () => ipcRenderer.removeListener('scheduler:state-updated', handler);
+  },
+  onLogEntry: (callback) => {
+    const handler = (_event, entry) => callback(entry);
+    ipcRenderer.on('logs:new-entry', handler);
+    return () => ipcRenderer.removeListener('logs:new-entry', handler);
   }
 });

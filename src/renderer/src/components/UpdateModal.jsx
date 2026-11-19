@@ -125,6 +125,18 @@ export default function UpdateModal({
       const result = await window.electronAPI.downloadUpdate(updateInfo.asset);
       if (result && result.success) {
         setDownloadResult(result);
+        // Automatically launch installer and close application for executable updates
+        if (result.filePath && (result.filePath.toLowerCase().endsWith('.exe') || result.filePath.toLowerCase().endsWith('.appimage'))) {
+          setIsInstalling(true);
+          setTimeout(async () => {
+            try {
+              await window.electronAPI.installUpdate(result.filePath);
+            } catch (err) {
+              setDownloadError('Install error: ' + err.message);
+              setIsInstalling(false);
+            }
+          }, 1200);
+        }
       } else {
         setDownloadError(result?.error || 'Download failed');
       }
@@ -455,15 +467,21 @@ export default function UpdateModal({
             {downloadResult && !isDownloading && (
               <div className="p-3.5 rounded-xl bg-emerald-500/10 border border-emerald-500/30 flex items-center justify-between gap-3 text-xs">
                 <div className="flex items-center gap-2.5 text-emerald-600 dark:text-emerald-400 font-semibold">
-                  <CheckCircle2 className="w-5 h-5 shrink-0" />
+                  {isInstalling ? (
+                    <CircularProgress size={18} color="inherit" className="shrink-0" />
+                  ) : (
+                    <CheckCircle2 className="w-5 h-5 shrink-0" />
+                  )}
                   <div>
-                    <div>Update downloaded and verified!</div>
+                    <div>{isInstalling ? 'Launching installer and closing app...' : 'Update downloaded and verified!'}</div>
                     <div className="text-[11px] text-[var(--theme-text-muted)] font-normal mt-0.5">
-                      Ready to install. Click below to launch installer and restart.
+                      {isInstalling
+                        ? 'Voltrex Loader will close in a moment to complete installation.'
+                        : 'Ready to install. Click below to launch installer and restart.'}
                     </div>
                   </div>
                 </div>
-                {downloadResult.filePath && (
+                {downloadResult.filePath && !isInstalling && (
                   <Tooltip title="Reveal file in file manager" arrow>
                     <IconButton
                       size="small"
@@ -541,6 +559,7 @@ export default function UpdateModal({
                 size="small"
                 variant="outlined"
                 onClick={onClose}
+                disabled={isInstalling}
                 className="!text-xs !py-1.5 !px-3 rounded-lg !border-[var(--theme-border-accent)] !text-[var(--theme-text-muted)] hover:!text-[var(--theme-text-primary)]"
               >
                 Install Later
@@ -550,10 +569,10 @@ export default function UpdateModal({
                 variant="contained"
                 onClick={handleInstallNow}
                 disabled={isInstalling}
-                startIcon={<Zap className="w-3.5 h-3.5" />}
+                startIcon={isInstalling ? <CircularProgress size={14} color="inherit" /> : <Zap className="w-3.5 h-3.5" />}
                 className="btn-theme-primary !text-white !text-xs !py-1.5 !px-4 font-semibold rounded-lg shadow-md"
               >
-                {isInstalling ? 'Launching...' : 'Restart & Install'}
+                {isInstalling ? 'Closing & Installing...' : 'Restart & Install'}
               </Button>
             </>
           ) : updateInfo?.updateAvailable && updateInfo?.asset ? (

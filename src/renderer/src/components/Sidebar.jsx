@@ -16,7 +16,8 @@ import {
   ChevronLeft,
   ChevronRight,
   Magnet,
-  Video
+  Video,
+  CalendarClock
 } from 'lucide-react';
 import Tooltip from '@mui/material/Tooltip';
 import IconButton from '@mui/material/IconButton';
@@ -203,6 +204,7 @@ export default function Sidebar({
             </div>
           )}
           <div className="space-y-0.5 sm:space-y-1 w-full">
+            {/* Media Downloader */}
             {isCollapsed ? (
               <Tooltip title="Media Downloader (YouTube, TikTok, Facebook, Reddit...)" placement="right" arrow>
                 <button
@@ -228,6 +230,36 @@ export default function Sidebar({
                 <div className="flex items-center gap-2 min-w-0">
                   <Video className={`w-4 h-4 shrink-0 ${currentView === 'media-downloader' ? 'text-[var(--theme-primary)]' : 'text-[#D84040]'}`} />
                   <span className="truncate">Media Downloader</span>
+                </div>
+              </button>
+            )}
+
+            {/* Scheduler */}
+            {isCollapsed ? (
+              <Tooltip title="Scheduler (Download Queues & Timers)" placement="right" arrow>
+                <button
+                  onClick={() => onViewChange?.('scheduler')}
+                  className={`w-full flex justify-center py-1.5 px-1 rounded-lg text-xs font-medium transition-all border outline-none ${
+                    currentView === 'scheduler'
+                      ? '!border-[var(--theme-border-accent)] bg-[var(--theme-secondary-subtle)] text-[var(--theme-primary)] dark:text-[#EEEEEE] font-bold shadow-sm'
+                      : 'border-transparent text-slate-700 dark:text-[#b8a5a5] hover:bg-slate-200/60 dark:hover:bg-[#2d1e1e] hover:text-slate-900 dark:hover:text-[#EEEEEE]'
+                  }`}
+                >
+                  <CalendarClock className={`w-4 h-4 shrink-0 ${currentView === 'scheduler' ? 'text-[var(--theme-primary)]' : 'text-amber-500'}`} />
+                </button>
+              </Tooltip>
+            ) : (
+              <button
+                onClick={() => onViewChange?.('scheduler')}
+                className={`w-full flex items-center justify-between px-2.5 py-1 sm:py-1.5 rounded-lg text-xs font-medium transition-all border outline-none ${
+                  currentView === 'scheduler'
+                    ? '!border-[var(--theme-border-accent)] bg-[var(--theme-secondary-subtle)] text-[var(--theme-primary)] dark:text-[#EEEEEE] font-bold shadow-sm'
+                    : 'border-transparent text-slate-700 dark:text-[#b8a5a5] hover:bg-slate-200/60 dark:hover:bg-[#2d1e1e] hover:text-slate-900 dark:hover:text-[#EEEEEE]'
+                }`}
+              >
+                <div className="flex items-center gap-2 min-w-0">
+                  <CalendarClock className={`w-4 h-4 shrink-0 ${currentView === 'scheduler' ? 'text-[var(--theme-primary)]' : 'text-amber-500'}`} />
+                  <span className="truncate">Scheduler</span>
                 </div>
               </button>
             )}

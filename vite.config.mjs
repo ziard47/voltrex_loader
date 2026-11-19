@@ -1,3 +1,10 @@
+import fs from 'node:fs';
+try {
+  if (fs.realpathSync && fs.realpathSync.native) {
+    fs.realpathSync.native = fs.realpathSync;
+  }
+} catch {}
+
 import { defineConfig } from 'vite';
 import react from '@vitejs/plugin-react';
 import path from 'node:path';

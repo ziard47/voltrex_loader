@@ -17,6 +17,8 @@ const { app, BrowserWindow, ipcMain, dialog, shell, Tray, Menu, nativeImage, ses
 const path = require('node:path');
 const fs = require('node:fs');
 const { DownloadEngine } = require('./main/downloadEngine');
+const { SchedulerEngine } = require('./main/schedulerEngine');
+const { Logger } = require('./main/logger');
 const { BridgeServer } = require('./main/bridgeServer');
 const {
   checkForGitHubUpdate,
@@ -27,6 +29,8 @@ const {
 
 let mainWindow = null;
 let downloadEngine = null;
+let schedulerEngine = null;
+let logger = null;
 let bridgeServer = null;
 let tray = null;
 let isQuitting = false;
@@ -292,6 +296,7 @@ function createWindow() {
 
   downloadEngine.on('progress-batch', (batch) => forwardEvent('download:progress-batch', batch));
   downloadEngine.on('task-added', (task) => {
+    if (logger) logger.activity('DOWNLOAD', `Added download: "${task.fileName || task.url}"`);
     forwardEvent('download:task-added', task);
     updateTrayMenu();
   });
@@ -300,21 +305,34 @@ function createWindow() {
     updateTrayMenu();
   });
   downloadEngine.on('task-completed', (task) => {
+    if (logger) logger.activity('DOWNLOAD', `Download completed: "${task.fileName || task.url}"`);
     forwardEvent('download:task-completed', task);
     updateTrayMenu();
   });
   downloadEngine.on('task-error', (info) => {
+    const task = info.task || info;
+    if (logger) logger.error('DOWNLOAD', `Download failed: "${task?.fileName || 'task'}" - ${info.error || 'Unknown error'}`);
     forwardEvent('download:task-error', info);
     updateTrayMenu();
   });
   downloadEngine.on('task-deleted', (taskId) => {
+    if (logger) logger.activity('DOWNLOAD', `Deleted download task (${taskId})`);
     forwardEvent('download:task-deleted', taskId);
     updateTrayMenu();
   });
   downloadEngine.on('tasks-cleared', () => {
+    if (logger) logger.activity('DOWNLOAD', 'Cleared completed download tasks');
     forwardEvent('download:tasks-cleared');
     updateTrayMenu();
   });
+
+  if (schedulerEngine) {
+    schedulerEngine.on('state-updated', (state) => forwardEvent('scheduler:state-updated', state));
+  }
+
+  if (logger) {
+    logger.on('new-entry', (entry) => forwardEvent('logs:new-entry', entry));
+  }
 }
 
 // Setup IPC Handlers
@@ -575,7 +593,22 @@ function setupIpcHandlers() {
   });
 
   ipcMain.handle('updater:install', async (_event, filePath) => {
-    return await installUpdate(filePath);
+    return await installUpdate(filePath, () => {
+      isQuitting = true;
+      if (bridgeServer) {
+        try { bridgeServer.stop(); } catch {}
+      }
+      if (downloadEngine) {
+        try { downloadEngine.destroy(); } catch {}
+      }
+      if (schedulerEngine) {
+        try { schedulerEngine.destroy(); } catch {}
+      }
+      if (tray) {
+        try { tray.destroy(); } catch {}
+      }
+      app.exit(0);
+    });
   });
 
   // Settings Management IPC
@@ -659,6 +692,126 @@ function setupIpcHandlers() {
     } catch (err) {
       return { success: false, error: err.message };
     }
+  });
+
+  // Scheduler API Handlers
+  ipcMain.handle('scheduler:get-state', async () => {
+    if (schedulerEngine) {
+      return schedulerEngine.getState();
+    }
+    return { queues: [], downloadLimits: {} };
+  });
+
+  ipcMain.handle('scheduler:create-queue', async (_event, payload) => {
+    if (schedulerEngine) {
+      return schedulerEngine.createQueue(payload || {});
+    }
+    return null;
+  });
+
+  ipcMain.handle('scheduler:delete-queue', async (_event, queueId) => {
+    if (schedulerEngine) {
+      return schedulerEngine.deleteQueue(queueId);
+    }
+    return false;
+  });
+
+  ipcMain.handle('scheduler:save-queue', async (_event, { queueId, updates }) => {
+    if (schedulerEngine) {
+      return schedulerEngine.saveQueue(queueId, updates || {});
+    }
+    return null;
+  });
+
+  ipcMain.handle('scheduler:start-queue', async (_event, queueId) => {
+    if (schedulerEngine) {
+      return schedulerEngine.startQueue(queueId);
+    }
+    return false;
+  });
+
+  ipcMain.handle('scheduler:stop-queue', async (_event, queueId) => {
+    if (schedulerEngine) {
+      return schedulerEngine.stopQueue(queueId);
+    }
+    return false;
+  });
+
+  ipcMain.handle('scheduler:add-tasks', async (_event, { queueId, taskIds }) => {
+    if (schedulerEngine) {
+      return schedulerEngine.addTasksToQueue(queueId, taskIds);
+    }
+    return false;
+  });
+
+  ipcMain.handle('scheduler:remove-task', async (_event, { queueId, taskId }) => {
+    if (schedulerEngine) {
+      return schedulerEngine.removeTaskFromQueue(queueId, taskId);
+    }
+    return false;
+  });
+
+  ipcMain.handle('scheduler:reorder-tasks', async (_event, { queueId, taskIds }) => {
+    if (schedulerEngine) {
+      return schedulerEngine.reorderTasks(queueId, taskIds);
+    }
+    return false;
+  });
+
+  ipcMain.handle('scheduler:save-limits', async (_event, limits) => {
+    if (schedulerEngine) {
+      return schedulerEngine.saveDownloadLimits(limits);
+    }
+    return false;
+  });
+
+  ipcMain.handle('scheduler:reset-limits', async () => {
+    if (schedulerEngine) {
+      return schedulerEngine.resetDownloadLimits();
+    }
+    return false;
+  });
+
+  ipcMain.handle('dialog:browse-file', async (_event, defaultPath) => {
+    if (!mainWindow || mainWindow.isDestroyed()) return null;
+    const result = await dialog.showOpenDialog(mainWindow, {
+      title: 'Select Program or File to Open on Completion',
+      defaultPath: defaultPath || app.getPath('home'),
+      properties: ['openFile']
+    });
+    if (!result.canceled && result.filePaths.length > 0) {
+      return result.filePaths[0];
+    }
+    return null;
+  });
+
+  // Logs & Activity API Handlers
+  ipcMain.handle('logs:get', async (_event, options) => {
+    if (logger) {
+      return logger.getLogs(options || {});
+    }
+    return [];
+  });
+
+  ipcMain.handle('logs:clear', async () => {
+    if (logger) {
+      return logger.clearLogs();
+    }
+    return false;
+  });
+
+  ipcMain.handle('logs:export', async () => {
+    if (logger) {
+      return await logger.exportLogs(mainWindow);
+    }
+    return { success: false, error: 'Logger not initialized' };
+  });
+
+  ipcMain.handle('logs:open-folder', async () => {
+    if (logger) {
+      return logger.openLogFolder();
+    }
+    return false;
   });
 }
 
@@ -1008,6 +1161,8 @@ function createTray() {
 // App lifecycle
 app.whenReady().then(() => {
   const userDataPath = app.getPath('userData');
+  logger = new Logger(userDataPath);
+  logger.activity('SYSTEM', `Voltrex Loader engine started (v${app.getVersion()})`);
   settingsPath = path.join(userDataPath, 'voltrex-settings.json');
   const initialSettings = loadSettings();
   const defaultDownloadPath = initialSettings.defaultDownloadPath || app.getPath('downloads');
@@ -1028,6 +1183,12 @@ app.whenReady().then(() => {
   if (initialSettings.tempDownloadPath) {
     downloadEngine.setTempDownloadPath(initialSettings.tempDownloadPath);
   }
+
+  schedulerEngine = new SchedulerEngine({
+    userDataPath,
+    downloadEngine,
+    getSettings: loadSettings
+  });
 
   bridgeServer = new BridgeServer(
     downloadEngine,
@@ -1067,6 +1228,9 @@ app.on('login', (event, _webContents, _request, authInfo, callback) => {
 
 app.on('before-quit', () => {
   isQuitting = true;
+  if (schedulerEngine) {
+    schedulerEngine.destroy();
+  }
   if (downloadEngine) {
     downloadEngine.saveState();
   }
